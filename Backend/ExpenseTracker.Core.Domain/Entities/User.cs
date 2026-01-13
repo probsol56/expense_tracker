@@ -1,0 +1,11 @@
+using Microsoft.AspNetCore.Identity;
+using System;
+
+namespace ExpenseTracker.Core.Domain.Entities
+{
+    public class User : IdentityUser<Guid>
+    {
+        public required string FirstName { get; set; }
+        public required string LastName { get; set; }
+    }
+}

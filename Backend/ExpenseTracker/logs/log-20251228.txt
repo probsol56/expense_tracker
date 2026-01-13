@@ -1,0 +1,119 @@
+[15:59:35 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[15:59:36 INFORMATION] Now listening on: https://localhost:7039
+[15:59:36 INFORMATION] Now listening on: http://localhost:5293
+[15:59:36 INFORMATION] Application started. Press Ctrl+C to shut down.
+[15:59:36 INFORMATION] Hosting environment: Development
+[15:59:36 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[16:00:51 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[16:00:51 INFORMATION] Now listening on: https://localhost:7039
+[16:00:51 INFORMATION] Now listening on: http://localhost:5293
+[16:00:51 INFORMATION] Application started. Press Ctrl+C to shut down.
+[16:00:51 INFORMATION] Hosting environment: Development
+[16:00:51 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[17:03:25 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[17:03:25 INFORMATION] Now listening on: https://localhost:7039
+[17:03:25 INFORMATION] Now listening on: http://localhost:5293
+[17:03:25 INFORMATION] Application started. Press Ctrl+C to shut down.
+[17:03:25 INFORMATION] Hosting environment: Development
+[17:03:25 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[17:03:54 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[17:03:54 INFORMATION] Now listening on: https://localhost:7039
+[17:03:54 INFORMATION] Now listening on: http://localhost:5293
+[17:03:54 INFORMATION] Application started. Press Ctrl+C to shut down.
+[17:03:54 INFORMATION] Hosting environment: Development
+[17:03:54 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[17:04:56 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/ - null null
+[17:04:56 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/ - 404 0 null 504.4472ms
+[17:04:56 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/, Response status code: 404
+[17:06:28 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[17:06:28 INFORMATION] Now listening on: https://localhost:7039
+[17:06:28 INFORMATION] Now listening on: http://localhost:5293
+[17:06:28 INFORMATION] Application started. Press Ctrl+C to shut down.
+[17:06:28 INFORMATION] Hosting environment: Development
+[17:06:28 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[17:06:34 INFORMATION] Request starting HTTP/1.1 GET http://localhost:5293/ - null null
+[17:06:34 INFORMATION] Request finished HTTP/1.1 GET http://localhost:5293/ - 307 0 null 219.3201ms
+[17:06:35 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/ - null null
+[17:06:35 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/ - 404 0 null 13.5745ms
+[17:06:35 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/, Response status code: 404
+[17:07:24 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/ - null null
+[17:07:24 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/ - 404 0 null 15.0332ms
+[17:07:24 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/, Response status code: 404
+[17:07:42 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[17:07:43 INFORMATION] Now listening on: https://localhost:7039
+[17:07:43 INFORMATION] Now listening on: http://localhost:5293
+[17:07:43 INFORMATION] Application started. Press Ctrl+C to shut down.
+[17:07:43 INFORMATION] Hosting environment: Development
+[17:07:43 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[17:11:09 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[17:11:09 INFORMATION] Now listening on: https://localhost:7039
+[17:11:09 INFORMATION] Now listening on: http://localhost:5293
+[17:11:09 INFORMATION] Application started. Press Ctrl+C to shut down.
+[17:11:09 INFORMATION] Hosting environment: Development
+[17:11:09 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[17:13:46 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[17:13:46 INFORMATION] Request starting HTTP/2 GET https://localhost:44383/ - null null
+[17:13:46 INFORMATION] Application started. Press Ctrl+C to shut down.
+[17:13:46 INFORMATION] Hosting environment: Development
+[17:13:46 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[17:13:46 INFORMATION] Request finished HTTP/2 GET https://localhost:44383/ - 404 null null 121.5675ms
+[17:13:46 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:44383/, Response status code: 404
+[17:14:04 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[17:14:04 INFORMATION] Now listening on: https://localhost:7039
+[17:14:04 INFORMATION] Now listening on: http://localhost:5293
+[17:14:04 INFORMATION] Application started. Press Ctrl+C to shut down.
+[17:14:04 INFORMATION] Hosting environment: Development
+[17:14:04 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[17:14:26 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/weatherforecast/ - null null
+[17:14:26 INFORMATION] Executing endpoint 'ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker)'
+[17:14:26 INFORMATION] Route matched with {action = "Get", controller = "WeatherForecast"}. Executing controller action with signature System.Collections.Generic.IEnumerable`1[ExpenseTracker.WeatherForecast] Get() on controller ExpenseTracker.Controllers.WeatherForecastController (ExpenseTracker).
+[17:14:26 INFORMATION] This is an information.
+[17:14:26 WARNING] This is a warn message.
+[17:14:26 ERROR] This is an error message.
+[17:14:26 INFORMATION] Executing ObjectResult, writing value of type '<>z__ReadOnlyList`1[[ExpenseTracker.WeatherForecast, ExpenseTracker, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[17:14:26 INFORMATION] Executed action ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker) in 45.2481ms
+[17:14:26 INFORMATION] Executed endpoint 'ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker)'
+[17:14:26 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/weatherforecast/ - 200 null application/json; charset=utf-8 198.1827ms
+[17:14:26 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/favicon.ico - null null
+[17:14:26 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/favicon.ico - 404 0 null 6.9667ms
+[17:14:27 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/favicon.ico, Response status code: 404
+[17:14:47 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/weatherforecast - null null
+[17:14:47 INFORMATION] Executing endpoint 'ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker)'
+[17:14:47 INFORMATION] Route matched with {action = "Get", controller = "WeatherForecast"}. Executing controller action with signature System.Collections.Generic.IEnumerable`1[ExpenseTracker.WeatherForecast] Get() on controller ExpenseTracker.Controllers.WeatherForecastController (ExpenseTracker).
+[17:14:47 INFORMATION] This is an information.
+[17:14:47 WARNING] This is a warn message.
+[17:14:47 ERROR] This is an error message.
+[17:14:47 INFORMATION] Executing ObjectResult, writing value of type '<>z__ReadOnlyList`1[[ExpenseTracker.WeatherForecast, ExpenseTracker, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[17:14:47 INFORMATION] Executed action ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker) in 7.8522ms
+[17:14:47 INFORMATION] Executed endpoint 'ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker)'
+[17:14:47 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/weatherforecast - 200 null application/json; charset=utf-8 29.5506ms
+[17:15:12 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/weatherforecast - null null
+[17:15:12 INFORMATION] Executing endpoint 'ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker)'
+[17:15:12 INFORMATION] Route matched with {action = "Get", controller = "WeatherForecast"}. Executing controller action with signature System.Collections.Generic.IEnumerable`1[ExpenseTracker.WeatherForecast] Get() on controller ExpenseTracker.Controllers.WeatherForecastController (ExpenseTracker).
+[17:15:12 INFORMATION] This is an information.
+[17:15:12 WARNING] This is a warn message.
+[17:15:12 ERROR] This is an error message.
+[17:15:12 INFORMATION] Executing ObjectResult, writing value of type '<>z__ReadOnlyList`1[[ExpenseTracker.WeatherForecast, ExpenseTracker, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[17:15:12 INFORMATION] Executed action ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker) in 8.2049ms
+[17:15:12 INFORMATION] Executed endpoint 'ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker)'
+[17:15:12 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/weatherforecast - 200 null application/json; charset=utf-8 25.5586ms
+[17:15:13 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/weatherforecast - null null
+[17:15:13 INFORMATION] Executing endpoint 'ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker)'
+[17:15:13 INFORMATION] Route matched with {action = "Get", controller = "WeatherForecast"}. Executing controller action with signature System.Collections.Generic.IEnumerable`1[ExpenseTracker.WeatherForecast] Get() on controller ExpenseTracker.Controllers.WeatherForecastController (ExpenseTracker).
+[17:15:13 INFORMATION] This is an information.
+[17:15:13 WARNING] This is a warn message.
+[17:15:13 ERROR] This is an error message.
+[17:15:13 INFORMATION] Executing ObjectResult, writing value of type '<>z__ReadOnlyList`1[[ExpenseTracker.WeatherForecast, ExpenseTracker, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[17:15:13 INFORMATION] Executed action ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker) in 10.5282ms
+[17:15:13 INFORMATION] Executed endpoint 'ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker)'
+[17:15:13 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/weatherforecast - 200 null application/json; charset=utf-8 31.121ms
+[17:15:14 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/weatherforecast - null null
+[17:15:14 INFORMATION] Executing endpoint 'ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker)'
+[17:15:14 INFORMATION] Route matched with {action = "Get", controller = "WeatherForecast"}. Executing controller action with signature System.Collections.Generic.IEnumerable`1[ExpenseTracker.WeatherForecast] Get() on controller ExpenseTracker.Controllers.WeatherForecastController (ExpenseTracker).
+[17:15:14 INFORMATION] This is an information.
+[17:15:14 WARNING] This is a warn message.
+[17:15:14 ERROR] This is an error message.
+[17:15:14 INFORMATION] Executing ObjectResult, writing value of type '<>z__ReadOnlyList`1[[ExpenseTracker.WeatherForecast, ExpenseTracker, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[17:15:14 INFORMATION] Executed action ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker) in 7.9562ms
+[17:15:14 INFORMATION] Executed endpoint 'ExpenseTracker.Controllers.WeatherForecastController.Get (ExpenseTracker)'
+[17:15:14 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/weatherforecast - 200 null application/json; charset=utf-8 28.7604ms

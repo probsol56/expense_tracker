@@ -1,0 +1,96 @@
+[19:53:53 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[19:53:53 INFORMATION] Now listening on: https://localhost:7039
+[19:53:53 INFORMATION] Now listening on: http://localhost:5293
+[19:53:54 INFORMATION] Application started. Press Ctrl+C to shut down.
+[19:53:54 INFORMATION] Hosting environment: Development
+[19:53:54 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[19:54:51 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/ - null null
+[19:54:51 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/ - 404 0 null 311.8541ms
+[19:54:51 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/, Response status code: 404
+[19:55:06 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/api/categories - null null
+[19:55:06 INFORMATION] Executing endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation)'
+[19:55:06 INFORMATION] Route matched with {action = "GetCategories", controller = "Categories"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult GetCategories(ExpenseTracker.Shared.RequestFeature.PaginationParameter) on controller ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController (ExpenseTracker.Infrastructure.Presentation).
+[19:55:09 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[19:55:09 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[19:55:10 INFORMATION] Executing OkObjectResult, writing value of type 'System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[[System.ValueTuple`2[[System.Linq.IQueryable`1[[ExpenseTracker.Core.Domain.Entities.Category, ExpenseTracker.Core.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Linq.Expressions, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a],[System.Int32, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[ExpenseTracker.Core.Services.CategoryService+<GetList>d__3, ExpenseTracker.Core.Services, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[19:55:10 INFORMATION] Executed action ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation) in 3543.5433ms
+[19:55:10 INFORMATION] Executed endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation)'
+[19:55:10 ERROR] An unhandled exception has occurred while executing the request.
+[19:55:10 ERROR] An error occurred using the connection to database 'ExpenseTracker' on server '.'.
+[19:55:10 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/api/categories - 500 null text/html; charset=utf-8 4021.2365ms
+[19:55:11 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/_vs/browserLink - null null
+[19:55:11 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/_framework/aspnetcore-browser-refresh.js - null null
+[19:55:11 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/_framework/aspnetcore-browser-refresh.js - 200 16513 application/javascript; charset=utf-8 50.0743ms
+[19:55:11 ERROR] Something went wrong in the GetList method of the CategoryService. Exception: System.Threading.Tasks.TaskCanceledException: A task was canceled.
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at ExpenseTracker.Core.Services.CategoryService.GetList(PaginationParameter parameters, Boolean trackChanges, CancellationToken cancellationToken) in D:\Works\Personal\ExpenseTracker\ExpenseTracker.Core.Services\CategoryService.cs:line 18
+[19:55:11 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/_vs/browserLink - 200 null text/javascript; charset=UTF-8 188.701ms
+[19:55:11 INFORMATION] Request starting HTTP/2 GET https://localhost:7039/favicon.ico - null null
+[19:55:11 INFORMATION] Request finished HTTP/2 GET https://localhost:7039/favicon.ico - 404 0 null 10.9595ms
+[19:55:11 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/favicon.ico, Response status code: 404
+[19:55:47 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[19:55:47 INFORMATION] Now listening on: https://localhost:7039
+[19:55:47 INFORMATION] Now listening on: http://localhost:5293
+[19:55:47 INFORMATION] Application started. Press Ctrl+C to shut down.
+[19:55:47 INFORMATION] Hosting environment: Development
+[19:55:47 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[19:59:15 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories - null null
+[19:59:15 INFORMATION] Executing endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation)'
+[19:59:15 INFORMATION] Route matched with {action = "GetCategories", controller = "Categories"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult GetCategories(ExpenseTracker.Shared.RequestFeature.PaginationParameter) on controller ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController (ExpenseTracker.Infrastructure.Presentation).
+[19:59:16 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[19:59:16 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[19:59:16 INFORMATION] Executing OkObjectResult, writing value of type 'System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1+AsyncStateMachineBox`1[[System.ValueTuple`2[[System.Linq.IQueryable`1[[ExpenseTracker.Core.Domain.Entities.Category, ExpenseTracker.Core.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Linq.Expressions, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a],[System.Int32, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[ExpenseTracker.Core.Services.CategoryService+<GetList>d__3, ExpenseTracker.Core.Services, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]'.
+[19:59:16 INFORMATION] Executed action ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation) in 1636.1766ms
+[19:59:16 INFORMATION] Executed endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation)'
+[19:59:16 ERROR] An unhandled exception has occurred while executing the request.
+[19:59:16 ERROR] An error occurred using the connection to database 'ExpenseTracker' on server '.'.
+[19:59:16 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories - 500 null text/plain; charset=utf-8 1780.6443ms
+[19:59:16 ERROR] Something went wrong in the GetList method of the CategoryService. Exception: System.Threading.Tasks.TaskCanceledException: A task was canceled.
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenInternalAsync(Boolean errorsExpected, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalConnection.OpenAsync(CancellationToken cancellationToken, Boolean errorsExpected)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.SqlServer.Storage.Internal.SqlServerExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.ShapedQueryCompilingExpressionVisitor.SingleAsync[TSource](IAsyncEnumerable`1 asyncEnumerable, CancellationToken cancellationToken)
+   at ExpenseTracker.Core.Services.CategoryService.GetList(PaginationParameter parameters, Boolean trackChanges, CancellationToken cancellationToken) in D:\Works\Personal\ExpenseTracker\ExpenseTracker.Core.Services\CategoryService.cs:line 18
+[20:02:00 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\ExpenseTracker\wwwroot. Static files may be unavailable.
+[20:02:00 INFORMATION] Now listening on: https://localhost:7039
+[20:02:00 INFORMATION] Now listening on: http://localhost:5293
+[20:02:00 INFORMATION] Application started. Press Ctrl+C to shut down.
+[20:02:00 INFORMATION] Hosting environment: Development
+[20:02:00 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\ExpenseTracker
+[20:02:06 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories - null null
+[20:02:06 INFORMATION] Executing endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation)'
+[20:02:06 INFORMATION] Route matched with {action = "GetCategories", controller = "Categories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCategories(ExpenseTracker.Shared.RequestFeature.PaginationParameter) on controller ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController (ExpenseTracker.Infrastructure.Presentation).
+[20:02:07 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[20:02:07 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[20:02:07 INFORMATION] Executed DbCommand (211ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM (
+    SELECT 1 AS empty
+    FROM [Categories] AS [c]
+    ORDER BY (SELECT 1)
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [c0]
+[20:02:07 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[20:02:07 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[20:02:07 INFORMATION] Executed DbCommand (13ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c].[Id], [c].[CreatedDate], [c].[Description], [c].[IsGlobal], [c].[Name], [c].[Type], [c].[UpdatedDate]
+FROM [Categories] AS [c]
+ORDER BY (SELECT 1)
+OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+[20:02:07 INFORMATION] Executing OkObjectResult, writing value of type '<>f__AnonymousType0`2[[System.Collections.Generic.List`1[[ExpenseTracker.Core.Domain.Entities.Category, ExpenseTracker.Core.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+[20:02:07 INFORMATION] Executed action ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation) in 1794.6792ms
+[20:02:08 INFORMATION] Executed endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation)'
+[20:02:08 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories - 200 null application/json; charset=utf-8 1910.5301ms

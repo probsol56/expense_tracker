@@ -1,0 +1,58 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Works\\Personal\\ExpenseTracker\\LoggingService\\LoggingService\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{21E601E9-0199-49C1-AA95-36E49B578041}|LoggingService.csproj|d:\\works\\personal\\expensetracker\\loggingservice\\loggingservice\\loggermanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{21E601E9-0199-49C1-AA95-36E49B578041}|LoggingService.csproj|solutionrelative:loggermanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{21E601E9-0199-49C1-AA95-36E49B578041}|LoggingService.csproj|d:\\works\\personal\\expensetracker\\loggingservice\\loggingservice\\iloggermanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{21E601E9-0199-49C1-AA95-36E49B578041}|LoggingService.csproj|solutionrelative:iloggermanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "LoggerManager.cs",
+              "DocumentMoniker": "D:\\Works\\Personal\\ExpenseTracker\\LoggingService\\LoggingService\\LoggerManager.cs",
+              "RelativeDocumentMoniker": "LoggerManager.cs",
+              "ToolTip": "D:\\Works\\Personal\\ExpenseTracker\\LoggingService\\LoggingService\\LoggerManager.cs",
+              "RelativeToolTip": "LoggerManager.cs",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAABYAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-28T06:28:25.034Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ILoggerManager.cs",
+              "DocumentMoniker": "D:\\Works\\Personal\\ExpenseTracker\\LoggingService\\LoggingService\\ILoggerManager.cs",
+              "RelativeDocumentMoniker": "ILoggerManager.cs",
+              "ToolTip": "D:\\Works\\Personal\\ExpenseTracker\\LoggingService\\LoggingService\\ILoggerManager.cs",
+              "RelativeToolTip": "ILoggerManager.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-28T06:25:16.603Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

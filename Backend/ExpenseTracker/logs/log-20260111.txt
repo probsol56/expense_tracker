@@ -1,0 +1,126 @@
+[18:30:36 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\Backend\ExpenseTracker\wwwroot. Static files may be unavailable.
+[18:30:36 INFORMATION] Now listening on: https://localhost:7039
+[18:30:36 INFORMATION] Now listening on: http://localhost:5293
+[18:30:36 INFORMATION] Application started. Press Ctrl+C to shut down.
+[18:30:36 INFORMATION] Hosting environment: Development
+[18:30:36 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\Backend\ExpenseTracker
+[18:30:49 INFORMATION] Application is shutting down...
+[18:49:11 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\Backend\ExpenseTracker\wwwroot. Static files may be unavailable.
+[18:49:11 INFORMATION] Now listening on: https://localhost:7039
+[18:49:11 INFORMATION] Now listening on: http://localhost:5293
+[18:49:11 INFORMATION] Application started. Press Ctrl+C to shut down.
+[18:49:11 INFORMATION] Hosting environment: Development
+[18:49:11 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\Backend\ExpenseTracker
+[18:50:29 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories - null null
+[18:50:29 INFORMATION] Executing endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation)'
+[18:50:29 INFORMATION] Route matched with {action = "GetCategories", controller = "Categories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCategories(ExpenseTracker.Shared.RequestFeature.PaginationParameter) on controller ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController (ExpenseTracker.Infrastructure.Presentation).
+[18:50:32 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[18:50:32 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[18:50:33 INFORMATION] Executed DbCommand (129ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM (
+    SELECT 1 AS empty
+    FROM [Categories] AS [c]
+    ORDER BY (SELECT 1)
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [c0]
+[18:50:33 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[18:50:33 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[18:50:33 INFORMATION] Executed DbCommand (8ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c].[Id], [c].[CreatedDate], [c].[Description], [c].[IsGlobal], [c].[Name], [c].[Type], [c].[UpdatedDate]
+FROM [Categories] AS [c]
+ORDER BY (SELECT 1)
+OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+[18:50:33 INFORMATION] Executing OkObjectResult, writing value of type '<>f__AnonymousType0`2[[System.Collections.Generic.IEnumerable`1[[ExpenseTracker.Core.Domain.Entities.Category, ExpenseTracker.Core.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+[18:50:33 INFORMATION] Executed action ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation) in 4015.4526ms
+[18:50:33 INFORMATION] Executed endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation)'
+[18:50:33 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories - 200 null application/json; charset=utf-8 4294.9624ms
+[18:50:54 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298a - null null
+[18:50:54 INFORMATION] Executing endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategoryById (ExpenseTracker.Infrastructure.Presentation)'
+[18:50:54 INFORMATION] Route matched with {action = "GetCategoryById", controller = "Categories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCategoryById(System.Guid) on controller ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController (ExpenseTracker.Infrastructure.Presentation).
+[18:50:54 INFORMATION] Executed DbCommand (20ms) [Parameters=[@__categoryId_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(2) [c].[Id], [c].[CreatedDate], [c].[Description], [c].[IsGlobal], [c].[Name], [c].[Type], [c].[UpdatedDate]
+FROM [Categories] AS [c]
+WHERE [c].[Id] = @__categoryId_0
+[18:50:54 INFORMATION] Executing OkObjectResult, writing value of type 'ExpenseTracker.Core.Domain.Entities.Category'.
+[18:50:54 INFORMATION] Executed action ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategoryById (ExpenseTracker.Infrastructure.Presentation) in 166.0293ms
+[18:50:54 INFORMATION] Executed endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategoryById (ExpenseTracker.Infrastructure.Presentation)'
+[18:50:54 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298a - 200 null application/json; charset=utf-8 191.7718ms
+[18:51:02 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298l - null null
+[18:51:02 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298l - 404 0 null 10.3413ms
+[18:51:02 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298l, Response status code: 404
+[18:59:53 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298l - null null
+[18:59:53 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298l - 404 0 null 6.9522ms
+[18:59:53 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298l, Response status code: 404
+[18:59:58 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - null null
+[18:59:58 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - 404 0 null 3.8954ms
+[18:59:58 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298, Response status code: 404
+[19:03:48 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - null null
+[19:03:48 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - 404 0 null 9.9842ms
+[19:03:48 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298, Response status code: 404
+[19:03:55 INFORMATION] Application is shutting down...
+[19:04:08 WARNING] The WebRootPath was not found: D:\Works\Personal\ExpenseTracker\Backend\ExpenseTracker\wwwroot. Static files may be unavailable.
+[19:04:08 INFORMATION] Now listening on: https://localhost:7039
+[19:04:08 INFORMATION] Now listening on: http://localhost:5293
+[19:04:08 INFORMATION] Application started. Press Ctrl+C to shut down.
+[19:04:08 INFORMATION] Hosting environment: Development
+[19:04:08 INFORMATION] Content root path: D:\Works\Personal\ExpenseTracker\Backend\ExpenseTracker
+[19:04:15 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - null null
+[19:04:15 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - 404 0 null 53.4173ms
+[19:04:15 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298, Response status code: 404
+[19:04:17 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - null null
+[19:04:17 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - 404 0 null 8.2116ms
+[19:04:17 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298, Response status code: 404
+[19:04:18 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - null null
+[19:04:18 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - 404 0 null 6.767ms
+[19:04:18 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298, Response status code: 404
+[19:04:19 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - null null
+[19:04:19 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298 - 404 0 null 4.2195ms
+[19:04:19 INFORMATION] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:7039/api/categories/e4df724c-7e92-40f8-be2c-622aa899298, Response status code: 404
+[19:04:56 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories - null null
+[19:04:56 INFORMATION] Executing endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation)'
+[19:04:56 INFORMATION] Route matched with {action = "GetCategories", controller = "Categories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCategories(ExpenseTracker.Shared.RequestFeature.PaginationParameter) on controller ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController (ExpenseTracker.Infrastructure.Presentation).
+[19:04:57 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[19:04:57 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[19:04:58 INFORMATION] Executed DbCommand (63ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT COUNT(*)
+FROM (
+    SELECT 1 AS empty
+    FROM [Categories] AS [c]
+    ORDER BY (SELECT 1)
+    OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+) AS [c0]
+[19:04:58 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[19:04:58 WARNING] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+[19:04:58 INFORMATION] Executed DbCommand (7ms) [Parameters=[@__p_0='?' (DbType = Int32), @__p_1='?' (DbType = Int32)], CommandType='"Text"', CommandTimeout='30']
+SELECT [c].[Id], [c].[CreatedDate], [c].[Description], [c].[IsGlobal], [c].[Name], [c].[Type], [c].[UpdatedDate]
+FROM [Categories] AS [c]
+ORDER BY (SELECT 1)
+OFFSET @__p_0 ROWS FETCH NEXT @__p_1 ROWS ONLY
+[19:04:58 INFORMATION] Executing OkObjectResult, writing value of type '<>f__AnonymousType0`2[[System.Collections.Generic.IEnumerable`1[[ExpenseTracker.Core.Domain.Entities.Category, ExpenseTracker.Core.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]'.
+[19:04:58 INFORMATION] Executed action ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation) in 1936.8103ms
+[19:04:58 INFORMATION] Executed endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategories (ExpenseTracker.Infrastructure.Presentation)'
+[19:04:58 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories - 200 null application/json; charset=utf-8 2042.3703ms
+[19:05:07 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories/3ddf5524-7fda-4537-b596-0dad4e6a1867 - null null
+[19:05:07 INFORMATION] Executing endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategoryById (ExpenseTracker.Infrastructure.Presentation)'
+[19:05:07 INFORMATION] Route matched with {action = "GetCategoryById", controller = "Categories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCategoryById(System.Guid) on controller ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController (ExpenseTracker.Infrastructure.Presentation).
+[19:05:08 INFORMATION] Executed DbCommand (3ms) [Parameters=[@__categoryId_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(2) [c].[Id], [c].[CreatedDate], [c].[Description], [c].[IsGlobal], [c].[Name], [c].[Type], [c].[UpdatedDate]
+FROM [Categories] AS [c]
+WHERE [c].[Id] = @__categoryId_0
+[19:05:08 INFORMATION] Executing OkObjectResult, writing value of type 'ExpenseTracker.Core.Domain.Entities.Category'.
+[19:05:08 INFORMATION] Executed action ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategoryById (ExpenseTracker.Infrastructure.Presentation) in 168.2017ms
+[19:05:08 INFORMATION] Executed endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategoryById (ExpenseTracker.Infrastructure.Presentation)'
+[19:05:08 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories/3ddf5524-7fda-4537-b596-0dad4e6a1867 - 200 null application/json; charset=utf-8 196.8167ms
+[19:05:13 INFORMATION] Request starting HTTP/1.1 GET https://localhost:7039/api/categories/3ddf5524-7fda-4537-b596-0dad4e6a1868 - null null
+[19:05:13 INFORMATION] Executing endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategoryById (ExpenseTracker.Infrastructure.Presentation)'
+[19:05:13 INFORMATION] Route matched with {action = "GetCategoryById", controller = "Categories"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetCategoryById(System.Guid) on controller ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController (ExpenseTracker.Infrastructure.Presentation).
+[19:05:13 INFORMATION] Executed DbCommand (1ms) [Parameters=[@__categoryId_0='?' (DbType = Guid)], CommandType='"Text"', CommandTimeout='30']
+SELECT TOP(2) [c].[Id], [c].[CreatedDate], [c].[Description], [c].[IsGlobal], [c].[Name], [c].[Type], [c].[UpdatedDate]
+FROM [Categories] AS [c]
+WHERE [c].[Id] = @__categoryId_0
+[19:05:13 INFORMATION] Executed action ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategoryById (ExpenseTracker.Infrastructure.Presentation) in 64.8413ms
+[19:05:13 INFORMATION] Executed endpoint 'ExpenseTracker.Infrastructure.Presentation.Controllers.CategoriesController.GetCategoryById (ExpenseTracker.Infrastructure.Presentation)'
+[19:05:13 ERROR] An unhandled exception has occurred while executing the request.
+[19:05:13 INFORMATION] Request finished HTTP/1.1 GET https://localhost:7039/api/categories/3ddf5524-7fda-4537-b596-0dad4e6a1868 - 500 null application/problem+json 209.2454ms
+[20:15:18 INFORMATION] Application is shutting down...

@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="16.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
+    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.7.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ExpenseTracker.Core.Domain\ExpenseTracker.Core.Domain.csproj" />
+    <ProjectReference Include="..\ExpenseTracker.Core.Services.Abstractions\ExpenseTracker.Core.Services.Abstractions.csproj" />
+    <ProjectReference Include="..\ExpenseTracker.Shared.RequestFeature\ExpenseTracker.Shared.RequestFeature.csproj" />
+    <ProjectReference Include="..\LoggingService\LoggingService\LoggingService.csproj" />
+  </ItemGroup>
+
+</Project>

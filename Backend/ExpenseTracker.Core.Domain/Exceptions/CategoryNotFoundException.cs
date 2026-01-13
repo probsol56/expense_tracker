@@ -1,7 +1,4 @@
 namespace ExpenseTracker.Core.Domain.Exceptions;
-public class CategoryNotFoundException : NotFoundException
+public class CategoryNotFoundException(Guid categoryId) : NotFoundException($"Category with id: {categoryId} not found")
 {
-    public CategoryNotFoundException(Guid categoryId) : base($"Category with id: {categoryId} not found")
-    {
-    }
 }

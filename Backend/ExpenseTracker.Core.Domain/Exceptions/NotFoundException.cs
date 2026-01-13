@@ -1,7 +1,4 @@
 namespace ExpenseTracker.Core.Domain.Exceptions;
-public abstract class NotFoundException : Exception
+public abstract class NotFoundException(string message) : Exception(message)
 {
-    public NotFoundException(string message) : base(message)
-    {
-    }
 }

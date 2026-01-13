@@ -15,7 +15,7 @@ namespace ExpenseTracker.Infrastructure.Persistence
             RepositoryContext.Set<T>();
 
 
-        public IQueryable<T> GetAll(PaginationParameter paginationParameter, bool trackChanges)
+        public IQueryable<T> GetList(PaginationParameter paginationParameter, bool trackChanges)
         {
             IQueryable<T> query = GetAll(trackChanges);
             if (paginationParameter.Page <= 0)
@@ -26,7 +26,7 @@ namespace ExpenseTracker.Infrastructure.Persistence
             return query.Skip(skip).Take(paginationParameter.PerPage);
         }
 
-        public IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges)
+        public IQueryable<T> GetOne(Expression<Func<T, bool>> expression, bool trackChanges)
         {
             return !trackChanges ?
                 RepositoryContext.Set<T>().Where(expression).AsNoTracking() :

@@ -1,9 +1,4 @@
 ﻿using ExpenseTracker.Core.Domain.Repositories;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ExpenseTracker.Infrastructure.Persistence
 {
@@ -22,7 +17,6 @@ namespace ExpenseTracker.Infrastructure.Persistence
 
         public ICategoryRepository Category => _categoryRepository.Value;
         public ITransactionRepository Transaction => _transactionRepository.Value;
-        public void Save() => _repositoryContext.SaveChanges();
         public async Task SaveAsync() => await _repositoryContext.SaveChangesAsync();
     }
 }

@@ -10,8 +10,8 @@ namespace ExpenseTracker.Core.Domain.Repositories
 {
     public interface IRepositoryBase<T>
     {
-        IQueryable<T> GetAll(PaginationParameter paginationParameter, bool trackChanges);
-        IQueryable<T> FindByCondition(Expression<Func<T, bool>> expression, bool trackChanges);
+        IQueryable<T> GetList(PaginationParameter paginationParameter, bool trackChanges);
+        IQueryable<T> GetOne(Expression<Func<T, bool>> expression, bool trackChanges);
         void Create(T entity);
         void Update(T entity);
         void Delete(T entity);

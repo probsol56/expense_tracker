@@ -11,19 +11,12 @@ using System.Text;
 
 namespace ExpenseTracker.Core.Services
 {
-    public class AuthenticationService : IAuthenticationService
+    public class AuthenticationService(UserManager<User> userManager, IConfiguration configuration, IMapper mapper) : IAuthenticationService
     {
-        private readonly UserManager<User> _userManager;
-        private readonly IConfiguration _configuration;
-        private readonly IMapper _mapper;
+        private readonly UserManager<User> _userManager = userManager;
+        private readonly IConfiguration _configuration = configuration;
+        private readonly IMapper _mapper = mapper;
         private User? _user;
-
-        public AuthenticationService(UserManager<User> userManager, IConfiguration configuration, IMapper mapper)
-        {
-            _userManager = userManager;
-            _configuration = configuration;
-            _mapper = mapper;
-        }
 
         public async Task<IdentityResult> RegisterUser(UserRegistrationDto userForRegistration)
         {

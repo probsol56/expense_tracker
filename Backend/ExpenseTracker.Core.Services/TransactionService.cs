@@ -8,17 +8,10 @@ using Microsoft.AspNetCore.Http; // For IFormFile
 
 namespace ExpenseTracker.Core.Services
 {
-    public class TransactionService : ITransactionService
+    public class TransactionService(IRepositoryManager repository, IMapper mapper) : ITransactionService
     {
-        private readonly IRepositoryManager _repository;
-        private readonly IMapper _mapper;
-        // private readonly IWebHostEnvironment _environment; // To save files to wwwroot or local folder
-
-        public TransactionService(IRepositoryManager repository, IMapper mapper)
-        {
-            _repository = repository;
-            _mapper = mapper;
-        }
+        private readonly IRepositoryManager _repository = repository;
+        private readonly IMapper _mapper = mapper;
 
         public async Task<Transaction> CreateTransaction(Guid userId, TransactionForCreationDto transactionDto)
         {

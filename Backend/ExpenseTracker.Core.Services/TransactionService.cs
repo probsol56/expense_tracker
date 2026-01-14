@@ -3,8 +3,6 @@ using ExpenseTracker.Core.Domain.Entities;
 using ExpenseTracker.Core.Domain.Repositories;
 using ExpenseTracker.Core.Services.Abstractions;
 using ExpenseTracker.Shared.RequestFeature;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http; // For IFormFile
 
 namespace ExpenseTracker.Core.Services
 {
@@ -13,13 +11,13 @@ namespace ExpenseTracker.Core.Services
         private readonly IRepositoryManager _repository = repository;
         private readonly IMapper _mapper = mapper;
 
-        public async Task<Transaction> CreateTransaction(Guid userId, TransactionForCreationDto transactionDto)
+        public async Task<IEnumerable<Transaction>> GetTransactionsAsync(Guid userId, CancellationToken cancellationToken = default)
         {
-            // Map DTO to Entity
-            // Since we don't have mapping profile yet, manual or assume mapper works
-            // Assuming strict manual mapping for now or partial
-
-            // Note: Use AutoMapper in real mapping profile, simplified here
+            var transactions = await _repository.Transaction.GetTransactionsAsync(userId, trackChanges: false);
+            return transactions;
+        }
+        public async Task<Transaction> CreateTransactionAsync(Guid userId, TransactionForCreationDto transactionDto, CancellationToken cancellationToken = default)
+        {
             var transaction = new Transaction
             {
                 Amount = transactionDto.Amount,
@@ -27,10 +25,10 @@ namespace ExpenseTracker.Core.Services
                 Description = transactionDto.Description,
                 CategoryId = transactionDto.CategoryId,
                 UserId = userId,
-                Attachments = new List<TransactionAttachment>()
+                Attachments = []
             };
 
-            // Handle File Uploads
+            // Handle File Uploads (Simplified for now)
             if (transactionDto.Attachments != null)
             {
                 var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
@@ -45,7 +43,7 @@ namespace ExpenseTracker.Core.Services
                         var filePath = Path.Combine(uploadPath, fileName);
                         using (var stream = new FileStream(filePath, FileMode.Create))
                         {
-                            await file.CopyToAsync(stream);
+                            await file.CopyToAsync(stream, cancellationToken);
                         }
 
                         transaction.Attachments.Add(new TransactionAttachment
@@ -58,32 +56,46 @@ namespace ExpenseTracker.Core.Services
                 }
             }
 
-            _repository.Transaction.CreateTransaction(transaction);
+            _repository.Transaction.Create(transaction);
             await _repository.SaveAsync();
             return transaction;
         }
 
-        public async Task DeleteTransaction(Guid userId, Guid id, bool trackChanges)
+        public async Task<bool> DeleteTransactionAsync(Guid userId, Guid id, bool trackChanges, CancellationToken cancellationToken = default)
         {
             var transaction = await _repository.Transaction.GetTransactionByIdAsync(userId, id, trackChanges);
             if (transaction is null)
-                throw new KeyNotFoundException($"Transaction with id: {id} not found");
+                return false;
 
-            _repository.Transaction.DeleteTransaction(transaction);
+            _repository.Transaction.Delete(transaction);
             await _repository.SaveAsync();
+            return true;
         }
 
-        public async Task<Transaction> GetTransactionById(Guid userId, Guid id, bool trackChanges)
+        public async Task<Transaction?> GetTransactionByIdAsync(Guid userId, Guid id, CancellationToken cancellationToken = default)
         {
-            var transaction = await _repository.Transaction.GetTransactionByIdAsync(userId, id, trackChanges);
+            return await _repository.Transaction.GetTransactionByIdAsync(userId, id, trackChanges: false);
+        }
+
+
+        public async Task<Transaction?> UpdateTransactionAsync(Guid userId, Guid id, TransactionForCreationDto transactionDto, CancellationToken cancellationToken = default)
+        {
+            var transaction = await _repository.Transaction.GetTransactionByIdAsync(userId, id, trackChanges: true);
             if (transaction is null)
-                throw new KeyNotFoundException($"Transaction with id: {id} not found");
-            return transaction;
-        }
+                return null;
 
-        public async Task<IEnumerable<Transaction>> GetTransactions(Guid userId, bool trackChanges)
-        {
-            return await _repository.Transaction.GetTransactionsAsync(userId, trackChanges);
+            // Manual Map updates
+            transaction.Amount = transactionDto.Amount;
+            transaction.Date = transactionDto.Date;
+            transaction.Description = transactionDto.Description;
+            transaction.CategoryId = transactionDto.CategoryId;
+
+            // Attachments update is complex, skipping for now as not requested.
+
+            _repository.Transaction.Update(transaction);
+            await _repository.SaveAsync();
+
+            return transaction;
         }
     }
 }

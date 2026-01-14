@@ -4,6 +4,7 @@ namespace ExpenseTracker.Core.Domain.Repositories
 {
     public interface ITransactionRepository : IRepositoryBase<Transaction>
     {
-        Task<Transaction?> GetByIdAsync(Guid id, bool trackChanges);
+        Task<Transaction?> GetTransactionByIdAsync(Guid userId, Guid id, bool trackChanges);
+        Task<IEnumerable<Transaction>> GetTransactionsAsync(Guid userId, bool trackChanges);
     }
 }

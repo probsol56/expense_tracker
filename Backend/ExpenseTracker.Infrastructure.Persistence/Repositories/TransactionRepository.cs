@@ -11,6 +11,9 @@ namespace ExpenseTracker.Infrastructure.Persistence.Repositories
                 .Include(t => t.Attachments)
                 .SingleOrDefaultAsync();
 
+        public async Task<IEnumerable<Transaction>> GetTransactionsAsync(Guid userId, bool trackChanges) =>
+            await GetOne(t => t.UserId == userId, trackChanges).ToListAsync();
+
 
 
     }

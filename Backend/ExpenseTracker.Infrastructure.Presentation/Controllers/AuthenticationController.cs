@@ -6,14 +6,9 @@ namespace ExpenseTracker.Infrastructure.Presentation.Controllers
 {
     [Route("api/authentication")]
     [ApiController]
-    public class AuthenticationController : ControllerBase
+    public class AuthenticationController(IServiceManager service) : ControllerBase
     {
-        private readonly IServiceManager _service;
-
-        public AuthenticationController(IServiceManager service)
-        {
-            _service = service;
-        }
+        private readonly IServiceManager _service = service;
 
         [HttpPost("register")]
         public async Task<IActionResult> RegisterUser([FromBody] UserRegistrationDto userForRegistration)

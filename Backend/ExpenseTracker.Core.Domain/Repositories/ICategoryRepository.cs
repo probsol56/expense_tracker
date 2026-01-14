@@ -7,5 +7,6 @@ namespace ExpenseTracker.Core.Domain.Repositories
     {
         Task<IEnumerable<Category>> GetCategoriesAsync(Guid userId, PaginationParameter parameters, bool trackChanges);
         Task<Category?> GetCategoryByIdAsync(Guid userId, Guid id, bool trackChanges);
+        Task<IEnumerable<Category>> GetGlobalCategoriesAsync(bool trackChanges);
     }
 }

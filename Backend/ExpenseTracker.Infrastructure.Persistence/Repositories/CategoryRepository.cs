@@ -22,5 +22,8 @@ namespace ExpenseTracker.Infrastructure.Persistence.Repositories
         {
             return await GetOne(c => (c.UserId == userId || c.IsGlobal) && c.Id == id, trackChanges).SingleOrDefaultAsync();
         }
+
+        public async Task<IEnumerable<Category>> GetGlobalCategoriesAsync(bool trackChanges) =>
+            await GetOne(c => c.UserId == null || c.IsGlobal, trackChanges).ToListAsync();
     }
 }

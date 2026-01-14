@@ -1,5 +1,6 @@
 using AutoMapper;
 using ExpenseTracker.Core.Domain.Entities;
+using ExpenseTracker.Core.Domain.Repositories;
 using ExpenseTracker.Core.Services.Abstractions;
 using ExpenseTracker.Shared.RequestFeature;
 using Microsoft.AspNetCore.Identity;
@@ -11,11 +12,12 @@ using System.Text;
 
 namespace ExpenseTracker.Core.Services
 {
-    public class AuthenticationService(UserManager<User> userManager, IConfiguration configuration, IMapper mapper) : IAuthenticationService
+    public class AuthenticationService(UserManager<User> userManager, IConfiguration configuration, IMapper mapper, IRepositoryManager repository) : IAuthenticationService
     {
         private readonly UserManager<User> _userManager = userManager;
         private readonly IConfiguration _configuration = configuration;
         private readonly IMapper _mapper = mapper;
+        private readonly IRepositoryManager _repository = repository;
         private User? _user;
 
         public async Task<IdentityResult> RegisterUser(UserRegistrationDto userForRegistration)
@@ -23,9 +25,28 @@ namespace ExpenseTracker.Core.Services
             var user = _mapper.Map<User>(userForRegistration);
             var result = await _userManager.CreateAsync(user, userForRegistration.Password!);
 
-            if (result.Succeeded && userForRegistration.Roles != null)
+            if (result.Succeeded)
             {
-                await _userManager.AddToRolesAsync(user, userForRegistration.Roles);
+                if (userForRegistration.Roles != null)
+                {
+                    await _userManager.AddToRolesAsync(user, userForRegistration.Roles);
+                }
+
+                // Assign Default Categories
+                var globalCategories = await _repository.Category.GetGlobalCategoriesAsync(trackChanges: false);
+                foreach (var globalCat in globalCategories)
+                {
+                    var newCat = new Category
+                    {
+                        Name = globalCat.Name,
+                        Description = globalCat.Description,
+                        Type = globalCat.Type,
+                        IsGlobal = false, // User's copy is private
+                        UserId = user.Id
+                    };
+                    _repository.Category.Create(newCat);
+                }
+                await _repository.SaveAsync();
             }
 
             return result;
@@ -45,8 +66,8 @@ namespace ExpenseTracker.Core.Services
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, _user!.Id.ToString()),
-                new Claim(ClaimTypes.Name, _user.UserName!)
+                new(ClaimTypes.NameIdentifier, _user!.Id.ToString()),
+                new(ClaimTypes.Name, _user.UserName!)
             };
 
             // Add roles

@@ -30,7 +30,7 @@ namespace ExpenseTracker.Infrastructure.Presentation.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateTransaction([FromForm] TransactionForCreationDto transactionDto)
+        public async Task<IActionResult> CreateTransaction([FromBody] TransactionForCreationDto transactionDto)
         {
             if (transactionDto is null)
                 return BadRequest("TransactionDto object is null");

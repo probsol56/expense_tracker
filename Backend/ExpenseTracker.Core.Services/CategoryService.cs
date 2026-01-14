@@ -44,6 +44,10 @@ namespace ExpenseTracker.Core.Services
             if (category is null)
                 return false;
 
+            // Prevent deleting global categories
+            if (category.IsGlobal)
+                return false;
+
             _repository.Category.Delete(category);
             await _repository.SaveAsync();
             return true;
@@ -59,6 +63,10 @@ namespace ExpenseTracker.Core.Services
         {
             var existingCategory = await _repository.Category.GetCategoryByIdAsync(userId, categoryId, trackChanges: true);
             if (existingCategory is null)
+                return null;
+
+            // Prevent updating global categories
+            if (existingCategory.IsGlobal)
                 return null;
 
             existingCategory.Name = category.Name;

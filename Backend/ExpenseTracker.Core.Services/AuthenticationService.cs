@@ -31,22 +31,6 @@ namespace ExpenseTracker.Core.Services
                 {
                     await _userManager.AddToRolesAsync(user, userForRegistration.Roles);
                 }
-
-                // Assign Default Categories
-                var globalCategories = await _repository.Category.GetGlobalCategoriesAsync(trackChanges: false);
-                foreach (var globalCat in globalCategories)
-                {
-                    var newCat = new Category
-                    {
-                        Name = globalCat.Name,
-                        Description = globalCat.Description,
-                        Type = globalCat.Type,
-                        IsGlobal = false, // User's copy is private
-                        UserId = user.Id
-                    };
-                    _repository.Category.Create(newCat);
-                }
-                await _repository.SaveAsync();
             }
 
             return result;

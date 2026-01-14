@@ -1,101 +1,112 @@
+import type { DataProvider } from 'react-admin';
 import axios from 'axios';
 import queryString from 'query-string';
-import type { DataProvider } from 'react-admin';
 
-const DATA_PROVIDER_API = import.meta.env.VITE_REACT_ADMIN_PROVIDER_API;
+const apiUrl = import.meta.env.VITE_REACT_ADMIN_PROVIDER_API;
 
-export const sendPost = async (resource: string, method: string, body?: never) => {
-    const response = await axios({
-        method: 'post',
-        url: `${DATA_PROVIDER_API}/ra/${resource}${method}`,
-        withCredentials: true,
-        data: body,
-        headers: {
-            "Authorization": `Bearer ${localStorage.getItem('access_token')}`
-        }
-    })
+const axiosInstance = axios.create({
+    baseURL: apiUrl,
+    headers: {
+        'Content-Type': 'application/json',
+    }
+});
 
-    return response.data
-}
+axiosInstance.interceptors.request.use(config => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
 
 export const dataProvider: DataProvider = {
-    getList: (resource: string, params: any) => {
-        const { page, perPage } = params.pagination
-        const { field, order } = params.sort
-
+    getList: async (resource, params) => {
+        const { page, perPage } = params.pagination || { page: 1, perPage: 10 };
         const query = {
-            sort: JSON.stringify([field, order]),
-            range: JSON.stringify([(page - 1) * perPage, page * perPage - 1]),
-            filter: JSON.stringify(params.filter),
-        }
-        return sendPost(resource, `/getList?${queryString.stringify(query)}`)
+            page: page,
+            pageSize: perPage,
+        };
+        const url = `/${resource}?${queryString.stringify(query)}`;
+        const { data } = await axiosInstance.get(url);
+
+        // Backend returns { categories: [...], totalCount: ... }
+        // We handle dynamic keys
+        const items = data.categories || data.transactions || data.items || [];
+        const total = data.totalCount || items.length;
+
+        return {
+            data: items,
+            total: total,
+        };
     },
 
-    getOne: async (resource: string, params: any) => {
-        if (params.id) {
-            return await sendPost(resource, '/getOne/' + params.id)
-        } else {
-            return null;
-        }
+    getOne: async (resource, params) => {
+        const url = `/${resource}/${params.id}`;
+        const { data } = await axiosInstance.get(url);
+        return { data: data };
     },
 
-    getMany: (resource: string, params: any) => {
+    getMany: async (resource, params) => {
         const query = {
-            filter: JSON.stringify({ id: params.ids }),
+            ids: params.ids,
         }
-
-        return sendPost(resource, `/getMany?${queryString.stringify(query)}`)
+        const url = `/${resource}?${queryString.stringify(query)}`;
+        const { data } = await axiosInstance.get(url);
+        return { data: data };
     },
 
-    getManyReference: async (resource: any, params: any): Promise<any> => {
-        // console.log("params>>>", resource, params);
-        const target = params.target
-        const id = params.id
-        const { page, perPage } = params.pagination
-        const { field, order } = params.sort
-
+    getManyReference: async (resource, params) => {
+        const { page, perPage } = params.pagination || { page: 1, perPage: 10 };
         const query = {
-            target: target,
-            id: id,
-            sort: JSON.stringify([field, order]),
-            range_: JSON.stringify([(page - 1) * perPage, page * perPage - 1]),
-            filter: JSON.stringify(params.filter),
-        }
+            page: page,
+            pageSize: perPage,
+            [params.target]: params.id,
+        };
+        const url = `/${resource}?${queryString.stringify(query)}`;
+        const { data } = await axiosInstance.get(url);
 
-        const result = await sendPost(resource, `/getList?${queryString.stringify(query)}`)
-        result.data = result.data.map((item: any) => ({ ...item, id: item.id || item.uuid }))
-        return result
+        const items = data.categories || data.transactions || [];
+        const total = data.totalCount || items.length;
+
+        return {
+            data: items,
+            total: total,
+        };
     },
 
-    create: async (resource: string, params: any) => {
-        return await sendPost(resource, '/create', {
-            ...params.data
-        })
+    update: async (resource, params) => {
+        const url = `/${resource}/${params.id}`;
+        const { data } = await axiosInstance.put(url, params.data);
+        return { data: data };
     },
 
-    update: async (resource: string, params: any) => {
-        return await sendPost(resource, '/update/' + params.id, params.data)
+    updateMany: async (resource, params) => {
+        await Promise.all(
+            params.ids.map(id =>
+                axiosInstance.put(`/${resource}/${id}`, params.data)
+            )
+        );
+        return { data: params.ids };
     },
 
-    updateMany: async (resource: string, params: any) => {
-        const query = {
-            filter: JSON.stringify({ id: params.ids }),
-        }
-
-        return await sendPost(resource, `/updateMany?${queryString.stringify(query)}`, params.data)
+    create: async (resource, params) => {
+        const url = `/${resource}`;
+        const { data } = await axiosInstance.post(url, params.data);
+        return { data: data };
     },
 
-    delete: (resource: string, params: any) => {
-        return sendPost(resource, '/delete/' + params.id)
+    delete: async (resource, params) => {
+        const url = `/${resource}/${params.id}`;
+        const { data } = await axiosInstance.delete(url);
+        return { data: data };
     },
 
-    deleteMany: (resource: string, params: any) => {
-        const query = {
-            filter: JSON.stringify({ id: params.ids }),
-        }
-
-        return sendPost(resource, `/deleteMany?${queryString.stringify(query)}`)
+    deleteMany: async (resource, params) => {
+        await Promise.all(
+            params.ids.map(id =>
+                axiosInstance.delete(`/${resource}/${id}`)
+            )
+        );
+        return { data: params.ids };
     },
-}
-
-// export default dataProvider;
+};

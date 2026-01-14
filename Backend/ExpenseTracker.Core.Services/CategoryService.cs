@@ -4,7 +4,6 @@ using ExpenseTracker.Core.Services.Abstractions;
 using ExpenseTracker.Shared.RequestFeature;
 using LoggingService;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace ExpenseTracker.Core.Services
 {
@@ -27,7 +26,7 @@ namespace ExpenseTracker.Core.Services
 
         public async Task<bool> DeleteCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default)
         {
-            var category = await _repository.Category.GetByIdAsync(categoryId, trackChanges: false, cancellationToken);
+            var category = await _repository.Category.GetByIdAsync(categoryId, trackChanges: false);
             if (category is null)
                 return false;
 

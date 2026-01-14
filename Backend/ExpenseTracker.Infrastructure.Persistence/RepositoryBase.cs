@@ -1,11 +1,12 @@
-﻿using ExpenseTracker.Core.Domain.Repositories;
+﻿using ExpenseTracker.Core.Domain.Entities;
+using ExpenseTracker.Core.Domain.Repositories;
 using ExpenseTracker.Shared.RequestFeature;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace ExpenseTracker.Infrastructure.Persistence
 {
-    public abstract class RepositoryBase<T>(RepositoryContext repositoryContext) : IRepositoryBase<T> where T : class
+    public abstract class RepositoryBase<T>(RepositoryContext repositoryContext) : IRepositoryBase<T> where T : CommonEntity
     {
         protected RepositoryContext RepositoryContext = repositoryContext;
 
@@ -26,11 +27,16 @@ namespace ExpenseTracker.Infrastructure.Persistence
             return query.Skip(skip).Take(paginationParameter.PerPage);
         }
 
-        public IQueryable<T> GetOne(Expression<Func<T, bool>> expression, bool trackChanges)
+        protected IQueryable<T> GetOne(Expression<Func<T, bool>> expression, bool trackChanges)
         {
             return !trackChanges ?
                 RepositoryContext.Set<T>().Where(expression).AsNoTracking() :
                 RepositoryContext.Set<T>().Where(expression);
+        }
+
+        public async Task<T?> GetByIdAsync(Guid id, bool trackChanges, CancellationToken cancellationToken)
+        {
+            return await GetOne(x => x.Id.Equals(id), trackChanges).SingleOrDefaultAsync(cancellationToken);
         }
 
         public void Create(T entity) => RepositoryContext.Set<T>().Add(entity);

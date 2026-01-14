@@ -1,17 +1,12 @@
-﻿using ExpenseTracker.Shared.RequestFeature;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ExpenseTracker.Core.Domain.Entities;
+using ExpenseTracker.Shared.RequestFeature;
 
 namespace ExpenseTracker.Core.Domain.Repositories
 {
-    public interface IRepositoryBase<T>
+    public interface IRepositoryBase<T> where T : CommonEntity
     {
         IQueryable<T> GetList(PaginationParameter paginationParameter, bool trackChanges);
-        IQueryable<T> GetOne(Expression<Func<T, bool>> expression, bool trackChanges);
+        Task<T?> GetByIdAsync(Guid id, bool trackChanges, CancellationToken cancellationToken);
         void Create(T entity);
         void Update(T entity);
         void Delete(T entity);

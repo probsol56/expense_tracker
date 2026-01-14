@@ -12,6 +12,7 @@ import myTheme from './theme';
 import { MyLoginPage } from './pages/MyLoginPage';
 import { Register } from './pages/Register';
 import { MyLayout } from './layout/MyLayout';
+import { Dashboard } from './pages/Dashboard';
 
 const App = () => (
   <Admin
@@ -20,6 +21,7 @@ const App = () => (
     theme={myTheme}
     loginPage={MyLoginPage}
     layout={MyLayout}
+    dashboard={Dashboard}
   >
     <Resource name="categories" list={CategoryList} create={CategoryCreate} edit={CategoryEdit} />
     <Resource name="transactions" list={TransactionList} create={TransactionCreate} edit={TransactionEdit} />

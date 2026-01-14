@@ -4,7 +4,7 @@ import queryString from 'query-string';
 
 const apiUrl = import.meta.env.VITE_REACT_ADMIN_PROVIDER_API;
 
-const axiosInstance = axios.create({
+export const axiosInstance = axios.create({
     baseURL: apiUrl,
     headers: {
         'Content-Type': 'application/json',

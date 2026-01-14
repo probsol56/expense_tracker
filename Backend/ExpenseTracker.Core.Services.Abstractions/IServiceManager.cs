@@ -11,5 +11,6 @@ namespace ExpenseTracker.Core.Services.Abstractions
         ICategoryService CategoryService { get; }
         IAuthenticationService AuthenticationService { get; }
         ITransactionService TransactionService { get; }
+        IDashboardService DashboardService { get; }
     }
 }

@@ -44,7 +44,7 @@ namespace ExpenseTracker.Core.Services
 
         public async Task<string> CreateToken()
         {
-            var secretKey = _configuration["JwtSettings:SecretKey"];
+            var secretKey = _configuration["JwtSettings:secret"];
             // Fallback for demo/dev if config is missing (SHOULD be in appsettings)
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey ?? "SuperSecretKeyForExpenseTrackerAndDemoWaitWhatIsThis123456"));
 
@@ -64,10 +64,10 @@ namespace ExpenseTracker.Core.Services
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var tokenOptions = new JwtSecurityToken(
-                issuer: _configuration["JwtSettings:ValidIssuer"],
-                audience: _configuration["JwtSettings:ValidAudience"],
+                issuer: _configuration["JwtSettings:validIssuer"],
+                audience: _configuration["JwtSettings:validAudience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["JwtSettings:ExpiresInMinutes"] ?? "60")),
+                expires: DateTime.Now.AddMinutes(Convert.ToDouble(_configuration["JwtSettings:expires"] ?? "60")),
                 signingCredentials: creds
             );
 

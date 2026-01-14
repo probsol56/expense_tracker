@@ -13,9 +13,11 @@ namespace ExpenseTracker.Core.Services
         private readonly Lazy<ICategoryService> _categoryService = new(() => new CategoryService(repositoryManager, loggerManager));
         private readonly Lazy<IAuthenticationService> _authenticationService = new(() => new AuthenticationService(userManager, configuration, mapper, repositoryManager));
         private readonly Lazy<ITransactionService> _transactionService = new(() => new TransactionService(repositoryManager, mapper));
+        private readonly Lazy<IDashboardService> _dashboardService = new(() => new DashboardService(repositoryManager));
 
         public ICategoryService CategoryService => _categoryService.Value;
         public IAuthenticationService AuthenticationService => _authenticationService.Value;
         public ITransactionService TransactionService => _transactionService.Value;
+        public IDashboardService DashboardService => _dashboardService.Value;
     }
 }

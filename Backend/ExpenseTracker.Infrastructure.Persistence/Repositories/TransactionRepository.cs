@@ -12,7 +12,9 @@ namespace ExpenseTracker.Infrastructure.Persistence.Repositories
                 .SingleOrDefaultAsync();
 
         public async Task<IEnumerable<Transaction>> GetTransactionsAsync(Guid userId, bool trackChanges) =>
-            await GetOne(t => t.UserId == userId, trackChanges).ToListAsync();
+            await GetOne(t => t.UserId == userId, trackChanges)
+                .Include(t => t.Category)
+                .ToListAsync();
 
 
 

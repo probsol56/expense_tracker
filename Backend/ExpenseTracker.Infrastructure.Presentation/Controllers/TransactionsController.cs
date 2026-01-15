@@ -32,16 +32,17 @@ namespace ExpenseTracker.Infrastructure.Presentation.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTransaction([FromBody] TransactionForCreationDto transactionDto)
         {
-            if (transactionDto is null)
-                return BadRequest("TransactionDto object is null");
-
-            if (!ModelState.IsValid)
-                return UnprocessableEntity(ModelState);
-
             var userId = User.GetUserId();
             var transaction = await _service.TransactionService.CreateTransactionAsync(userId, transactionDto, cancellationToken: default);
 
             return CreatedAtRoute("TransactionById", new { id = transaction.Id }, transaction);
+        }
+        [HttpPut("{id:guid}")]
+        public async Task<IActionResult> UpdateTransaction(Guid id, [FromBody] TransactionForCreationDto transactionDto)
+        {
+            var userId = User.GetUserId();
+            var transaction = await _service.TransactionService.UpdateTransactionAsync(userId, id, transactionDto, cancellationToken: default);
+            return Ok(transaction);
         }
 
         [HttpDelete("{id:guid}")]

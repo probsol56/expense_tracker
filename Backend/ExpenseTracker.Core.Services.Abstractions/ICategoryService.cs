@@ -12,8 +12,8 @@ namespace ExpenseTracker.Core.Services.Abstractions
 
         Task<Category?> GetCategoryByIdAsync(Guid userId, Guid categoryId, CancellationToken cancellationToken = default);
 
-        Task<Category> CreateCategoryAsync(Guid userId, Category category, CancellationToken cancellationToken = default);
-        Task<Category?> UpdateCategoryAsync(Guid userId, Guid categoryId, Category category, CancellationToken cancellationToken = default);
+        Task<Category> CreateCategoryAsync(Guid userId, CategoryDto categoryDto, CancellationToken cancellationToken = default);
+        Task<Category?> UpdateCategoryAsync(Guid userId, Guid categoryId, CategoryDto categoryDto, CancellationToken cancellationToken = default);
         Task<bool> DeleteCategoryAsync(Guid userId, Guid categoryId, CancellationToken cancellationToken = default);
     }
 }

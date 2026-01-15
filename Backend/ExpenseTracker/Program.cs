@@ -1,6 +1,7 @@
 using ExpenseTracker;
 using ExpenseTracker.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +18,13 @@ builder.Services.ConfigureAutoMapper();
 builder.Services.ConfigureJWT(builder.Configuration);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
-builder.Services.AddControllers().AddApplicationPart(typeof(ExpenseTracker.Infrastructure.Presentation.AssemblyReference).Assembly);
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+            new UnprocessableEntityObjectResult(context.ModelState);
+    })
+    .AddApplicationPart(typeof(ExpenseTracker.Infrastructure.Presentation.AssemblyReference).Assembly);
 
 builder.Host.UseSerilog((hostContext, configuration) =>
 {

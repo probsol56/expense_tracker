@@ -28,11 +28,15 @@ namespace ExpenseTracker.Core.Services
             // Let's stick to simple implementation for now and maybe fix count later or just return page count.
         }
 
-        public async Task<Category> CreateCategoryAsync(Guid userId, Category category, CancellationToken cancellationToken = default)
+        public async Task<Category> CreateCategoryAsync(Guid userId, CategoryDto categoryDto, CancellationToken cancellationToken = default)
         {
-            // If the user is creating it, it belongs to them (unless they are Admin creating Global, which is a different flow).
-            // For now, we assign the logged-in user.
-            category.UserId = userId;
+            var category = new Category
+            {
+                Name = categoryDto.Name!,
+                Description = categoryDto.Description,
+                Type = categoryDto.Type!.Value,
+                UserId = userId
+            };
             _repository.Category.Create(category);
             await _repository.SaveAsync();
             return category;
@@ -59,20 +63,15 @@ namespace ExpenseTracker.Core.Services
             return category;
         }
 
-        public async Task<Category?> UpdateCategoryAsync(Guid userId, Guid categoryId, Category category, CancellationToken cancellationToken = default)
+        public async Task<Category?> UpdateCategoryAsync(Guid userId, Guid categoryId, CategoryDto categoryDto, CancellationToken cancellationToken = default)
         {
             var existingCategory = await _repository.Category.GetCategoryByIdAsync(userId, categoryId, trackChanges: true);
             if (existingCategory is null)
                 return null;
 
-            // Prevent updating global categories
-            if (existingCategory.IsGlobal)
-                return null;
-
-            existingCategory.Name = category.Name;
-            existingCategory.Description = category.Description;
-            existingCategory.Type = category.Type;
-            existingCategory.IsGlobal = category.IsGlobal;
+            existingCategory.Name = categoryDto.Name!;
+            existingCategory.Description = categoryDto.Description;
+            existingCategory.Type = categoryDto.Type!.Value;
 
             _repository.Category.Update(existingCategory);
             await _repository.SaveAsync();

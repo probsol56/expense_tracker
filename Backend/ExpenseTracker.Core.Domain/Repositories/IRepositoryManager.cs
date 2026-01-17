@@ -10,6 +10,7 @@ namespace ExpenseTracker.Core.Domain.Repositories
     {
         ICategoryRepository Category { get; }
         ITransactionRepository Transaction { get; }
+        IBudgetRepository Budget { get; }
         Task SaveAsync();
     }
 }

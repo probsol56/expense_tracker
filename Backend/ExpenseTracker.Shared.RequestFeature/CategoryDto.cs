@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
+namespace ExpenseTracker.Shared.RequestFeature;
+
 public record CategoryDto
 {
     [Required(ErrorMessage = "Name is required")]

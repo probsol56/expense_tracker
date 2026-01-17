@@ -18,35 +18,35 @@ namespace ExpenseTracker.Infrastructure.Presentation.Controllers
         public async Task<IActionResult> GetCategories([FromQuery] PaginationParameter parameters)
         {
             var userId = User.GetUserId();
-            var (categories, totalCount) = await _serviceManager.CategoryService.GetCategoriesAsync(userId, parameters, cancellationToken: default);
+            var (categories, totalCount) = await _serviceManager.CategoryService.GetCategoriesAsync(userId, parameters, trackChanges: false, cancellationToken: default);
             return Ok(new { categories, totalCount });
         }
         [HttpGet("{id:guid}", Name = "GetCategoryById")]
         public async Task<IActionResult> GetCategoryById(Guid id)
         {
             var userId = User.GetUserId();
-            var category = await _serviceManager.CategoryService.GetCategoryByIdAsync(userId, id);
+            var category = await _serviceManager.CategoryService.GetCategoryByIdAsync(userId, id, trackChanges: false);
             return category is null ? throw new CategoryNotFoundException(id) : Ok(category);
         }
         [HttpPost]
         public async Task<IActionResult> CreateCategory([FromBody] CategoryDto categoryDto)
         {
             var userId = User.GetUserId();
-            var category = await _serviceManager.CategoryService.CreateCategoryAsync(userId, categoryDto, cancellationToken: default);
+            var category = await _serviceManager.CategoryService.CreateCategoryAsync(userId, categoryDto, trackChanges: false, cancellationToken: default);
             return CreatedAtRoute("GetCategoryById", new { id = category.Id }, category);
         }
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] CategoryDto categoryDto)
         {
             var userId = User.GetUserId();
-            var category = await _serviceManager.CategoryService.UpdateCategoryAsync(userId, id, categoryDto, cancellationToken: default);
+            var category = await _serviceManager.CategoryService.UpdateCategoryAsync(userId, id, categoryDto, trackChanges: true, cancellationToken: default);
             return Ok(category);
         }
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteCategory(Guid id)
         {
             var userId = User.GetUserId();
-            await _serviceManager.CategoryService.DeleteCategoryAsync(userId, id, cancellationToken: default);
+            await _serviceManager.CategoryService.DeleteCategoryAsync(userId, id, trackChanges: false, cancellationToken: default);
             return NoContent();
         }
     }

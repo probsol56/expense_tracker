@@ -8,9 +8,9 @@ namespace ExpenseTracker.Core.Services
 {
     internal sealed class CategoryService(IRepositoryManager _repository, ILoggerManager _logger) : ICategoryService
     {
-        public async Task<(IEnumerable<Category> categories, int totalCount)> GetCategoriesAsync(Guid userId, PaginationParameter parameters, CancellationToken cancellationToken = default)
+        public async Task<(IQueryable<Category> categories, int totalCount)> GetCategoriesAsync(Guid userId, PaginationParameter parameters, bool trackChanges, CancellationToken cancellationToken = default)
         {
-            var categoriesList = await _repository.Category.GetCategoriesAsync(userId, parameters, trackChanges: false);
+            var categoriesList = await _repository.Category.GetCategoriesAsync(userId, parameters, trackChanges);
             // Count might be tricky if pagination is done in Repo. 
             // If Repo returns paged list, we can't get total count easily unless Repo returns PagedList<T> or we do a separate Count query.
             // For now, I'll assume users want the count of "Filtered Categories".
@@ -19,7 +19,7 @@ namespace ExpenseTracker.Core.Services
             // I'll re-query count or logic. 
             // Actually, best practice: Repo returns PagedList<T> which has MetaData.
             // But to fix THIS request quickly: 
-            return (categoriesList, categoriesList.Count()); // This is wrong for valid pagination (only returns page count).
+            return (categoriesList.AsQueryable(), categoriesList.Count()); // This is wrong for valid pagination (only returns page count).
 
             // Let's rely on logic for now. 
             // Better: `categoriesList` is what I have. 
@@ -28,7 +28,7 @@ namespace ExpenseTracker.Core.Services
             // Let's stick to simple implementation for now and maybe fix count later or just return page count.
         }
 
-        public async Task<Category> CreateCategoryAsync(Guid userId, CategoryDto categoryDto, CancellationToken cancellationToken = default)
+        public async Task<Category> CreateCategoryAsync(Guid userId, CategoryDto categoryDto, bool trackChanges, CancellationToken cancellationToken = default)
         {
             var category = new Category
             {
@@ -42,9 +42,9 @@ namespace ExpenseTracker.Core.Services
             return category;
         }
 
-        public async Task<bool> DeleteCategoryAsync(Guid userId, Guid categoryId, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteCategoryAsync(Guid userId, Guid categoryId, bool trackChanges, CancellationToken cancellationToken = default)
         {
-            var category = await _repository.Category.GetCategoryByIdAsync(userId, categoryId, trackChanges: false);
+            var category = await _repository.Category.GetCategoryByIdAsync(userId, categoryId, trackChanges);
             if (category is null)
                 return false;
 
@@ -57,15 +57,15 @@ namespace ExpenseTracker.Core.Services
             return true;
         }
 
-        public async Task<Category?> GetCategoryByIdAsync(Guid userId, Guid categoryId, CancellationToken cancellationToken = default)
+        public async Task<Category?> GetCategoryByIdAsync(Guid userId, Guid categoryId, bool trackChanges, CancellationToken cancellationToken = default)
         {
-            var category = await _repository.Category.GetCategoryByIdAsync(userId, categoryId, trackChanges: false);
+            var category = await _repository.Category.GetCategoryByIdAsync(userId, categoryId, trackChanges);
             return category;
         }
 
-        public async Task<Category?> UpdateCategoryAsync(Guid userId, Guid categoryId, CategoryDto categoryDto, CancellationToken cancellationToken = default)
+        public async Task<Category?> UpdateCategoryAsync(Guid userId, Guid categoryId, CategoryDto categoryDto, bool trackChanges, CancellationToken cancellationToken = default)
         {
-            var existingCategory = await _repository.Category.GetCategoryByIdAsync(userId, categoryId, trackChanges: true);
+            var existingCategory = await _repository.Category.GetCategoryByIdAsync(userId, categoryId, trackChanges);
             if (existingCategory is null)
                 return null;
 

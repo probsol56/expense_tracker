@@ -18,14 +18,14 @@ namespace ExpenseTracker.Infrastructure.Presentation.Controllers
         public async Task<IActionResult> GetCategories([FromQuery] PaginationParameter parameters)
         {
             var userId = User.GetUserId();
-            var (categories, totalCount) = await _serviceManager.CategoryService.GetCategoriesAsync(userId, parameters, trackChanges: false, cancellationToken: default);
+            var (categories, totalCount) = await _serviceManager.CategoryService.GetCategoriesAsync(userId, parameters, cancellationToken: default);
             return Ok(new { categories, totalCount });
         }
         [HttpGet("{id:guid}", Name = "GetCategoryById")]
         public async Task<IActionResult> GetCategoryById(Guid id)
         {
             var userId = User.GetUserId();
-            var category = await _serviceManager.CategoryService.GetCategoryByIdAsync(userId, id, trackChanges: false);
+            var category = await _serviceManager.CategoryService.GetCategoryByIdAsync(userId, id);
             return category is null ? throw new CategoryNotFoundException(id) : Ok(category);
         }
         [HttpPost]

@@ -8,9 +8,9 @@ namespace ExpenseTracker.Core.Services
 {
     internal sealed class CategoryService(IRepositoryManager _repository, ILoggerManager _logger) : ICategoryService
     {
-        public async Task<(IQueryable<Category> categories, int totalCount)> GetCategoriesAsync(Guid userId, PaginationParameter parameters, bool trackChanges, CancellationToken cancellationToken = default)
+        public async Task<(IQueryable<Category> categories, int totalCount)> GetCategoriesAsync(Guid userId, PaginationParameter parameters, CancellationToken cancellationToken = default)
         {
-            var categoriesList = await _repository.Category.GetCategoriesAsync(userId, parameters, trackChanges);
+            var categoriesList = await _repository.Category.GetCategoriesAsync(userId, parameters, trackChanges: false);
             // Count might be tricky if pagination is done in Repo. 
             // If Repo returns paged list, we can't get total count easily unless Repo returns PagedList<T> or we do a separate Count query.
             // For now, I'll assume users want the count of "Filtered Categories".
@@ -57,9 +57,9 @@ namespace ExpenseTracker.Core.Services
             return true;
         }
 
-        public async Task<Category?> GetCategoryByIdAsync(Guid userId, Guid categoryId, bool trackChanges, CancellationToken cancellationToken = default)
+        public async Task<Category?> GetCategoryByIdAsync(Guid userId, Guid categoryId, CancellationToken cancellationToken = default)
         {
-            var category = await _repository.Category.GetCategoryByIdAsync(userId, categoryId, trackChanges);
+            var category = await _repository.Category.GetCategoryByIdAsync(userId, categoryId, trackChanges: false);
             return category;
         }
 

@@ -8,10 +8,9 @@ namespace ExpenseTracker.Core.Services.Abstractions
         Task<(IQueryable<Category> categories, int totalCount)> GetCategoriesAsync(
            Guid userId,
            PaginationParameter parameters,
-           bool trackChanges,
            CancellationToken cancellationToken = default);
 
-        Task<Category?> GetCategoryByIdAsync(Guid userId, Guid categoryId, bool trackChanges, CancellationToken cancellationToken = default);
+        Task<Category?> GetCategoryByIdAsync(Guid userId, Guid categoryId, CancellationToken cancellationToken = default);
 
         Task<Category> CreateCategoryAsync(Guid userId, CategoryDto categoryDto, bool trackChanges, CancellationToken cancellationToken = default);
         Task<Category?> UpdateCategoryAsync(Guid userId, Guid categoryId, CategoryDto categoryDto, bool trackChanges, CancellationToken cancellationToken = default);

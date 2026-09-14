@@ -133,3 +133,24 @@
   background: #475569;
 }
 
+/* Ledger-book auth identity: ruled-paper texture for the login page only */
+.ledger-rules {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 27px,
+    #e4dcc8 27px,
+    #e4dcc8 28px
+  );
+}
+
+.dark .ledger-rules {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 27px,
+    #3a3226 27px,
+    #3a3226 28px
+  );
+}
+

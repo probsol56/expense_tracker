@@ -1,14 +1,24 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { AlertCircle, ArrowRight, Lock, Mail, Sparkles } from "lucide-react";
+import { FormEvent, useId, useState } from "react";
+import { Fraunces } from "next/font/google";
+import { AlertCircle, ArrowRight, Lock, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Button, Card, Input } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
+
+const ledgerDisplay = Fraunces({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-ledger-display",
+  display: "swap",
+});
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const emailId = useId();
+  const passwordId = useId();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,135 +41,147 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative grid min-h-screen place-items-center bg-sand bg-mesh dark:bg-ink-950 px-4 py-12 sm:p-6 overflow-hidden">
-      {/* Decorative ambient glowing orbs */}
-      <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-teal-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-coral-500/10 blur-3xl" />
-
-      <div className="relative z-10 w-full max-w-md">
-        {/* Brand header */}
-        <div className="mb-7 text-center">
-          <div className="mx-auto mb-4 relative grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950 font-bold text-white shadow-xl shadow-slate-950/20 ring-1 ring-white/20">
-            <span className="text-2xl tracking-tight">WALLO</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-            {mode === "sign-in" ? "Welcome back" : "Create your account"}
-          </h1>
-          <p className="mt-2 text-xs sm:text-sm text-slate-500">
-            {mode === "sign-in"
-              ? "Access your unified financial ledger and insights."
-              : "Start organizing your finances with calmness and clarity."}
-          </p>
-        </div>
-
-        {/* Auth Card */}
-        <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 sm:p-8 shadow-card backdrop-blur-xl transition-all dark:border-slate-700 dark:bg-ink-800/80 dark:shadow-none">
-          {/* Segmented Auth Mode Switch */}
-          <div className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100/90 p-1 text-xs font-bold dark:bg-ink-900">
-            <button
-              type="button"
-              onClick={() => {
-                setMode("sign-in");
-                setMessage("");
-              }}
-              className={`rounded-lg py-2 transition-all ${
-                mode === "sign-in"
-                  ? "bg-white text-slate-900 shadow-sm dark:bg-ink-950 dark:text-slate-100"
-                  : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-              }`}
-            >
-              Sign In
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode("sign-up");
-                setMessage("");
-              }}
-              className={`rounded-lg py-2 transition-all ${
-                mode === "sign-up"
-                  ? "bg-white text-slate-900 shadow-sm dark:bg-ink-950 dark:text-slate-100"
-                  : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-              }`}
-            >
-              Sign Up
-            </button>
-          </div>
-
-          <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-                Email address
-              </label>
-              <div className="relative">
-                <Input
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="name@example.com"
-                  className="h-11 pl-10"
-                />
-                <Mail
-                  size={16}
-                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-                Password
-              </label>
-              <div className="relative">
-                <Input
-                  name="password"
-                  type="password"
-                  minLength={6}
-                  required
-                  placeholder="••••••••"
-                  className="h-11 pl-10"
-                />
-                <Lock
-                  size={16}
-                  className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-              </div>
-            </div>
-
-            {message && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-coral-200/80 bg-coral-50/80 p-3.5 text-xs font-medium text-coral-700 animate-in fade-in dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400">
-                <AlertCircle size={16} className="shrink-0 text-coral-600 mt-0.5" />
-                <span>{message}</span>
-              </div>
-            )}
-
-            <div className="pt-2">
-              <Button
-                className="w-full h-11 justify-center bg-slate-900 text-white shadow-card hover:bg-slate-800 hover:shadow-glow dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
-                type="submit"
-                disabled={loading}
-              >
-                {loading ? (
-                  "Authenticating..."
-                ) : (
-                  <>
-                    <span>{mode === "sign-in" ? "Continue to dashboard" : "Create account"}</span>
-                    <ArrowRight size={16} className="ml-1.5" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-
-          <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4 text-center">
-            <p className="text-xs text-slate-400">
-              By continuing, you agree to our Terms of Service & Privacy Policy.
+    <main
+      className={`${ledgerDisplay.variable} grid min-h-screen place-items-center bg-ledger-page dark:bg-ledger-page-dark px-4 py-12 sm:p-6`}
+    >
+      <div className="w-full max-w-md">
+        <div className="overflow-hidden rounded-2xl shadow-hover">
+          {/* Cover — the book's front matter */}
+          <div className="bg-ledger-cover px-6 py-8 text-center dark:bg-ledger-cover-dark sm:px-8 sm:py-10">
+            <p className="font-ledger text-lg font-semibold tracking-[0.3em] text-ledger-brass dark:text-ledger-brass-dark">
+              WALLO
             </p>
+            <div className="mx-auto mt-4 h-px w-10 bg-ledger-brass/60 dark:bg-ledger-brass-dark/60" />
+            <h1 className="mt-5 font-ledger text-2xl font-semibold text-ledger-cover-text dark:text-ledger-cover-text-dark sm:text-[1.75rem]">
+              {mode === "sign-in" ? "Welcome back" : "Open a ledger"}
+            </h1>
+            <p className="mt-2 text-sm text-ledger-cover-text/70 dark:text-ledger-cover-text-dark/70">
+              {mode === "sign-in"
+                ? "Sign in to pick up where you left off."
+                : "Create an account to start recording."}
+            </p>
+          </div>
+
+          {/* Page — where the numbers go */}
+          <div className="ledger-rules bg-ledger-paper px-6 py-7 dark:bg-ledger-paper-dark sm:px-8 sm:py-8">
+            <div className="border-l-2 border-ledger-brass/70 pl-5 dark:border-ledger-brass-dark/60 sm:pl-6">
+              {/* Mode switch */}
+              <div
+                role="tablist"
+                aria-label="Sign in or sign up"
+                className="mb-6 flex gap-6 border-b border-ledger-rule dark:border-ledger-rule-dark"
+              >
+                {(["sign-in", "sign-up"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === tab}
+                    onClick={() => {
+                      setMode(tab);
+                      setMessage("");
+                    }}
+                    className={`-mb-px border-b-2 pb-2.5 text-sm font-semibold transition-colors focus-visible:outline-ledger-brass dark:focus-visible:outline-ledger-brass-dark ${
+                      mode === tab
+                        ? "border-ledger-brass text-ledger-ink dark:border-ledger-brass-dark dark:text-ledger-ink-dark"
+                        : "border-transparent text-ledger-muted hover:text-ledger-ink dark:text-ledger-muted-dark dark:hover:text-ledger-ink-dark"
+                    }`}
+                  >
+                    {tab === "sign-in" ? "Sign in" : "Sign up"}
+                  </button>
+                ))}
+              </div>
+
+              <form onSubmit={submit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor={emailId}
+                    className="block text-xs font-semibold uppercase tracking-wider text-ledger-muted dark:text-ledger-muted-dark"
+                  >
+                    Email address
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id={emailId}
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      placeholder="name@example.com"
+                      className="h-11 border-ledger-rule bg-ledger-paper pl-10 text-ledger-ink focus-visible:border-ledger-brass focus-visible:ring-ledger-brass/15 dark:border-ledger-rule-dark dark:bg-ledger-paper-dark dark:text-ledger-ink-dark dark:focus-visible:border-ledger-brass-dark"
+                    />
+                    <Mail
+                      size={16}
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ledger-muted dark:text-ledger-muted-dark"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor={passwordId}
+                    className="block text-xs font-semibold uppercase tracking-wider text-ledger-muted dark:text-ledger-muted-dark"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id={passwordId}
+                      name="password"
+                      type="password"
+                      autoComplete={mode === "sign-in" ? "current-password" : "new-password"}
+                      minLength={6}
+                      required
+                      placeholder="••••••••"
+                      className="h-11 border-ledger-rule bg-ledger-paper pl-10 text-ledger-ink focus-visible:border-ledger-brass focus-visible:ring-ledger-brass/15 dark:border-ledger-rule-dark dark:bg-ledger-paper-dark dark:text-ledger-ink-dark dark:focus-visible:border-ledger-brass-dark"
+                    />
+                    <Lock
+                      size={16}
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ledger-muted dark:text-ledger-muted-dark"
+                    />
+                  </div>
+                </div>
+
+                {message && (
+                  <div
+                    role="alert"
+                    aria-live="polite"
+                    className="flex items-start gap-2.5 rounded-lg border border-ledger-brick/25 bg-ledger-brick-bg p-3.5 text-xs font-medium text-ledger-brick dark:border-ledger-brick-dark/30 dark:bg-ledger-brick-bg-dark dark:text-ledger-brick-dark"
+                  >
+                    <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                    <span>{message}</span>
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <Button
+                    className="h-11 w-full justify-center bg-ledger-brass text-ledger-cover shadow-none hover:bg-ledger-brass-deep hover:shadow-none focus-visible:ring-ledger-brass/30 dark:bg-ledger-brass-dark dark:text-ledger-cover-dark dark:hover:bg-ledger-brass-dark-deep dark:focus-visible:ring-ledger-brass-dark/30"
+                    type="submit"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      mode === "sign-in" ? (
+                        "Signing in…"
+                      ) : (
+                        "Creating account…"
+                      )
+                    ) : (
+                      <>
+                        <span>{mode === "sign-in" ? "Continue to dashboard" : "Create account"}</span>
+                        <ArrowRight size={16} className="ml-1.5" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+
+              <p className="mt-6 border-t border-ledger-rule pt-4 text-xs text-ledger-muted dark:border-ledger-rule-dark dark:text-ledger-muted-dark">
+                By continuing, you agree to our Terms of Service & Privacy Policy.
+              </p>
+            </div>
           </div>
         </div>
       </div>
     </main>
   );
 }
-
-

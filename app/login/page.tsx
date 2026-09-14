@@ -40,7 +40,7 @@ export default function LoginPage() {
         {/* Brand header */}
         <div className="mb-7 text-center">
           <div className="mx-auto mb-4 relative grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-teal-950 font-bold text-white shadow-xl shadow-slate-950/20 ring-1 ring-white/20">
-            <span className="text-2xl tracking-tight">L</span>
+            <span className="text-2xl tracking-tight">WALLO</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
             {mode === "sign-in" ? "Welcome back" : "Create your account"}

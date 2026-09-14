@@ -65,7 +65,7 @@ export function DashboardSidebar({
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100 leading-none">
-                Ledgerly
+                Wallo
               </span>
               <span className="text-[10px] font-medium tracking-wide text-teal-600 dark:text-teal-400">
                 FINANCIAL HUB

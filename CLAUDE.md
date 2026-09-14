@@ -1,4 +1,4 @@
-# Ledgerly — Expense Tracker
+# Wallo — Expense Tracker
 
 Multi-workspace (personal/household/business) expense & loan tracker. Next.js App Router + Supabase, single deployable app — no separate backend service.
 

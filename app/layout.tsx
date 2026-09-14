@@ -9,7 +9,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Ledgerly — Personal Finance, Elevated",
+  title: "Wallo — Personal Finance, Elevated",
   description: "A calmer, premium way to track and understand your money.",
 };
 

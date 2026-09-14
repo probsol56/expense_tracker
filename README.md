@@ -1,4 +1,4 @@
-# Ledgerly
+# Wallo
 
 Multi-workspace expense, income, and loan tracker. Next.js App Router + Supabase (Postgres, RLS, `@supabase/ssr`) as a single deployable app — no separate backend service.
 

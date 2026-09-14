@@ -28,7 +28,7 @@ export function AppShell({
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between border-b border-slate-200/70 bg-white/70 px-4 py-3 backdrop-blur-sm dark:border-slate-800 dark:bg-ink-900/60 lg:hidden">
           <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Ledgerly
+            Wallo
           </span>
           <button
             onClick={() => setMobileNavOpen(true)}

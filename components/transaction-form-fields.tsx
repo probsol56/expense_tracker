@@ -1,6 +1,6 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { ArrowDownRight, ArrowUpRight, Landmark, Plus, Trash2 } from "lucide-react";
 import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
 import { TransactionTypeToggle } from "@/components/transaction-type-toggle";
@@ -25,8 +25,6 @@ interface TransactionFormFieldsProps {
   merchant: string;
   setMerchant: (merchant: string) => void;
   merchantOptions: string[];
-  isAddingMerchant: boolean;
-  setIsAddingMerchant: (value: boolean) => void;
   description: string;
   setDescription: (description: string) => void;
   descriptionSuggestions: string[];
@@ -57,8 +55,6 @@ export function TransactionFormFields({
   merchant,
   setMerchant,
   merchantOptions,
-  isAddingMerchant,
-  setIsAddingMerchant,
   description,
   setDescription,
   descriptionSuggestions,
@@ -73,7 +69,11 @@ export function TransactionFormFields({
   error,
   transaction,
 }: TransactionFormFieldsProps) {
-  const merchantSelectValue = merchant || merchantOptions[0] || "";
+  const [showMerchantSuggestions, setShowMerchantSuggestions] = useState(false);
+  const merchantSuggestions = useMemo(() => {
+    const query = merchant.trim().toLowerCase();
+    return merchantOptions.filter((opt) => opt.toLowerCase() !== query && (!query || opt.toLowerCase().includes(query)));
+  }, [merchant, merchantOptions]);
   const hasItems = items.length > 0;
   const hasItemDetails = showItemDetails || hasItems;
   const shouldUseItemAmount = showItemDetails && items.some((item) => {
@@ -157,61 +157,39 @@ export function TransactionFormFields({
       )}
 
       <div className="space-y-1.5">
-        <label className={FIELD_LABEL} id="tx-merchant-label">Merchant / Title</label>
-        {isAddingMerchant || !merchantOptions.length ? (
-          <div className="space-y-2">
-            <Input
-              id="tx-merchant"
-              name="merchant"
-              required
-              value={merchant}
-              onChange={(event) => setMerchant(event.target.value)}
-              placeholder="e.g. Apple Store, Whole Foods, Freelance Client"
-              className="h-11"
-            />
-            {merchantOptions.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAddingMerchant(false);
-                  setMerchant(merchantOptions[0] || "");
-                }}
-                className="text-xs font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
-              >
-                Use saved merchant
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            <input type="hidden" name="merchant" value={merchant || merchantSelectValue} />
-            <Select value={merchantSelectValue || undefined} onValueChange={(value) => {
-              if (value === "__new__") {
-                setIsAddingMerchant(true);
-                setMerchant("");
-                return;
-              }
-              setMerchant(value);
-              setIsAddingMerchant(false);
-            }}>
-              <SelectTrigger aria-labelledby="tx-merchant-label" className="h-11">
-                <SelectValue placeholder="Select merchant" />
-              </SelectTrigger>
-              <SelectContent position="popper" className="z-popover">
-                {merchantOptions.length ? (
-                  <>
-                    {merchantOptions.map((opt) => (
-                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                    ))}
-                    <SelectItem value="__new__">+ Add new merchant</SelectItem>
-                  </>
-                ) : (
-                  <div className="px-2 py-2 text-xs text-slate-500">No merchants available.</div>
-                )}
-              </SelectContent>
-            </Select>
-          </>
-        )}
+        <label htmlFor="tx-merchant" className={FIELD_LABEL}>Merchant / Title</label>
+        <div className="relative">
+          <Input
+            id="tx-merchant"
+            name="merchant"
+            required
+            autoComplete="off"
+            value={merchant}
+            onChange={(event) => setMerchant(event.target.value)}
+            onFocus={() => setShowMerchantSuggestions(true)}
+            onBlur={() => setShowMerchantSuggestions(false)}
+            placeholder="e.g. Apple Store, Whole Foods, Freelance Client"
+            className="h-11"
+          />
+          {showMerchantSuggestions && merchantSuggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-ink-800">
+              {merchantSuggestions.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    setMerchant(opt);
+                    setShowMerchantSuggestions(false);
+                  }}
+                  className="block w-full border-b border-slate-100 px-3 py-2 text-left text-xs text-slate-700 last:border-b-0 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700/70"
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="space-y-1.5">

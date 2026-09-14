@@ -112,11 +112,11 @@ export async function updateLoan(loanId: string, formData: FormData) {
   if (!name || !lender || !dateStarted || !Number.isFinite(principalAmount) || principalAmount <= 0) {
     return { error: "Loan name, lender, date, and a valid amount are required." };
   }
-  if (loan.transaction_id) {
-    if (!accountId) return { error: "Select which account received the loan." };
-    if (!(await assertAccountInWorkspace(supabase, loan.workspace_id, accountId))) {
-      return { error: "Select a valid account." };
-    }
+  if (loan.transaction_id && !accountId) {
+    return { error: "Select which account received the loan." };
+  }
+  if (accountId && !(await assertAccountInWorkspace(supabase, loan.workspace_id, accountId))) {
+    return { error: "Select a valid account." };
   }
 
   // Repayments already made are untouched by this edit — shift the
@@ -141,6 +141,38 @@ export async function updateLoan(loanId: string, formData: FormData) {
         })
         .eq("id", loan.transaction_id);
       if (transactionError) return { error: transactionError.message };
+    } else if (accountId) {
+      // Loan predates account tracking — post the disbursement now instead of
+      // leaving it invisible to account balances.
+      const [categoryId, merchantId] = await Promise.all([
+        resolveCategoryId(supabase, loan.workspace_id, "loan", LOAN_CATEGORY),
+        resolveMerchantId(supabase, loan.workspace_id, lender),
+      ]);
+
+      const { data: transaction, error: transactionError } = await supabase
+        .from("transactions")
+        .insert({
+          workspace_id: loan.workspace_id,
+          user_id: user.id,
+          account_id: accountId,
+          loan_id: loanId,
+          category_id: categoryId,
+          merchant_id: merchantId,
+          notes: notes || `Loan disbursement from ${lender}`,
+          amount: principalAmount,
+          date: dateStarted,
+          status: "cleared",
+        })
+        .select("id")
+        .single();
+
+      if (transactionError) return { error: transactionError.message };
+
+      const { error: linkError } = await supabase
+        .from("loans")
+        .update({ transaction_id: transaction.id })
+        .eq("id", loanId);
+      if (linkError) return { error: linkError.message };
     }
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Failed to update the linked disbursement." };

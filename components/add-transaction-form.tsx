@@ -34,7 +34,6 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
   const [merchant, setMerchant] = useState<string>(() => isEditing ? (transaction.merchant || "") : "");
   const [description, setDescription] = useState<string>(() => isEditing ? (transaction.notes || "") : "");
   const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);
-  const [isAddingMerchant, setIsAddingMerchant] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [items, setItems] = useState<TransactionItem[]>([]);
@@ -110,16 +109,10 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
         const rows = merchantRows ?? [];
         const names = rows.map((row) => row.name).filter(Boolean);
         setCustomMerchants(names);
-        if (!merchant && names.length) setMerchant(names[0]);
-        if (transaction?.merchant && !names.includes(transaction.merchant)) setMerchant(transaction.merchant);
       }
     })();
     return () => { active = false; };
   }, []);
-
-  useEffect(() => {
-    if (!merchant && merchantOptions.length) setMerchant(merchantOptions[0]);
-  }, [merchant, merchantOptions]);
 
   useEffect(() => {
     const query = description.trim();
@@ -185,8 +178,6 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
         merchant={merchant}
         setMerchant={setMerchant}
         merchantOptions={merchantOptions}
-        isAddingMerchant={isAddingMerchant}
-        setIsAddingMerchant={setIsAddingMerchant}
         description={description}
         setDescription={setDescription}
         descriptionSuggestions={descriptionSuggestions}

@@ -176,22 +176,26 @@ export default async function LoansPage({
                       <Input name="date_started" type="date" defaultValue={editingLoan.date_started} className="h-11" />
                     </div>
                   </div>
-                  {editingLoan.transaction_id ? (
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deposit into</label>
-                      <select name="account_id" required defaultValue={editingLoanAccountId} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                        <option value="">Choose an account</option>
-                        {accountList.map((account) => (
-                          <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), workspace.base_currency || "BDT")}</option>
-                        ))}
-                      </select>
-                      <p className="text-[11px] text-slate-400">Moving this to a different account shifts the disbursement there and recalculates both balances.</p>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-400">
-                      This loan predates account tracking, so there&apos;s no linked disbursement to move.
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deposit into</label>
+                    <select
+                      name="account_id"
+                      required={Boolean(editingLoan.transaction_id)}
+                      disabled={!accountList.length}
+                      defaultValue={editingLoanAccountId}
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      <option value="">Choose an account</option>
+                      {accountList.map((account) => (
+                        <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), workspace.base_currency || "BDT")}</option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-slate-400">
+                      {editingLoan.transaction_id
+                        ? "Moving this to a different account shifts the disbursement there and recalculates both balances."
+                        : "This loan predates account tracking. Choose an account to post the disbursement now and start tracking its balance impact."}
                     </p>
-                  )}
+                  </div>
                   <div className="space-y-1.5">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</label>
                     <textarea name="notes" rows={3} defaultValue={editingLoan.notes ?? ""} className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus-visible:border-teal-500 focus-visible:ring-4 focus-visible:ring-teal-500/10 dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-100 dark:placeholder:text-slate-500" placeholder="Optional details about this loan" />

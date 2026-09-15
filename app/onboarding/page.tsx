@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { ArrowRight, Building2, Sparkles, User, Globe2 } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createWorkspace } from "@/app/onboarding/actions";
-import { Button, Card, Input } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
 
 // Requires an authenticated session — never let it be indexed.
 export const metadata: Metadata = {

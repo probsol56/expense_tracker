@@ -5,6 +5,7 @@ import {
   Landmark,
   LayoutGrid,
   LogOut,
+  PieChart,
   Settings,
   Sparkles,
   FolderKanban,
@@ -44,6 +45,7 @@ export function DashboardSidebar({
     { label: "Transactions", icon: CreditCard, href: "/transactions" },
     { label: "Loans", icon: Landmark, href: "/loans" },
     { label: "Accounts", icon: Landmark, href: "/accounts" },
+    { label: "Reports", icon: PieChart, href: "/reports" },
     { label: "Categories", icon: FolderKanban, href: "/categories" },
     { label: "Settings", icon: Settings, href: "/settings" },
   ];

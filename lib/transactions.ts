@@ -42,6 +42,7 @@ export type TransactionPageParams = {
   page: number;
   pageSize: number;
   category?: string;
+  accountId?: string;
   dateFrom?: string;
   dateTo?: string;
 };
@@ -63,9 +64,10 @@ export type TransactionPageResult = {
  */
 export async function fetchTransactionsPage(
   supabase: SupabaseClient,
-  { page, pageSize, category, dateFrom, dateTo }: TransactionPageParams,
+  { page, pageSize, category, accountId, dateFrom, dateTo }: TransactionPageParams,
 ): Promise<TransactionPageResult> {
   const hasCategoryFilter = !!category && category !== "all";
+  const hasAccountFilter = !!accountId && accountId !== "all";
 
   const buildQuery = () => {
     let q = supabase
@@ -74,6 +76,7 @@ export async function fetchTransactionsPage(
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
     if (hasCategoryFilter) q = q.eq("category.name", category as string);
+    if (hasAccountFilter) q = q.eq("account_id", accountId as string);
     if (dateFrom) q = q.gte("date", dateFrom);
     if (dateTo) q = q.lte("date", dateTo);
     return q;

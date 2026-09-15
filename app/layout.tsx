@@ -8,14 +8,54 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const title = "Wallo — Personal Finance, Elevated";
+const description = "A calmer, premium way to track and understand your money.";
+
 export const metadata: Metadata = {
-  title: "Wallo — Personal Finance, Elevated",
-  description: "A calmer, premium way to track and understand your money.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: title,
+    template: "%s · Wallo",
+  },
+  description,
+  applicationName: "Wallo",
+  keywords: [
+    "expense tracker",
+    "personal finance",
+    "budgeting app",
+    "loan tracker",
+    "money management",
+  ],
+  authors: [{ name: "Wallo" }],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Wallo",
+    title,
+    description,
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "Wallo — Personal Finance, Elevated" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: ["/opengraph-image"],
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#EEF1EF" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B0F0C" },
+  ],
 };
 
 export default function RootLayout({

@@ -50,6 +50,36 @@ export type LoanPayment = {
   transaction_id?: string | null;
 };
 
+export type RecurringTransaction = {
+  id: string;
+  workspace_id: string;
+  user_id: string;
+  account_id: string;
+  category_id: string | null;
+  merchant_id: string | null;
+  merchant: string;
+  category: string;
+  type: "expense" | "income";
+  amount: number;
+  description?: string | null;
+  frequency: "daily" | "weekly" | "monthly";
+  weekdays: number[] | null;
+  day_of_month: number | null;
+  skip_holidays: boolean;
+  start_date: string;
+  end_date?: string | null;
+  is_active: boolean;
+  last_generated_date?: string | null;
+  created_at?: string;
+};
+
+export type Holiday = {
+  id: string;
+  workspace_id: string;
+  date: string;
+  name: string;
+};
+
 export type Account = {
   id: string;
   name: string;

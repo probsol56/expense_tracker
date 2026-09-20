@@ -1,34 +1,55 @@
 import { redirect } from "next/navigation";
-import { Landmark, Plus } from "lucide-react";
+import { Landmark, Pencil, Plus, Repeat, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { Badge, Button, Card, Input } from "@/components/ui";
 import { money } from "@/lib/utils";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
-import { createAccount } from "@/app/(app)/accounts/actions";
-import type { Account } from "@/lib/types";
+import { createAccount, createTransfer, deleteTransfer, updateTransfer } from "@/app/(app)/accounts/actions";
+import type { Account, Transfer } from "@/lib/types";
 
 export default async function AccountsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; editTransfer?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, editTransfer } = await searchParams;
   const { user, workspace, supabase } = await getCurrentWorkspaceAndProfile();
   if (!user || !supabase) {
-    return <AccountsContent accounts={[]} currency="BDT" workspaceName="Personal Workspace" error={error} />;
+    return (
+      <AccountsContent
+        accounts={[]}
+        transfers={[]}
+        currency="BDT"
+        workspaceName="Personal Workspace"
+        error={error}
+        editingTransferId={editTransfer}
+      />
+    );
   }
 
-  const { data } = await supabase
-    .from("accounts")
-    .select("id, name, account_type, balance, starting_balance, institution, last_synced_at")
-    .order("created_at", { ascending: false });
+  const [{ data: accountRows }, { data: transferRows }] = await Promise.all([
+    supabase
+      .from("accounts")
+      .select("id, name, account_type, balance, starting_balance, institution, last_synced_at")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("transfers")
+      .select("id, from_account_id, to_account_id, amount, date, notes, created_at")
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false }),
+  ]);
 
-  const accounts = (data ?? []) as Account[];
+  const accounts = (accountRows ?? []) as Account[];
+  const transfers = (transferRows ?? []) as Transfer[];
+
   return (
     <AccountsContent
       accounts={accounts}
+      transfers={transfers}
       currency={workspace?.base_currency || "BDT"}
       workspaceName={workspace?.name || "Personal Workspace"}
       error={error}
+      editingTransferId={editTransfer}
     />
   );
 }
@@ -42,17 +63,50 @@ async function handleCreateAccount(formData: FormData) {
   redirect("/accounts");
 }
 
+async function handleCreateTransfer(formData: FormData) {
+  "use server";
+  const result = await createTransfer(formData);
+  if (result?.error) redirect(`/accounts?error=${encodeURIComponent(result.error)}`);
+  redirect("/accounts");
+}
+
+async function handleUpdateTransfer(formData: FormData) {
+  "use server";
+  const transferId = String(formData.get("transfer_id") ?? "");
+  const result = await updateTransfer(transferId, formData);
+  if (result?.error) redirect(`/accounts?editTransfer=${transferId}&error=${encodeURIComponent(result.error)}`);
+  redirect("/accounts");
+}
+
+async function handleDeleteTransfer(formData: FormData) {
+  "use server";
+  const transferId = String(formData.get("transfer_id") ?? "");
+  const result = await deleteTransfer(transferId);
+  if (result?.error) redirect(`/accounts?error=${encodeURIComponent(result.error)}`);
+  redirect("/accounts");
+}
+
 function AccountsContent({
   accounts,
+  transfers,
   currency,
   workspaceName,
   error,
+  editingTransferId,
 }: {
   accounts: Account[];
+  transfers: Transfer[];
   currency: string;
   workspaceName: string;
   error?: string;
+  editingTransferId?: string;
 }) {
+  const accountsById = new Map(accounts.map((account) => [account.id, account]));
+  const editingTransfer = editingTransferId
+    ? transfers.find((transfer) => transfer.id === editingTransferId)
+    : undefined;
+  const canTransfer = accounts.length >= 2;
+
   return (
     <div className="mx-auto max-w-4xl">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -116,6 +170,131 @@ function AccountsContent({
           </div>
         </Card>
 
+        <Card className="mb-8 shadow-card">
+          <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+              {editingTransfer ? "Edit transfer" : "Transfer funds"}
+            </h2>
+            {editingTransfer && (
+              <Link href="/accounts" className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">Cancel</Link>
+            )}
+          </div>
+          <div className="p-5">
+            {!canTransfer ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Add a second account — e.g. a Cash in Hand wallet — before you can move money between accounts.
+              </p>
+            ) : (
+              <form action={editingTransfer ? handleUpdateTransfer : handleCreateTransfer} className="space-y-4">
+                {editingTransfer && <input type="hidden" name="transfer_id" value={editingTransfer.id} />}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">From account</label>
+                    <select
+                      name="from_account_id"
+                      required
+                      defaultValue={editingTransfer?.from_account_id ?? ""}
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      <option value="">Choose an account</option>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), currency)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">To account</label>
+                    <select
+                      name="to_account_id"
+                      required
+                      defaultValue={editingTransfer?.to_account_id ?? ""}
+                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      <option value="">Choose an account</option>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), currency)}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount</label>
+                    <Input name="amount" type="number" min="0.01" step="0.01" required defaultValue={editingTransfer?.amount} className="h-11" placeholder="0.00" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</label>
+                    <Input name="date" type="date" defaultValue={editingTransfer?.date ?? new Date().toISOString().slice(0, 10)} className="h-11" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</label>
+                  <textarea name="notes" rows={2} defaultValue={editingTransfer?.notes ?? ""} className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus-visible:border-teal-500 focus-visible:ring-4 focus-visible:ring-teal-500/10 dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-100 dark:placeholder:text-slate-500" placeholder="Optional, e.g. ATM withdrawal" />
+                </div>
+                <Button type="submit" className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white sm:w-auto">
+                  <Repeat size={15} className="mr-2 inline" /> {editingTransfer ? "Save changes" : "Transfer funds"}
+                </Button>
+              </form>
+            )}
+          </div>
+        </Card>
+
+        {transfers.length > 0 && (
+          <Card className="mb-8 overflow-hidden shadow-card">
+            <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Transfer history</h2>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {transfers.map((transfer) => {
+                const fromAccount = accountsById.get(transfer.from_account_id);
+                const toAccount = accountsById.get(transfer.to_account_id);
+                return (
+                  <div key={transfer.id} className="group flex flex-col gap-3 p-5 transition-colors hover:bg-slate-50/60 dark:hover:bg-ink-900/40 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900">
+                        <Repeat size={16} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                          {fromAccount?.name ?? "Deleted account"} → {toAccount?.name ?? "Deleted account"}
+                        </p>
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                          {new Date(transfer.date).toLocaleDateString()}
+                          {transfer.notes ? ` · ${transfer.notes}` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 self-end sm:self-auto">
+                      <span className="text-base font-extrabold tabular-nums tracking-tight text-slate-900 dark:text-slate-100">
+                        {money(Number(transfer.amount), currency)}
+                      </span>
+                      <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                        <Link
+                          href={`/accounts?editTransfer=${transfer.id}`}
+                          aria-label="Edit transfer"
+                          className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-ink-800 dark:hover:text-slate-200"
+                        >
+                          <Pencil size={14} />
+                        </Link>
+                        <form action={handleDeleteTransfer}>
+                          <input type="hidden" name="transfer_id" value={transfer.id} />
+                          <button
+                            type="submit"
+                            aria-label="Delete transfer"
+                            className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           {accounts.map((account) => (
             <div
@@ -167,5 +346,3 @@ function AccountsContent({
     </div>
   );
 }
-
-

@@ -5,8 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui";
 
 interface TransactionListFiltersProps {
-  filterType: "all" | "expenses" | "income" | "loan";
-  setFilterType: (type: "all" | "expenses" | "income" | "loan") => void;
+  filterType: "all" | "expenses" | "income" | "loan" | "transfer";
+  setFilterType: (type: "all" | "expenses" | "income" | "loan" | "transfer") => void;
   onAdd?: () => void;
 }
 
@@ -25,7 +25,7 @@ export function TransactionListFilters({
       </div>
       <div className="flex items-center gap-2">
         <div className="flex items-center rounded-xl bg-slate-100/80 dark:bg-ink-800/80 p-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
-          {(["all", "expenses", "income", "loan"] as const).map((f) => (
+          {(["all", "expenses", "income", "loan", "transfer"] as const).map((f) => (
             <button
               key={f}
               type="button"

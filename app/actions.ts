@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { transactionSchema } from "@/lib/validations";
 import { createClient } from "@/lib/supabase/server";
-import { assertAccountInWorkspace, assertLoanInWorkspace, getUserWorkspaceId, isLoanLedgerTransaction, resolveCategoryId, resolveMerchantId } from "@/lib/ledger";
+import { assertAccountInWorkspace, assertLoanInWorkspace, getUserWorkspaceId, isLoanLedgerTransaction, isTransferLedgerTransaction, resolveCategoryId, resolveMerchantId } from "@/lib/ledger";
 
 const transactionTypeSchema = z.enum(["expense", "income", "loan"]);
 
@@ -157,6 +157,9 @@ export async function updateTransaction(transactionId: string, formData: FormDat
   if (await isLoanLedgerTransaction(supabase, transactionId)) {
     return { error: "Manage loan disbursements and repayments from the Loans page." };
   }
+  if (await isTransferLedgerTransaction(supabase, transactionId)) {
+    return { error: "Manage transfers from the Accounts page." };
+  }
 
   try {
     const { description, merchant, category, loan_id, ...transactionData } = parsed.data;
@@ -198,6 +201,9 @@ export async function deleteTransaction(transactionId: string) {
   if (transaction.user_id !== user.id) return { error: "You don't have permission to delete this transaction." };
   if (await isLoanLedgerTransaction(supabase, transactionId)) {
     return { error: "Loan disbursements and repayments can't be deleted from here." };
+  }
+  if (await isTransferLedgerTransaction(supabase, transactionId)) {
+    return { error: "Transfers can't be deleted from here — manage them from the Accounts page." };
   }
 
   const { error } = await supabase.from("transactions").delete().eq("id", transactionId);

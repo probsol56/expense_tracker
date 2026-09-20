@@ -1,10 +1,10 @@
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { getSearchParam, isLoanCategory } from "@/lib/utils";
+import { getSearchParam, isLoanCategory, isTransferCategory } from "@/lib/utils";
 import { toTransaction, type TransactionRow } from "@/lib/transactions";
 import type { Account, Loan, LoanPayment, Transaction } from "@/lib/types";
 
-export type ActivityType = "all" | "expenses" | "income" | "loan";
+export type ActivityType = "all" | "expenses" | "income" | "loan" | "transfer";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -111,14 +111,17 @@ export async function Dashboard({
   // Server-side type + search filtering.
   const filtered = allActivities.filter((t) => {
     const isLoan = isLoanCategory(t.category);
+    const isTransfer = isTransferCategory(t.category);
     const matchesType =
       activityType === "all"
         ? true
         : activityType === "expenses"
-          ? Number(t.amount) < 0 && !isLoan
+          ? Number(t.amount) < 0 && !isLoan && !isTransfer
           : activityType === "income"
-            ? Number(t.amount) > 0 && !isLoan
-            : isLoan;
+            ? Number(t.amount) > 0 && !isLoan && !isTransfer
+            : activityType === "transfer"
+              ? isTransfer
+              : isLoan;
     if (!matchesType) return false;
     if (query) {
       const haystack = `${t.merchant} ${t.category} ${t.notes ?? ""}`.toLowerCase();

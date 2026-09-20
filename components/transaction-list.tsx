@@ -11,7 +11,7 @@ import { AddTransactionModal } from "@/components/add-transaction-modal";
 import { PaginationBar } from "@/components/pagination-bar";
 import type { ActivityType } from "@/components/dashboard";
 import type { Account, Loan, Transaction } from "@/lib/types";
-import { isLoanCategory } from "@/lib/utils";
+import { isLoanCategory, isTransferCategory } from "@/lib/utils";
 
 interface TransactionListProps {
   /** Current page of filtered transactions (already paginated on the server). */
@@ -56,7 +56,7 @@ export function TransactionList({
   // Filtering, sorting and pagination all happen on the server (see
   // `components/dashboard.tsx`); the client only renders the page it receives.
   const handleEdit = (transaction: Transaction) => {
-    if (isLoanCategory(transaction.category)) return;
+    if (isLoanCategory(transaction.category) || isTransferCategory(transaction.category)) return;
     setEditingTransaction(transaction);
   };
 

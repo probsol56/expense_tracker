@@ -73,6 +73,20 @@ export type RecurringTransaction = {
   created_at?: string;
 };
 
+export type Transfer = {
+  id: string;
+  workspace_id: string;
+  user_id: string;
+  from_account_id: string;
+  to_account_id: string;
+  amount: number;
+  date: string;
+  notes?: string | null;
+  from_transaction_id?: string | null;
+  to_transaction_id?: string | null;
+  created_at?: string;
+};
+
 export type Holiday = {
   id: string;
   workspace_id: string;

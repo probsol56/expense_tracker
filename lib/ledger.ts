@@ -138,3 +138,20 @@ export async function isLoanLedgerTransaction(
   ]);
   return Boolean(loan) || Boolean(payment);
 }
+
+/**
+ * True only for one of the two linked legs a transfer posted (see
+ * app/(app)/accounts/actions.ts) — editing or deleting one independently
+ * would desync it from its counterpart leg and the account balances.
+ */
+export async function isTransferLedgerTransaction(
+  supabase: SupabaseClient,
+  transactionId: string,
+): Promise<boolean> {
+  const { data: transfer } = await supabase
+    .from("transfers")
+    .select("id")
+    .or(`from_transaction_id.eq.${transactionId},to_transaction_id.eq.${transactionId}`)
+    .maybeSingle();
+  return Boolean(transfer);
+}

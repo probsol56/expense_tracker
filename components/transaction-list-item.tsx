@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Edit } from "lucide-react";
 import { getCategoryIcon } from "@/lib/category-icon";
-import { isLoanCategory, money } from "@/lib/utils";
+import { isLoanCategory, isTransferCategory, money } from "@/lib/utils";
 import type { Transaction } from "@/lib/types";
 
 interface TransactionListItemProps {
@@ -19,6 +19,7 @@ export function TransactionListItem({
 }: TransactionListItemProps) {
   const isPositive = Number(transaction.amount) > 0;
   const isLoanEntry = isLoanCategory(transaction.category);
+  const isTransferEntry = isTransferCategory(transaction.category);
   const { icon: CategoryIcon, bg } = getCategoryIcon(transaction.category);
 
   return (
@@ -32,6 +33,13 @@ export function TransactionListItem({
           <Link
             href="/loans"
             className="block truncate text-sm font-bold text-slate-900 transition-colors hover:text-amber-700 dark:text-slate-100 dark:hover:text-amber-400"
+          >
+            {transaction.merchant}
+          </Link>
+        ) : isTransferEntry ? (
+          <Link
+            href="/accounts"
+            className="block truncate text-sm font-bold text-slate-900 transition-colors hover:text-teal-700 dark:text-slate-100 dark:hover:text-teal-400"
           >
             {transaction.merchant}
           </Link>
@@ -73,7 +81,7 @@ export function TransactionListItem({
         </span>
       </div>
 
-      {!isLoanEntry && (
+      {!isLoanEntry && !isTransferEntry && (
         <button
           type="button"
           onClick={(event) => {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight, Landmark, TrendingUp, Wallet } from "lucide-react";
 import { Card } from "@/components/ui";
-import { isLoanCategory, isLoanTransaction, money } from "@/lib/utils";
+import { isLoanCategory, isLoanTransaction, isTransferCategory, money } from "@/lib/utils";
 import type { Account, Loan, LoanPayment, Transaction } from "@/lib/types";
 
 export function SummaryCards({
@@ -29,16 +29,20 @@ export function SummaryCards({
   const thisMonthTransactions = transactions.filter((t) => t.date.startsWith(currentMonthPrefix));
 
   const spending = thisMonthTransactions
-    .filter((transaction) => Number(transaction.amount) < 0 && !isLoanTransaction(transaction))
+    .filter((transaction) => Number(transaction.amount) < 0 && !isLoanTransaction(transaction) && !isTransferCategory(transaction.category))
     .reduce((total, transaction) => total + Math.abs(Number(transaction.amount)), 0);
 
   // Loan disbursements land as positive-amount transactions so they show up
   // in the account balance, but they're borrowed money, not earned income.
+  // Transfers between the user's own accounts are excluded the same way —
+  // moving money isn't earning or spending it.
   const income = thisMonthTransactions
-    .filter((transaction) => Number(transaction.amount) > 0 && !isLoanCategory(transaction.category))
+    .filter((transaction) => Number(transaction.amount) > 0 && !isLoanCategory(transaction.category) && !isTransferCategory(transaction.category))
     .reduce((total, transaction) => total + Number(transaction.amount), 0);
 
-  const expenseCount = thisMonthTransactions.filter((t) => Number(t.amount) < 0 && !isLoanTransaction(t)).length;
+  const expenseCount = thisMonthTransactions.filter(
+    (t) => Number(t.amount) < 0 && !isLoanTransaction(t) && !isTransferCategory(t.category),
+  ).length;
   const loanCount = loans.length;
 
   return (

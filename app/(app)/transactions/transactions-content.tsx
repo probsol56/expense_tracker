@@ -11,7 +11,7 @@ import { PaginationBar } from "@/components/pagination-bar";
 import type { GroupByMode } from "@/app/(app)/transactions/transactions-grid";
 import type { Account, Loan, Transaction } from "@/lib/types";
 import { DEFAULT_CATEGORY_OPTIONS } from "@/lib/category-options";
-import { isLoanCategory } from "@/lib/utils";
+import { isLoanCategory, isTransferCategory } from "@/lib/utils";
 
 interface TransactionsPageContentProps {
   transactions: Transaction[];
@@ -93,9 +93,10 @@ export function TransactionsPageContent({
 
   // Loan disbursements/repayments are posted automatically from the Loans
   // page and keep a loan's outstanding balance in sync — editing them here
-  // would desync that balance, so send people there instead.
+  // would desync that balance, so send people there instead. Transfers are
+  // the same story, managed from the Accounts page.
   const handleEdit = (transaction: Transaction) => {
-    if (isLoanCategory(transaction.category)) return;
+    if (isLoanCategory(transaction.category) || isTransferCategory(transaction.category)) return;
     setEditingTransaction(transaction);
   };
 

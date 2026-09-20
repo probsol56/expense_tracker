@@ -39,6 +39,10 @@ export function isLoanTransaction(transaction: { amount?: number | string | null
   return isLoanCategory(transaction.category) && rawAmount < 0;
 }
 
+export function isTransferCategory(category?: string | null): boolean {
+  return (category ?? "").trim().toLowerCase() === "transfer";
+}
+
 /**
  * Reads a single search-param value from a Next.js searchParams object.
  * Next may pass a value as `string | string[] | undefined`; this normalizes

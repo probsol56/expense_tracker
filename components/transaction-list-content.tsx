@@ -8,7 +8,7 @@ interface TransactionListContentProps {
   transactions: Transaction[];
   currency: string;
   query: string;
-  filterType: "all" | "expenses" | "income" | "loan";
+  filterType: "all" | "expenses" | "income" | "loan" | "transfer";
   onEdit: (transaction: Transaction) => void;
   onClearFilters: () => void;
 }

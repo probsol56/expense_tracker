@@ -7,8 +7,7 @@ import { Button, Card, Input, LoadingOverlay, Select, SelectContent, SelectItem,
 import { AddTransactionModal } from "@/components/add-transaction-modal";
 import { TransactionsGrid } from "@/app/(app)/transactions/transactions-grid";
 import { PaginationBar } from "@/components/pagination-bar";
-import { money } from "@/lib/utils";
-import { isLoanCategory } from "@/lib/utils";
+import { isLoanCategory, isTransferCategory, money } from "@/lib/utils";
 import type { Account, Loan, Transaction } from "@/lib/types";
 
 interface ReportsPageContentProps {
@@ -90,9 +89,10 @@ export function ReportsPageContent({
 
   // Loan disbursements/repayments are posted automatically from the Loans
   // page and keep a loan's outstanding balance in sync — editing them here
-  // would desync that balance, so send people there instead.
+  // would desync that balance, so send people there instead. Transfers are
+  // the same story, managed from the Accounts page.
   const handleEdit = (transaction: Transaction) => {
-    if (isLoanCategory(transaction.category)) return;
+    if (isLoanCategory(transaction.category) || isTransferCategory(transaction.category)) return;
     setEditingTransaction(transaction);
   };
 

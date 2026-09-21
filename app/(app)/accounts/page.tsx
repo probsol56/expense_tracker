@@ -57,17 +57,19 @@ export default async function AccountsPage({
 async function handleCreateAccount(formData: FormData) {
   "use server";
   const result = await createAccount(formData);
+  // Only redirect when the URL needs to change (to surface the error). On
+  // success we're already on /accounts — revalidatePath (inside the action)
+  // refreshes it in place. Redirecting to the same path here blanks the page
+  // during the transition on Next 15 (vercel/next.js#73317).
   if (result?.error) {
     redirect(`/accounts?error=${encodeURIComponent(result.error)}`);
   }
-  redirect("/accounts");
 }
 
 async function handleCreateTransfer(formData: FormData) {
   "use server";
   const result = await createTransfer(formData);
   if (result?.error) redirect(`/accounts?error=${encodeURIComponent(result.error)}`);
-  redirect("/accounts");
 }
 
 async function handleUpdateTransfer(formData: FormData) {
@@ -83,7 +85,6 @@ async function handleDeleteTransfer(formData: FormData) {
   const transferId = String(formData.get("transfer_id") ?? "");
   const result = await deleteTransfer(transferId);
   if (result?.error) redirect(`/accounts?error=${encodeURIComponent(result.error)}`);
-  redirect("/accounts");
 }
 
 function AccountsContent({

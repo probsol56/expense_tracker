@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Repeat } from "lucide-react";
 import { Button, Input } from "@/components/ui";
 import { TransactionTypeToggle } from "@/components/transaction-type-toggle";
@@ -21,7 +21,7 @@ const WEEKDAYS = [
   { value: 5, label: "Fri" },
   { value: 6, label: "Sat" },
 ];
-const WORKDAYS = [1, 2, 3, 4, 5];
+const WORKDAYS = [0, 1, 2, 3, 4, 6];
 
 interface RecurringTransactionFormProps {
   action: (formData: FormData) => void | Promise<void>;
@@ -45,7 +45,13 @@ export function RecurringTransactionForm({
   const [frequency, setFrequency] = useState<RecurringTransaction["frequency"]>(recurring?.frequency ?? "weekly");
   const [weekdays, setWeekdays] = useState<number[]>(recurring?.weekdays ?? WORKDAYS);
 
-  const categoryOptions = getCategoryOptions(type, customCategories[type]);
+  const categoryOptions = useMemo(() => getCategoryOptions(type, customCategories[type]), [type, customCategories]);
+  const [category, setCategory] = useState(recurring?.category ?? categoryOptions[0] ?? "");
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
+  const categorySuggestions = useMemo(() => {
+    const query = category.trim().toLowerCase();
+    return categoryOptions.filter((opt) => opt.toLowerCase() !== query && (!query || opt.toLowerCase().includes(query)));
+  }, [category, categoryOptions]);
   const merchantOptions = [...new Set(customMerchants)].sort((a, b) => a.localeCompare(b));
 
   const toggleWeekday = (day: number) => {
@@ -79,17 +85,38 @@ export function RecurringTransactionForm({
 
       <div className="space-y-1.5">
         <label htmlFor="rt-category" className={FIELD_LABEL}>Category</label>
-        <Input
-          id="rt-category"
-          name="category"
-          required
-          list="rt-category-options"
-          defaultValue={recurring?.category ?? categoryOptions[0] ?? ""}
-          className="h-11"
-        />
-        <datalist id="rt-category-options">
-          {categoryOptions.map((opt) => <option key={opt} value={opt} />)}
-        </datalist>
+        <div className="relative">
+          <Input
+            id="rt-category"
+            name="category"
+            required
+            autoComplete="off"
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            onFocus={() => setShowCategorySuggestions(true)}
+            onBlur={() => setShowCategorySuggestions(false)}
+            placeholder="e.g. Groceries, Internet bill"
+            className="h-11"
+          />
+          {showCategorySuggestions && categorySuggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-ink-800">
+              {categorySuggestions.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    setCategory(opt);
+                    setShowCategorySuggestions(false);
+                  }}
+                  className="block w-full border-b border-slate-100 px-3 py-2 text-left text-xs text-slate-700 last:border-b-0 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700/70"
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

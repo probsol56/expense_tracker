@@ -74,6 +74,11 @@ export function TransactionFormFields({
     const query = merchant.trim().toLowerCase();
     return merchantOptions.filter((opt) => opt.toLowerCase() !== query && (!query || opt.toLowerCase().includes(query)));
   }, [merchant, merchantOptions]);
+  const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
+  const categorySuggestions = useMemo(() => {
+    const query = category.trim().toLowerCase();
+    return categoryOptions.filter((opt) => opt.toLowerCase() !== query && (!query || opt.toLowerCase().includes(query)));
+  }, [category, categoryOptions]);
   const hasItems = items.length > 0;
   const hasItemDetails = showItemDetails || hasItems;
   const shouldUseItemAmount = showItemDetails && items.some((item) => {
@@ -314,20 +319,39 @@ export function TransactionFormFields({
       </div>
 
       <div className="space-y-1.5">
-        <label className={FIELD_LABEL} id="tx-category-label">Category</label>
-        <input type="hidden" name="category" value={category} />
-        <Select value={category || undefined} onValueChange={setCategory}>
-          <SelectTrigger aria-labelledby="tx-category-label" className="h-11">
-            <SelectValue placeholder="Select category" />
-          </SelectTrigger>
-          <SelectContent position="popper" className="z-popover">
-            {categoryOptions.length ? (
-              categoryOptions.map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)
-            ) : (
-              <div className="px-2 py-2 text-xs text-slate-500">No categories available.</div>
-            )}
-          </SelectContent>
-        </Select>
+        <label htmlFor="tx-category" className={FIELD_LABEL}>Category</label>
+        <div className="relative">
+          <Input
+            id="tx-category"
+            name="category"
+            required
+            autoComplete="off"
+            value={category}
+            onChange={(event) => setCategory(event.target.value)}
+            onFocus={() => setShowCategorySuggestions(true)}
+            onBlur={() => setShowCategorySuggestions(false)}
+            placeholder="e.g. Groceries, Internet bill"
+            className="h-11"
+          />
+          {showCategorySuggestions && categorySuggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-ink-800">
+              {categorySuggestions.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    setCategory(opt);
+                    setShowCategorySuggestions(false);
+                  }}
+                  className="block w-full border-b border-slate-100 px-3 py-2 text-left text-xs text-slate-700 last:border-b-0 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700/70"
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {error && (

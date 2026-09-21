@@ -48,6 +48,8 @@ export async function createMerchant(formData: FormData) {
     redirect(`/merchants?error=${encodeURIComponent(error.message)}`);
   }
 
+  // No redirect on success: we're already on /merchants, and revalidatePath
+  // refreshes it in place. Redirecting to the same path here blanks the page
+  // during the transition on Next 15 (vercel/next.js#73317).
   revalidatePath("/merchants");
-  redirect("/merchants");
 }

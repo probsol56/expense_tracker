@@ -16,15 +16,17 @@ const LOAN_STATUS_BADGE: Record<Loan["status"], { variant: "amber" | "emerald" |
 async function handleCreateLoan(formData: FormData) {
   "use server";
   const result = await createLoan(formData);
+  // Only redirect when the URL needs to change (to surface the error). On
+  // success we're already on /loans — revalidatePath (inside the action)
+  // refreshes it in place. Redirecting to the same path here blanks the page
+  // during the transition on Next 15 (vercel/next.js#73317).
   if (result?.error) redirect(`/loans?error=${encodeURIComponent(result.error)}`);
-  redirect("/loans");
 }
 
 async function handleCreateLoanPayment(formData: FormData) {
   "use server";
   const result = await createLoanPayment(formData);
   if (result?.error) redirect(`/loans?error=${encodeURIComponent(result.error)}`);
-  redirect("/loans");
 }
 
 async function handleUpdateLoan(formData: FormData) {

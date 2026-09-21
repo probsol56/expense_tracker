@@ -81,11 +81,6 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
   }, [transaction?.id]);
 
   useEffect(() => {
-    if (!categoryOptions.length) setCategory("");
-    else if (!categoryOptions.includes(category)) setCategory(categoryOptions[0]);
-  }, [categoryOptions, category]);
-
-  useEffect(() => {
     let active = true;
     (async () => {
       const supabase = createClient();

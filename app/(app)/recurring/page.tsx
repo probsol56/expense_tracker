@@ -34,8 +34,11 @@ const OCCURRENCES_PER_MONTH: Record<RecurringTransaction["frequency"], (r: Recur
 async function handleCreate(formData: FormData) {
   "use server";
   const result = await createRecurringTransaction(formData);
+  // Only redirect when the URL needs to change (to surface the error). On
+  // success we're already on /recurring — revalidatePath (inside the action)
+  // refreshes it in place. Redirecting to the same path here blanks the page
+  // during the transition on Next 15 (vercel/next.js#73317).
   if (result?.error) redirect(`/recurring?error=${encodeURIComponent(result.error)}`);
-  redirect("/recurring");
 }
 
 async function handleUpdate(formData: FormData) {
@@ -51,7 +54,6 @@ async function handleDelete(formData: FormData) {
   const recurringId = String(formData.get("recurring_id") ?? "");
   const result = await deleteRecurringTransaction(recurringId);
   if (result?.error) redirect(`/recurring?error=${encodeURIComponent(result.error)}`);
-  redirect("/recurring");
 }
 
 async function handleToggleActive(formData: FormData) {
@@ -60,14 +62,12 @@ async function handleToggleActive(formData: FormData) {
   const isActive = formData.get("is_active") === "true";
   const result = await setRecurringTransactionActive(recurringId, isActive);
   if (result?.error) redirect(`/recurring?error=${encodeURIComponent(result.error)}`);
-  redirect("/recurring");
 }
 
 async function handleCreateHoliday(formData: FormData) {
   "use server";
   const result = await createHoliday(formData);
   if (result?.error) redirect(`/recurring?error=${encodeURIComponent(result.error)}`);
-  redirect("/recurring");
 }
 
 async function handleDeleteHoliday(formData: FormData) {
@@ -75,7 +75,6 @@ async function handleDeleteHoliday(formData: FormData) {
   const holidayId = String(formData.get("holiday_id") ?? "");
   const result = await deleteHoliday(holidayId);
   if (result?.error) redirect(`/recurring?error=${encodeURIComponent(result.error)}`);
-  redirect("/recurring");
 }
 
 export default async function RecurringPage({
@@ -209,6 +208,7 @@ export default async function RecurringPage({
           </div>
           <div className="p-5">
             <RecurringTransactionForm
+              key={editingRecurring?.id ?? "create"}
               action={editingRecurring ? handleUpdate : handleCreate}
               accounts={accountList}
               customCategories={customCategories}

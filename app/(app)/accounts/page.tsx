@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { Landmark, Pencil, Plus, Repeat, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { Badge, Button, Card, Input } from "@/components/ui";
+import { Badge, Card, Input, SubmitButton } from "@/components/ui";
 import { money } from "@/lib/utils";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { createAccount, createTransfer, deleteTransfer, updateTransfer } from "@/app/(app)/accounts/actions";
@@ -163,9 +163,9 @@ function AccountsContent({
                 <Input name="starting_balance" type="number" step="0.01" defaultValue="0" className="h-11" placeholder="0.00" />
               </div>
               <div className="sm:col-span-2">
-                <Button type="submit" className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white sm:w-auto">
+                <SubmitButton loadingText="Adding account..." className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white sm:w-auto">
                   <Plus size={15} className="mr-2 inline" /> Add account
-                </Button>
+                </SubmitButton>
               </div>
             </form>
           </div>
@@ -232,9 +232,12 @@ function AccountsContent({
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</label>
                   <textarea name="notes" rows={2} defaultValue={editingTransfer?.notes ?? ""} className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus-visible:border-teal-500 focus-visible:ring-4 focus-visible:ring-teal-500/10 dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-100 dark:placeholder:text-slate-500" placeholder="Optional, e.g. ATM withdrawal" />
                 </div>
-                <Button type="submit" className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white sm:w-auto">
+                <SubmitButton
+                  loadingText={editingTransfer ? "Saving..." : "Transferring..."}
+                  className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white sm:w-auto"
+                >
                   <Repeat size={15} className="mr-2 inline" /> {editingTransfer ? "Save changes" : "Transfer funds"}
-                </Button>
+                </SubmitButton>
               </form>
             )}
           </div>

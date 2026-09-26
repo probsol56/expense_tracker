@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Landmark, Pencil, Plus, Repeat } from "lucide-react";
 import Link from "next/link";
 import { Badge, Card, Input, SubmitButton } from "@/components/ui";
-import { DeleteTransferForm } from "@/components/delete-transfer-form";
+import { DeleteTransferButton } from "@/components/delete-transfer-button";
 import { EditDialog } from "@/components/edit-dialog";
 import { money } from "@/lib/utils";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
@@ -231,7 +231,7 @@ function AccountsContent({
                         >
                           <Pencil size={14} />
                         </Link>
-                        <DeleteTransferForm transferId={transfer.id} action={handleDeleteTransfer} />
+                        <DeleteTransferButton transferId={transfer.id} action={handleDeleteTransfer} />
                       </div>
                     </div>
                   </div>

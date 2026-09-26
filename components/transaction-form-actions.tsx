@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button, SubmitButton } from "@/components/ui";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { deleteTransaction } from "@/app/actions";
 import type { Transaction } from "@/lib/types";
 
@@ -24,6 +26,21 @@ export function TransactionFormActions({
   setError,
   hasAccounts,
 }: TransactionFormActionsProps) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const handleDelete = async () => {
+    if (!transaction) return;
+    setIsDeleting(true);
+    const result = await deleteTransaction(transaction.id);
+    if (result?.success) {
+      onClose();
+      return;
+    }
+    setConfirmOpen(false);
+    setError(result?.error || "Failed to delete transaction.");
+    setIsDeleting(false);
+  };
+
   return (
     <div className="flex flex-col-reverse sm:flex-row justify-between gap-2.5 pt-4">
       <div className="flex gap-2.5">
@@ -38,17 +55,7 @@ export function TransactionFormActions({
         {isEditing && (
           <button
             type="button"
-            onClick={async () => {
-              if (!confirm("Are you sure you want to delete this transaction?")) return;
-              setIsDeleting(true);
-              const result = await deleteTransaction(transaction!.id);
-              if (result?.success) {
-                onClose();
-              } else {
-                setError(result?.error || "Failed to delete transaction.");
-                setIsDeleting(false);
-              }
-            }}
+            onClick={() => setConfirmOpen(true)}
             disabled={isDeleting}
             className="rounded-lg border border-red-200/80 bg-red-50 px-4 py-2.5 text-xs font-bold text-red-600 shadow-sm transition-all hover:bg-red-100 hover:text-red-700 disabled:opacity-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
             aria-label="Delete transaction"
@@ -57,6 +64,14 @@ export function TransactionFormActions({
             {isDeleting ? "Deleting..." : "Delete"}
           </button>
         )}
+        <ConfirmDialog
+          open={confirmOpen}
+          title="Delete this transaction?"
+          description="This removes the transaction and adjusts the account balance. This can't be undone."
+          pending={isDeleting}
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmOpen(false)}
+        />
       </div>
       <SubmitButton
         loadingText={isEditing ? "Updating..." : "Recording..."}

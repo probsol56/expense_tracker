@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Landmark, Pencil, Plus, TrendingDown } from "lucide-react";
 import { Badge, Button, Card, Input } from "@/components/ui";
+import { EditDialog } from "@/components/edit-dialog";
 import { createLoan, createLoanPayment, updateLoan } from "@/app/(app)/loans/actions";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { money } from "@/lib/utils";
@@ -144,118 +145,62 @@ export default async function LoansPage({
           </div>
         )}
 
-        {error && (
+        {error && !editingLoan && (
           <div className="mt-8 rounded-2xl border border-rose-200/70 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
             {error}
           </div>
         )}
 
+        {editingLoan && (
+          <EditDialog title="Edit loan" closeHref="/loans" error={error}>
+            <LoanEditForm loan={editingLoan} accountId={editingLoanAccountId} accounts={accountList} currency={workspace.base_currency || "BDT"} />
+          </EditDialog>
+        )}
+
         <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          {editingLoan ? (
-            <Card className="shadow-card">
-              <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Edit loan</h2>
-                <Link href="/loans" className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">Cancel</Link>
-              </div>
-              <div className="p-5">
-                <form action={handleUpdateLoan} className="space-y-4">
-                  <input type="hidden" name="loan_id" value={editingLoan.id} />
+          <Card className="shadow-card">
+            <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Add a loan</h2>
+            </div>
+            <div className="p-5">
+              <form action={handleCreateLoan} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Loan name</label>
+                  <Input name="name" required className="h-11" placeholder="e.g. Family support, Business loan" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Lender</label>
+                  <Input name="lender" required className="h-11" placeholder="e.g. X Person, Bank, Friend" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Loan name</label>
-                    <Input name="name" required defaultValue={editingLoan.name} className="h-11" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Lender</label>
-                    <Input name="lender" required defaultValue={editingLoan.lender} className="h-11" />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount</label>
-                      <Input name="principal_amount" type="number" min="0.01" step="0.01" required defaultValue={editingLoan.principal_amount} className="h-11" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date received</label>
-                      <Input name="date_started" type="date" defaultValue={editingLoan.date_started} className="h-11" />
-                    </div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount</label>
+                    <Input name="principal_amount" type="number" min="0.01" step="0.01" required className="h-11" placeholder="0.00" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deposit into</label>
-                    <select
-                      name="account_id"
-                      required={Boolean(editingLoan.transaction_id)}
-                      disabled={!accountList.length}
-                      defaultValue={editingLoanAccountId}
-                      className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                    >
-                      <option value="">Choose an account</option>
-                      {accountList.map((account) => (
-                        <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), workspace.base_currency || "BDT")}</option>
-                      ))}
-                    </select>
-                    <p className="text-[11px] text-slate-400">
-                      {editingLoan.transaction_id
-                        ? "Moving this to a different account shifts the disbursement there and recalculates both balances."
-                        : "This loan predates account tracking. Choose an account to post the disbursement now and start tracking its balance impact."}
-                    </p>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date received</label>
+                    <Input name="date_started" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className="h-11" />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</label>
-                    <textarea name="notes" rows={3} defaultValue={editingLoan.notes ?? ""} className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus-visible:border-teal-500 focus-visible:ring-4 focus-visible:ring-teal-500/10 dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-100 dark:placeholder:text-slate-500" placeholder="Optional details about this loan" />
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Changing the amount adjusts the remaining balance by the difference — repayments already made aren&apos;t affected.
-                  </p>
-                  <Button type="submit" className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white">
-                    Save changes
-                  </Button>
-                </form>
-              </div>
-            </Card>
-          ) : (
-            <Card className="shadow-card">
-              <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Add a loan</h2>
-              </div>
-              <div className="p-5">
-                <form action={handleCreateLoan} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Loan name</label>
-                    <Input name="name" required className="h-11" placeholder="e.g. Family support, Business loan" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Lender</label>
-                    <Input name="lender" required className="h-11" placeholder="e.g. X Person, Bank, Friend" />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount</label>
-                      <Input name="principal_amount" type="number" min="0.01" step="0.01" required className="h-11" placeholder="0.00" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date received</label>
-                      <Input name="date_started" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className="h-11" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deposit into</label>
-                    <select name="account_id" required disabled={!accountList.length} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                      <option value="">Choose an account</option>
-                      {accountList.map((account) => (
-                        <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), workspace.base_currency || "BDT")}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</label>
-                    <textarea name="notes" rows={3} className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus-visible:border-teal-500 focus-visible:ring-4 focus-visible:ring-teal-500/10 dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-100 dark:placeholder:text-slate-500" placeholder="Optional details about this loan" />
-                  </div>
-                  <Button type="submit" disabled={!accountList.length} className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white">
-                    <Plus size={15} className="mr-2 inline" /> Add loan
-                  </Button>
-                </form>
-              </div>
-            </Card>
-          )}
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deposit into</label>
+                  <select name="account_id" required disabled={!accountList.length} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                    <option value="">Choose an account</option>
+                    {accountList.map((account) => (
+                      <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), workspace.base_currency || "BDT")}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</label>
+                  <textarea name="notes" rows={3} className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus-visible:border-teal-500 focus-visible:ring-4 focus-visible:ring-teal-500/10 dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-100 dark:placeholder:text-slate-500" placeholder="Optional details about this loan" />
+                </div>
+                <Button type="submit" disabled={!accountList.length} className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white">
+                  <Plus size={15} className="mr-2 inline" /> Add loan
+                </Button>
+              </form>
+            </div>
+          </Card>
 
           <Card className="shadow-card">
             <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
@@ -394,5 +339,71 @@ export default async function LoansPage({
           </Card>
         </div>
     </div>
+  );
+}
+
+function LoanEditForm({
+  loan,
+  accountId,
+  accounts,
+  currency,
+}: {
+  loan: Loan;
+  accountId: string;
+  accounts: Account[];
+  currency: string;
+}) {
+  return (
+      <form action={handleUpdateLoan} className="space-y-4">
+        <input type="hidden" name="loan_id" value={loan.id} />
+        <div className="space-y-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Loan name</label>
+          <Input name="name" required defaultValue={loan.name} className="h-11" />
+        </div>
+        <div className="space-y-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Lender</label>
+          <Input name="lender" required defaultValue={loan.lender} className="h-11" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount</label>
+            <Input name="principal_amount" type="number" min="0.01" step="0.01" required defaultValue={loan.principal_amount} className="h-11" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date received</label>
+            <Input name="date_started" type="date" defaultValue={loan.date_started} className="h-11" />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deposit into</label>
+          <select
+            name="account_id"
+            required={Boolean(loan.transaction_id)}
+            disabled={!accounts.length}
+            defaultValue={accountId}
+            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+          >
+            <option value="">Choose an account</option>
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), currency)}</option>
+            ))}
+          </select>
+          <p className="text-[11px] text-slate-400">
+            {loan.transaction_id
+              ? "Moving this to a different account shifts the disbursement there and recalculates both balances."
+              : "This loan predates account tracking. Choose an account to post the disbursement now and start tracking its balance impact."}
+          </p>
+        </div>
+        <div className="space-y-1.5">
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</label>
+          <textarea name="notes" rows={3} defaultValue={loan.notes ?? ""} className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus-visible:border-teal-500 focus-visible:ring-4 focus-visible:ring-teal-500/10 dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-100 dark:placeholder:text-slate-500" placeholder="Optional details about this loan" />
+        </div>
+        <p className="text-xs text-slate-400">
+          Changing the amount adjusts the remaining balance by the difference — repayments already made aren&apos;t affected.
+        </p>
+        <Button type="submit" className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white">
+          Save changes
+        </Button>
+      </form>
   );
 }

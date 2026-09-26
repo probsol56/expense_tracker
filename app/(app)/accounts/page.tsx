@@ -3,7 +3,7 @@ import { Landmark, Pencil, Plus, Repeat } from "lucide-react";
 import Link from "next/link";
 import { Badge, Card, Input, SubmitButton } from "@/components/ui";
 import { DeleteTransferForm } from "@/components/delete-transfer-form";
-import { TransferEditDialog } from "@/components/transfer-edit-dialog";
+import { EditDialog } from "@/components/edit-dialog";
 import { money } from "@/lib/utils";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { createAccount, createTransfer, deleteTransfer, updateTransfer } from "@/app/(app)/accounts/actions";
@@ -189,9 +189,9 @@ function AccountsContent({
         </Card>
 
         {editingTransfer && canTransfer && (
-          <TransferEditDialog error={error}>
+          <EditDialog title="Edit transfer" closeHref="/accounts" error={error}>
             <TransferForm accounts={accounts} currency={currency} transfer={editingTransfer} />
-          </TransferEditDialog>
+          </EditDialog>
         )}
 
         {transfers.length > 0 && (

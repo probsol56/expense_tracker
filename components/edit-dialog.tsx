@@ -7,10 +7,20 @@ import { X } from "lucide-react";
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export function TransferEditDialog({ error, children }: { error?: string; children: ReactNode }) {
+export function EditDialog({
+  title,
+  closeHref,
+  error,
+  children,
+}: {
+  title: string;
+  closeHref: string;
+  error?: string;
+  children: ReactNode;
+}) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const close = useCallback(() => router.push("/accounts", { scroll: false }), [router]);
+  const close = useCallback(() => router.push(closeHref, { scroll: false }), [router, closeHref]);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
@@ -54,15 +64,15 @@ export function TransferEditDialog({ error, children }: { error?: string; childr
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="edit-transfer-title"
+        aria-labelledby="edit-dialog-title"
         tabIndex={-1}
         className="relative z-modal max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-b-none rounded-t-3xl border border-slate-200/80 bg-white p-6 shadow-2xl animate-in slide-in-from-bottom duration-200 focus:outline-none dark:border-slate-700 dark:bg-ink-900 dark:shadow-none sm:rounded-2xl sm:p-7 sm:zoom-in-95"
       >
         <div className="mb-6 flex items-center justify-between">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">Edit Entry</span>
-            <h2 id="edit-transfer-title" className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              Edit transfer
+            <h2 id="edit-dialog-title" className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              {title}
             </h2>
           </div>
           <button

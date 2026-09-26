@@ -1,4 +1,4 @@
-import { ArrowUpRight, CreditCard, Landmark, Plus, Sparkles, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, CreditCard, Landmark, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { Badge, Button, Card } from "@/components/ui";
 import { money } from "@/lib/utils";

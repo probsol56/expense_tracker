@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight } from "lucide-react";
-import Link from "next/link";
-import { Button, Card, Input, LoadingOverlay } from "@/components/ui";
+import { Card, Input, LoadingOverlay } from "@/components/ui";
 import { Search } from "lucide-react";
 import { TransactionListContent } from "@/components/transaction-list-content";
 import { TransactionListFilters } from "@/components/transaction-list-filters";

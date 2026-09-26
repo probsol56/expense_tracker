@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, FileSpreadsheet, HelpCircle, Upload, ShieldCheck } from "lucide-react";
+import { FileSpreadsheet, Upload } from "lucide-react";
 import { importBankCsv } from "./actions";
-import { Button, Card, Input, SubmitButton } from "@/components/ui";
+import { Card, Input, SubmitButton } from "@/components/ui";
 
 export default function ImportPage() {
   const [message, setMessage] = useState("");

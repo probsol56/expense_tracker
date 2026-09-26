@@ -87,10 +87,11 @@ export async function fetchTransactionsPage(
     buildQuery().range(...pageRange(page, pageSize)),
   ]);
 
-  let { data, count } = first;
+  const { count } = first;
+  let { data } = first;
   let totalCount = count ?? 0;
   let totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  let safePage = Math.min(Math.max(1, page), totalPages);
+  const safePage = Math.min(Math.max(1, page), totalPages);
 
   // The requested page fell past the end of the filtered result set (e.g. a
   // filter change shrank it, or the URL was edited by hand) — refetch once

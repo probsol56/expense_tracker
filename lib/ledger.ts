@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+const UNIQUE_VIOLATION = "23505";
+
 /**
  * Shared by every server action that writes to the ledger (transactions,
  * loans, loan payments) so workspace resolution and category/merchant
@@ -59,6 +61,18 @@ export async function resolveCategoryId(
     .select("id")
     .single();
 
+  if (insertError?.code === UNIQUE_VIOLATION) {
+    // A concurrent request created it between our select and insert.
+    const { data: raced, error: reselectError } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .eq("type", type)
+      .eq("name", normalized)
+      .single();
+    if (reselectError) throw reselectError;
+    return raced.id;
+  }
   if (insertError) throw insertError;
   return created.id;
 }
@@ -87,6 +101,17 @@ export async function resolveMerchantId(
     .select("id")
     .single();
 
+  if (insertError?.code === UNIQUE_VIOLATION) {
+    // A concurrent request created it between our select and insert.
+    const { data: raced, error: reselectError } = await supabase
+      .from("merchants")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .eq("name", normalized)
+      .single();
+    if (reselectError) throw reselectError;
+    return raced.id;
+  }
   if (insertError) throw insertError;
   return created.id;
 }

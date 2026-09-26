@@ -1,3 +1,4 @@
+import { EditDialog } from "@/components/edit-dialog";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarOff, Pause, Pencil, Play, Plus, Repeat, Trash2 } from "lucide-react";
@@ -190,31 +191,37 @@ export default async function RecurringPage({
         </div>
       )}
 
-      {error && (
+      {error && !editingRecurring && (
         <div className="mt-8 rounded-2xl border border-rose-200/70 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
           {error}
         </div>
       )}
 
+      {editingRecurring && (
+        <EditDialog title="Edit schedule" closeHref="/recurring" error={error} wide>
+          <RecurringTransactionForm
+            action={handleUpdate}
+            accounts={accountList}
+            customCategories={customCategories}
+            customMerchants={customMerchants}
+            currency={workspace.base_currency || "BDT"}
+            recurring={editingRecurring}
+          />
+        </EditDialog>
+      )}
+
       <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <Card className="shadow-card">
-          <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-              {editingRecurring ? "Edit schedule" : "Add a schedule"}
-            </h2>
-            {editingRecurring && (
-              <Link href="/recurring" className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">Cancel</Link>
-            )}
+          <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Add a schedule</h2>
           </div>
           <div className="p-5">
             <RecurringTransactionForm
-              key={editingRecurring?.id ?? "create"}
-              action={editingRecurring ? handleUpdate : handleCreate}
+              action={handleCreate}
               accounts={accountList}
               customCategories={customCategories}
               customMerchants={customMerchants}
               currency={workspace.base_currency || "BDT"}
-              recurring={editingRecurring}
             />
           </div>
         </Card>

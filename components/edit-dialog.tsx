@@ -11,11 +11,13 @@ export function EditDialog({
   title,
   closeHref,
   error,
+  wide = false,
   children,
 }: {
   title: string;
   closeHref: string;
   error?: string;
+  wide?: boolean;
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -66,7 +68,7 @@ export function EditDialog({
         aria-modal="true"
         aria-labelledby="edit-dialog-title"
         tabIndex={-1}
-        className="relative z-modal max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-b-none rounded-t-3xl border border-slate-200/80 bg-white p-6 shadow-2xl animate-in slide-in-from-bottom duration-200 focus:outline-none dark:border-slate-700 dark:bg-ink-900 dark:shadow-none sm:rounded-2xl sm:p-7 sm:zoom-in-95"
+        className={`relative z-modal max-h-[90vh] w-full ${wide ? "max-w-2xl" : "max-w-lg"} overflow-y-auto rounded-b-none rounded-t-3xl border border-slate-200/80 bg-white p-6 shadow-2xl animate-in slide-in-from-bottom duration-200 focus:outline-none dark:border-slate-700 dark:bg-ink-900 dark:shadow-none sm:rounded-2xl sm:p-7 sm:zoom-in-95`}
       >
         <div className="mb-6 flex items-center justify-between">
           <div>

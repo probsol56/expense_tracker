@@ -155,7 +155,7 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
   }, [description]);
 
   return (
-    <form className="space-y-4" action={async (fd) => { const r = await (isEditing ? updateTransaction(transaction.id, fd) : createTransaction(fd)); r?.success ? onClose() : setError(r?.error || "Failed to save transaction."); }}>
+    <form className="space-y-4" action={async (fd) => { const r = await (isEditing ? updateTransaction(transaction.id, fd) : createTransaction(fd)); if (r?.success) onClose(); else setError(r?.error || "Failed to save transaction."); }}>
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="items_json" value={JSON.stringify(items)} />
       <TransactionFormFields

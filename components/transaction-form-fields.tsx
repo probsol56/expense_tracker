@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
-import { ArrowDownRight, ArrowUpRight, Landmark, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
 import { TransactionTypeToggle } from "@/components/transaction-type-toggle";
 import type { CategoryType } from "@/lib/category-options";

@@ -7,7 +7,7 @@ import { TransactionListContent } from "@/components/transaction-list-content";
 import { TransactionListFilters } from "@/components/transaction-list-filters";
 import { AddTransactionModal } from "@/components/add-transaction-modal";
 import { PaginationBar } from "@/components/pagination-bar";
-import type { ActivityType } from "@/components/dashboard";
+import type { ActivityType } from "@/lib/dashboard";
 import type { Account, Loan, Transaction } from "@/lib/types";
 import { isLoanCategory, isTransferCategory } from "@/lib/utils";
 

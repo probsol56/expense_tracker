@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, clampPageSize, getMonthRange, parseActivityType, toSearchPattern } from "@/lib/dashboard";
+import { getMonthRange, parseActivityType, toSearchPattern } from "@/lib/dashboard";
 
 describe("getMonthRange", () => {
   it("spans the first of the month to the first of the next", () => {
@@ -8,22 +8,6 @@ describe("getMonthRange", () => {
 
   it("rolls December into January of the next year", () => {
     expect(getMonthRange(new Date("2026-12-31T23:59:59Z"))).toEqual({ from: "2026-12-01", to: "2027-01-01" });
-  });
-});
-
-describe("clampPageSize", () => {
-  it("falls back to the default for invalid values", () => {
-    expect(clampPageSize(Number.NaN)).toBe(DEFAULT_PAGE_SIZE);
-    expect(clampPageSize(0)).toBe(DEFAULT_PAGE_SIZE);
-    expect(clampPageSize(-5)).toBe(DEFAULT_PAGE_SIZE);
-  });
-
-  it("caps oversized requests", () => {
-    expect(clampPageSize(100000)).toBe(MAX_PAGE_SIZE);
-  });
-
-  it("keeps valid sizes", () => {
-    expect(clampPageSize(25)).toBe(25);
   });
 });
 

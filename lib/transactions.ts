@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { pageRange } from "@/lib/pagination";
 import type { Transaction } from "@/lib/types";
 
 export type TransactionRow = {
@@ -111,9 +112,4 @@ export async function fetchTransactionsPage(
     totalCount,
     totalRows: totalRows ?? 0,
   };
-}
-
-function pageRange(page: number, pageSize: number): [number, number] {
-  const start = (Math.max(1, page) - 1) * pageSize;
-  return [start, start + pageSize - 1];
 }

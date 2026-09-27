@@ -2,15 +2,14 @@ import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { getSearchParam } from "@/lib/utils";
 import {
-  DEFAULT_PAGE_SIZE,
   EMPTY_DASHBOARD_SUMMARY,
   MAX_DASHBOARD_ACCOUNTS,
   MAX_DASHBOARD_LOANS,
-  clampPageSize,
   fetchActivityPage,
   fetchDashboardSummary,
   parseActivityType,
 } from "@/lib/dashboard";
+import { DEFAULT_PAGE_SIZE, clampPageSize, parsePage } from "@/lib/pagination";
 import type { Account, Loan } from "@/lib/types";
 
 export async function Dashboard({
@@ -20,7 +19,7 @@ export async function Dashboard({
 }) {
   const { user, workspace, profile, supabase } = await getCurrentWorkspaceAndProfile();
 
-  const page = Math.max(1, Number(getSearchParam(searchParams, "page") || 1));
+  const page = parsePage(getSearchParam(searchParams, "page"));
   const pageSize = clampPageSize(Number(getSearchParam(searchParams, "pageSize") || DEFAULT_PAGE_SIZE));
   const activityType = parseActivityType(getSearchParam(searchParams, "type") || "all");
   const query = getSearchParam(searchParams, "q");

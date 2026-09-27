@@ -12,6 +12,10 @@ import {
   setRecurringTransactionActive,
   updateRecurringTransaction,
 } from "@/app/(app)/recurring/actions";
+import { UrlPaginationBar } from "@/components/url-pagination-bar";
+import { fetchRecurringSummary } from "@/lib/list-summaries";
+import { LIST_PAGE_SIZE, PICKER_LIMITS, fetchPage, pageInfo, parsePage } from "@/lib/pagination";
+import { parseRecordId } from "@/lib/validations";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { money } from "@/lib/utils";
 import type { Account, Holiday, RecurringTransaction } from "@/lib/types";
@@ -26,11 +30,16 @@ const FREQUENCY_LABEL: Record<RecurringTransaction["frequency"], (r: RecurringTr
   monthly: (r) => `Monthly · day ${r.day_of_month}`,
 };
 
-const OCCURRENCES_PER_MONTH: Record<RecurringTransaction["frequency"], (r: RecurringTransaction) => number> = {
-  daily: () => 30,
-  weekly: (r) => (r.weekdays?.length ?? 0) * 4.345,
-  monthly: () => 1,
-};
+const RECURRING_SELECT =
+  "id, workspace_id, user_id, account_id, category_id, merchant_id, type, amount, description, frequency, weekdays, day_of_month, skip_holidays, start_date, end_date, is_active, last_generated_date, created_at, merchant:merchants(name), category:categories(name)";
+
+function toRecurring(row: Record<string, unknown>): RecurringTransaction {
+  return {
+    ...row,
+    merchant: (row.merchant as { name?: string } | null)?.name ?? "",
+    category: (row.category as { name?: string } | null)?.name ?? "",
+  } as RecurringTransaction;
+}
 
 async function handleCreate(formData: FormData) {
   "use server";
@@ -81,9 +90,9 @@ async function handleDeleteHoliday(formData: FormData) {
 export default async function RecurringPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; error?: string }>;
+  searchParams: Promise<{ edit?: string; error?: string; page?: string; holidayPage?: string }>;
 }) {
-  const { edit: editingId, error } = await searchParams;
+  const { edit, error, page, holidayPage } = await searchParams;
   const { user, workspace, supabase } = await getCurrentWorkspaceAndProfile();
 
   if (!user || !supabase || !workspace) {
@@ -100,32 +109,58 @@ export default async function RecurringPage({
     );
   }
 
-  const [{ data: accounts }, { data: categories }, { data: merchants }, { data: recurring }, { data: holidays }] =
-    await Promise.all([
-      supabase
-        .from("accounts")
-        .select("id, name, account_type, balance, starting_balance, institution, last_synced_at")
-        .eq("workspace_id", workspace.id)
-        .order("created_at", { ascending: false }),
-      supabase.from("categories").select("name, type").eq("workspace_id", workspace.id),
-      supabase.from("merchants").select("name").eq("workspace_id", workspace.id),
-      supabase
-        .from("recurring_transactions")
-        .select(
-          "id, workspace_id, user_id, account_id, category_id, merchant_id, type, amount, description, frequency, weekdays, day_of_month, skip_holidays, start_date, end_date, is_active, last_generated_date, created_at, merchant:merchants(name), category:categories(name)"
-        )
-        .eq("workspace_id", workspace.id)
-        .order("created_at", { ascending: false }),
-      supabase.from("holidays").select("id, workspace_id, date, name").eq("workspace_id", workspace.id).order("date", { ascending: true }),
-    ]);
+  const editingId = parseRecordId(edit);
+  const [
+    summary,
+    { data: accounts, error: accountsError },
+    { data: categories, error: categoriesError },
+    { data: merchants, error: merchantsError },
+    recurring,
+    holidays,
+    editing,
+  ] = await Promise.all([
+    fetchRecurringSummary(supabase, workspace.id),
+    supabase
+      .from("accounts")
+      .select("id, name, account_type, balance, starting_balance, institution, last_synced_at")
+      .eq("workspace_id", workspace.id)
+      .order("created_at", { ascending: false })
+      .limit(PICKER_LIMITS.accounts),
+    supabase.from("categories").select("name, type").eq("workspace_id", workspace.id).order("name").limit(PICKER_LIMITS.categories),
+    supabase.from("merchants").select("name").eq("workspace_id", workspace.id).order("name").limit(PICKER_LIMITS.merchants),
+    fetchPage<Record<string, unknown>>(
+      () =>
+        supabase
+          .from("recurring_transactions")
+          .select(RECURRING_SELECT, { count: "exact" })
+          .eq("workspace_id", workspace.id)
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false }),
+      parsePage(page ?? ""),
+      LIST_PAGE_SIZE,
+    ),
+    fetchPage<Holiday>(
+      () =>
+        supabase
+          .from("holidays")
+          .select("id, workspace_id, date, name", { count: "exact" })
+          .eq("workspace_id", workspace.id)
+          .order("date", { ascending: true })
+          .order("id", { ascending: true }),
+      parsePage(holidayPage ?? ""),
+      LIST_PAGE_SIZE,
+    ),
+    editingId
+      ? supabase.from("recurring_transactions").select(RECURRING_SELECT).eq("workspace_id", workspace.id).eq("id", editingId).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+  if (accountsError) throw accountsError;
+  if (categoriesError) throw categoriesError;
+  if (merchantsError) throw merchantsError;
+  if (editing.error) throw editing.error;
 
   const accountList = (accounts ?? []) as Account[];
-  const holidayList = (holidays ?? []) as Holiday[];
-  const recurringList = ((recurring ?? []) as Array<Record<string, unknown>>).map((row) => ({
-    ...row,
-    merchant: (row.merchant as { name?: string } | null)?.name ?? "",
-    category: (row.category as { name?: string } | null)?.name ?? "",
-  })) as RecurringTransaction[];
+  const recurringList = recurring.rows.map(toRecurring);
 
   const customCategories: Record<CategoryType, string[]> = { expense: [], income: [], loan: [] };
   for (const c of (categories ?? []) as Array<{ name: string; type: CategoryType }>) {
@@ -133,14 +168,7 @@ export default async function RecurringPage({
   }
   const customMerchants = ((merchants ?? []) as Array<{ name: string }>).map((m) => m.name);
 
-  const editingRecurring = editingId ? recurringList.find((r) => r.id === editingId) : undefined;
-  const activeCount = recurringList.filter((r) => r.is_active).length;
-  const estimatedMonthlyExpense = recurringList
-    .filter((r) => r.is_active && r.type === "expense")
-    .reduce((sum, r) => sum + r.amount * OCCURRENCES_PER_MONTH[r.frequency](r), 0);
-  const estimatedMonthlyIncome = recurringList
-    .filter((r) => r.is_active && r.type === "income")
-    .reduce((sum, r) => sum + r.amount * OCCURRENCES_PER_MONTH[r.frequency](r), 0);
+  const editingRecurring = editing.data ? toRecurring(editing.data) : undefined;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -164,14 +192,14 @@ export default async function RecurringPage({
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Active schedules</span>
             <Repeat size={16} className="text-teal-600" />
           </div>
-          <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{activeCount}</div>
+          <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{summary.active_count}</div>
         </Card>
         <Card className="p-5 shadow-card">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Est. monthly expense</span>
           </div>
           <div className="mt-3 text-2xl font-extrabold tracking-tight text-coral-600 dark:text-rose-400">
-            {money(estimatedMonthlyExpense, workspace.base_currency || "BDT")}
+            {money(summary.monthly_expense, workspace.base_currency || "BDT")}
           </div>
         </Card>
         <Card className="p-5 shadow-card">
@@ -179,7 +207,7 @@ export default async function RecurringPage({
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Est. monthly income</span>
           </div>
           <div className="mt-3 text-2xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
-            {money(estimatedMonthlyIncome, workspace.base_currency || "BDT")}
+            {money(summary.monthly_income, workspace.base_currency || "BDT")}
           </div>
         </Card>
       </div>
@@ -247,8 +275,8 @@ export default async function RecurringPage({
             </form>
 
             <div className="mt-4 space-y-2">
-              {holidayList.length ? (
-                holidayList.map((holiday) => (
+              {holidays.rows.length ? (
+                holidays.rows.map((holiday) => (
                   <div key={holiday.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900/40">
                     <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
                       <CalendarOff size={14} className="text-slate-400" />
@@ -268,6 +296,7 @@ export default async function RecurringPage({
                 <p className="text-sm text-slate-500 dark:text-slate-400">No holidays added yet.</p>
               )}
             </div>
+            <UrlPaginationBar pagination={pageInfo(holidays)} pageParam="holidayPage" />
           </div>
         </Card>
       </div>
@@ -330,6 +359,9 @@ export default async function RecurringPage({
             ) : (
               <div className="p-6 text-sm text-slate-500 dark:text-slate-400">No recurring transactions yet. Add your first schedule above.</div>
             )}
+          </div>
+          <div className="border-t border-slate-100 px-5 pb-4 dark:border-slate-800">
+            <UrlPaginationBar pagination={pageInfo(recurring)} />
           </div>
         </Card>
       </div>

@@ -5,6 +5,7 @@ import { transactionSchema } from "@/lib/validations";
 import { createClient } from "@/lib/supabase/server";
 import { getUserWorkspaceId, isLoanLedgerTransaction, isTransferLedgerTransaction } from "@/lib/ledger";
 import { toActionError } from "@/lib/errors";
+import { PICKER_LIMITS } from "@/lib/pagination";
 import type { CategoryType } from "@/lib/category-options";
 import type { TransactionItem } from "@/lib/types";
 
@@ -170,8 +171,8 @@ export async function getWorkspaceSuggestions(): Promise<{
   if (!workspace) return empty;
 
   const [{ data: categoryRows }, { data: merchantRows }] = await Promise.all([
-    supabase.from("categories").select("name, type").eq("workspace_id", workspace.id).order("name", { ascending: true }),
-    supabase.from("merchants").select("name").eq("workspace_id", workspace.id).order("name", { ascending: true }),
+    supabase.from("categories").select("name, type").eq("workspace_id", workspace.id).order("name", { ascending: true }).limit(PICKER_LIMITS.categories),
+    supabase.from("merchants").select("name").eq("workspace_id", workspace.id).order("name", { ascending: true }).limit(PICKER_LIMITS.merchants),
   ]);
 
   const categories: Record<CategoryType, string[]> = { expense: [], income: [], loan: [] };

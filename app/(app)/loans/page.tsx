@@ -4,9 +4,37 @@ import { Landmark, Pencil, Plus, TrendingDown } from "lucide-react";
 import { Badge, Button, Card, Input } from "@/components/ui";
 import { EditDialog } from "@/components/edit-dialog";
 import { createLoan, createLoanPayment, updateLoan } from "@/app/(app)/loans/actions";
+import { UrlPaginationBar } from "@/components/url-pagination-bar";
+import { fetchLoanSummary } from "@/lib/list-summaries";
+import { LIST_PAGE_SIZE, PICKER_LIMITS, RECENT_REPAYMENTS_PER_LOAN, fetchPage, pageInfo, parsePage } from "@/lib/pagination";
+import { parseRecordId } from "@/lib/validations";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { money } from "@/lib/utils";
 import type { Account, Loan, LoanPayment } from "@/lib/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+const LOAN_SELECT =
+  "id, workspace_id, user_id, name, lender, principal_amount, outstanding_balance, status, date_started, notes, created_at, transaction_id";
+
+type LoanOverview = Loan & { total_paid: number };
+type RecentPayment = Pick<LoanPayment, "id" | "amount" | "date" | "notes">;
+
+/** The latest few repayments for each loan on the current page, in one query. */
+async function fetchRecentPayments(
+  supabase: SupabaseClient,
+  loanIds: string[],
+): Promise<Map<string, RecentPayment[]>> {
+  if (!loanIds.length) return new Map();
+  const { data, error } = await supabase
+    .from("loans")
+    .select("id, loan_payments(id, amount, date, notes)")
+    .in("id", loanIds)
+    .order("date", { referencedTable: "loan_payments", ascending: false })
+    .order("created_at", { referencedTable: "loan_payments", ascending: false })
+    .limit(RECENT_REPAYMENTS_PER_LOAN, { referencedTable: "loan_payments" });
+  if (error) throw error;
+  return new Map((data ?? []).map((loan): [string, RecentPayment[]] => [loan.id, loan.loan_payments]));
+}
 
 const LOAN_STATUS_BADGE: Record<Loan["status"], { variant: "amber" | "emerald" | "secondary"; label: string }> = {
   active: { variant: "amber", label: "Active" },
@@ -41,9 +69,9 @@ async function handleUpdateLoan(formData: FormData) {
 export default async function LoansPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; error?: string }>;
+  searchParams: Promise<{ edit?: string; error?: string; page?: string }>;
 }) {
-  const { edit: editingLoanId, error } = await searchParams;
+  const { edit, error, page } = await searchParams;
   const { user, workspace, supabase } = await getCurrentWorkspaceAndProfile();
 
   if (!user || !supabase || !workspace) {
@@ -60,31 +88,46 @@ export default async function LoansPage({
     );
   }
 
-  const [{ data: loans }, { data: payments }, { data: accounts }] = await Promise.all([
-    supabase
-      .from("loans")
-      .select("id, name, lender, principal_amount, outstanding_balance, status, date_started, notes, created_at, transaction_id")
-      .eq("workspace_id", workspace.id)
-      .order("date_started", { ascending: false }),
-    supabase
-      .from("loan_payments")
-      .select("id, loan_id, amount, date, notes, created_at")
-      .eq("workspace_id", workspace.id)
-      .order("date", { ascending: false }),
-    supabase
-      .from("accounts")
-      .select("id, name, account_type, balance, starting_balance, institution, last_synced_at")
-      .eq("workspace_id", workspace.id)
-      .order("created_at", { ascending: false }),
-  ]);
+  const editingLoanId = parseRecordId(edit);
+  const [summary, loans, { data: repayableLoans, error: repayableError }, { data: accounts, error: accountsError }, editing] =
+    await Promise.all([
+      fetchLoanSummary(supabase, workspace.id),
+      fetchPage<LoanOverview>(
+        () =>
+          supabase
+            .from("loan_overview")
+            .select(`${LOAN_SELECT}, total_paid`, { count: "exact" })
+            .eq("workspace_id", workspace.id)
+            .order("date_started", { ascending: false })
+            .order("id", { ascending: false }),
+        parsePage(page ?? ""),
+        LIST_PAGE_SIZE,
+      ),
+      // Only loans with a balance left can take a repayment.
+      supabase
+        .from("loans")
+        .select("id, name, outstanding_balance")
+        .eq("workspace_id", workspace.id)
+        .gt("outstanding_balance", 0)
+        .order("date_started", { ascending: false })
+        .limit(PICKER_LIMITS.loans),
+      supabase
+        .from("accounts")
+        .select("id, name, account_type, balance, starting_balance, institution, last_synced_at")
+        .eq("workspace_id", workspace.id)
+        .order("created_at", { ascending: false })
+        .limit(PICKER_LIMITS.accounts),
+      editingLoanId
+        ? supabase.from("loans").select(LOAN_SELECT).eq("workspace_id", workspace.id).eq("id", editingLoanId).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+  if (repayableError) throw repayableError;
+  if (accountsError) throw accountsError;
+  if (editing.error) throw editing.error;
 
-  const loanList = (loans ?? []) as Loan[];
-  const paymentList = (payments ?? []) as LoanPayment[];
+  const recentPayments = await fetchRecentPayments(supabase, loans.rows.map((loan) => loan.id));
   const accountList = (accounts ?? []) as Account[];
-  const totalBorrowed = loanList.reduce((sum, loan) => sum + Number(loan.principal_amount), 0);
-  const totalRepaid = paymentList.reduce((sum, payment) => sum + Number(payment.amount), 0);
-  const remainingBalance = loanList.reduce((sum, loan) => sum + Number(loan.outstanding_balance), 0);
-  const editingLoan = editingLoanId ? loanList.find((loan) => loan.id === editingLoanId) : undefined;
+  const editingLoan: Loan | undefined = editing.data ?? undefined;
 
   let editingLoanAccountId = "";
   if (editingLoan?.transaction_id) {
@@ -118,7 +161,7 @@ export default async function LoansPage({
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Borrowed</span>
               <Landmark size={16} className="text-amber-600" />
             </div>
-            <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{money(totalBorrowed, workspace.base_currency || "BDT")}</div>
+            <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{money(summary.total_borrowed, workspace.base_currency || "BDT")}</div>
           </Card>
 
           <Card className="p-5 shadow-card">
@@ -126,7 +169,7 @@ export default async function LoansPage({
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Repaid</span>
               <TrendingDown size={16} className="text-teal-600" />
             </div>
-            <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{money(totalRepaid, workspace.base_currency || "BDT")}</div>
+            <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{money(summary.total_repaid, workspace.base_currency || "BDT")}</div>
           </Card>
 
           <Card className="p-5 shadow-card">
@@ -134,7 +177,7 @@ export default async function LoansPage({
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Remaining</span>
               <Landmark size={16} className="text-coral-600" />
             </div>
-            <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{money(remainingBalance, workspace.base_currency || "BDT")}</div>
+            <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{money(summary.total_outstanding, workspace.base_currency || "BDT")}</div>
           </Card>
         </div>
 
@@ -212,7 +255,7 @@ export default async function LoansPage({
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Select loan</label>
                   <select name="loan_id" required className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
                     <option value="">Choose a loan</option>
-                    {loanList.map((loan) => (
+                    {(repayableLoans ?? []).map((loan) => (
                       <option key={loan.id} value={loan.id}>{loan.name} — {money(Number(loan.outstanding_balance), workspace.base_currency || "BDT")} remaining</option>
                     ))}
                   </select>
@@ -254,10 +297,10 @@ export default async function LoansPage({
               <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Loan list</h2>
             </div>
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {loanList.length ? (
-                loanList.map((loan) => {
-                  const paymentsForLoan = paymentList.filter((payment) => payment.loan_id === loan.id);
-                  const totalPaid = paymentsForLoan.reduce((sum, payment) => sum + Number(payment.amount), 0);
+              {loans.rows.length ? (
+                loans.rows.map((loan) => {
+                  const paymentsForLoan = recentPayments.get(loan.id) ?? [];
+                  const totalPaid = Number(loan.total_paid);
                   const principal = Number(loan.principal_amount);
                   const paidRatio = principal > 0 ? Math.min(1, totalPaid / principal) : 0;
                   const statusBadge = LOAN_STATUS_BADGE[loan.status] ?? LOAN_STATUS_BADGE.active;
@@ -315,7 +358,7 @@ export default async function LoansPage({
 
                       {paymentsForLoan.length > 0 && (
                         <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-700 dark:bg-slate-900/40">
-                          <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Repayments</div>
+                          <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Recent repayments</div>
                           <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
                             {paymentsForLoan.map((payment) => (
                               <div key={payment.id} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 shadow-sm dark:bg-slate-800/70">
@@ -335,6 +378,9 @@ export default async function LoansPage({
               ) : (
                 <div className="p-6 text-sm text-slate-500 dark:text-slate-400">No loans yet. Add the first loan to start tracking repayments.</div>
               )}
+            </div>
+            <div className="border-t border-slate-100 px-5 pb-4 dark:border-slate-800">
+              <UrlPaginationBar pagination={pageInfo(loans)} />
             </div>
           </Card>
         </div>

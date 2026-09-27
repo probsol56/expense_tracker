@@ -2,13 +2,16 @@ import Link from "next/link";
 import { Building2, CirclePlus } from "lucide-react";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { createMerchant } from "@/app/(app)/merchants/actions";
+import { UrlPaginationBar } from "@/components/url-pagination-bar";
+import { MERCHANT_PAGE_SIZE, fetchPage, pageInfo, parsePage } from "@/lib/pagination";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 
 export default async function MerchantsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string }>;
+  searchParams?: Promise<{ error?: string; page?: string }>;
 }) {
+  const params = await searchParams;
   const { user, workspace, supabase } = await getCurrentWorkspaceAndProfile();
   if (!user || !supabase || !workspace) {
     return (
@@ -24,13 +27,19 @@ export default async function MerchantsPage({
     );
   }
 
-  const { data: merchants } = await supabase
-    .from("merchants")
-    .select("id, name")
-    .eq("workspace_id", workspace.id)
-    .order("name", { ascending: true });
+  const merchants = await fetchPage(
+    () =>
+      supabase
+        .from("merchants")
+        .select("id, name", { count: "exact" })
+        .eq("workspace_id", workspace.id)
+        .order("name", { ascending: true })
+        .order("id", { ascending: true }),
+    parsePage(params?.page ?? ""),
+    MERCHANT_PAGE_SIZE,
+  );
 
-  const error = (await searchParams)?.error;
+  const error = params?.error;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -57,17 +66,20 @@ export default async function MerchantsPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              {merchants && merchants.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {(merchants ?? []).map((merchant) => (
-                    <span
-                      key={merchant.id}
-                      className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                    >
-                      {merchant.name}
-                    </span>
-                  ))}
-                </div>
+              {merchants.rows.length > 0 ? (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    {merchants.rows.map((merchant) => (
+                      <span
+                        key={merchant.id}
+                        className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      >
+                        {merchant.name}
+                      </span>
+                    ))}
+                  </div>
+                  <UrlPaginationBar pagination={pageInfo(merchants)} />
+                </>
               ) : (
                 <span className="text-xs text-slate-500">No merchants added yet.</span>
               )}

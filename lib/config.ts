@@ -20,6 +20,7 @@ function loadConfig() {
     supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     siteUrl: env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+    isProduction: process.env.NODE_ENV === "production",
   });
 }
 

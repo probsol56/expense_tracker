@@ -3,7 +3,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { transactionSchema } from "@/lib/validations";
 import { createClient } from "@/lib/supabase/server";
-import { assertAccountInWorkspace, assertLoanInWorkspace, getUserWorkspaceId, isLoanLedgerTransaction, isTransferLedgerTransaction, resolveCategoryId, resolveMerchantId } from "@/lib/ledger";
+import type { PostgrestError } from "@supabase/supabase-js";
+import { getUserWorkspaceId, isLoanLedgerTransaction, isTransferLedgerTransaction } from "@/lib/ledger";
+
+const RAISE_EXCEPTION = "P0001";
 
 const transactionTypeSchema = z.enum(["expense", "income", "loan"]);
 
@@ -63,40 +66,13 @@ function normalizeFormData(formData: FormData) {
   return { type, items, parsed: transactionSchema.safeParse(normalized) };
 }
 
-function getSignedAmount(type: string, amount: number) {
-  return type === "income" ? Math.abs(amount) : -Math.abs(amount);
+function toTransactionError(error: PostgrestError, fallback: string) {
+  return error.code === RAISE_EXCEPTION ? error.message : fallback;
 }
 
-function getActionErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message;
-  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
-    return error.message;
-  }
-  return fallback;
-}
-
-async function insertTransactionItems(supabase: any, transactionId: string, items: ParsedItemRow[]) {
-  if (!items.length) return;
-
-  const { error } = await supabase.from("transaction_items").insert(
-    items.map((item) => ({
-      transaction_id: transactionId,
-      name: item.name,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      total_price: item.total_price,
-    }))
-  );
-  if (error) throw error;
-}
-
-async function replaceTransactionItems(supabase: any, transactionId: string, items: ParsedItemRow[]) {
-  const { error: deleteError } = await supabase
-    .from("transaction_items")
-    .delete()
-    .eq("transaction_id", transactionId);
-  if (deleteError) throw deleteError;
-  await insertTransactionItems(supabase, transactionId, items);
+function revalidateTransactionPaths() {
+  revalidatePath("/");
+  revalidatePath("/transactions");
 }
 
 export async function createTransaction(formData: FormData) {
@@ -110,37 +86,23 @@ export async function createTransaction(formData: FormData) {
   const workspace = await getUserWorkspaceId(supabase, user.id);
   if (!workspace) return { error: "Create a workspace before adding transactions." };
 
-  try {
-    const { description, merchant, category, loan_id, ...transactionData } = parsed.data;
-    if (!(await assertAccountInWorkspace(supabase, workspace.id, transactionData.account_id))) {
-      return { error: "Select a valid account." };
-    }
-    if (loan_id && !(await assertLoanInWorkspace(supabase, workspace.id, loan_id))) {
-      return { error: "Select a valid loan." };
-    }
-    const [categoryId, merchantId] = await Promise.all([
-      resolveCategoryId(supabase, workspace.id, type, category),
-      resolveMerchantId(supabase, workspace.id, merchant),
-    ]);
+  const { description, merchant, category, loan_id, account_id, amount, date } = parsed.data;
+  const { error } = await supabase.rpc("create_transaction_with_items", {
+    p_workspace_id: workspace.id,
+    p_type: type,
+    p_account_id: account_id,
+    p_loan_id: loan_id || null,
+    p_category: category,
+    p_merchant: merchant,
+    p_amount: amount,
+    p_date: date,
+    p_notes: description ?? "",
+    p_items: items,
+  });
+  if (error) return { error: toTransactionError(error, "Failed to save transaction.") };
 
-    const { data: inserted, error } = await supabase.from("transactions").insert({
-      ...transactionData,
-      category_id: categoryId,
-      merchant_id: merchantId,
-      loan_id: loan_id || null,
-      notes: description?.trim() || null,
-      workspace_id: workspace.id,
-      user_id: user.id,
-      amount: getSignedAmount(type, transactionData.amount),
-    }).select("id").single();
-
-    if (error) return { error: error.message };
-    await insertTransactionItems(supabase, inserted.id, items);
-    revalidatePath("/"); revalidatePath("/transactions");
-    return { success: true };
-  } catch (error) {
-    return { error: getActionErrorMessage(error, "Failed to save transaction.") };
-  }
+  revalidateTransactionPaths();
+  return { success: true };
 }
 
 export async function updateTransaction(transactionId: string, formData: FormData) {
@@ -151,9 +113,6 @@ export async function updateTransaction(transactionId: string, formData: FormDat
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Sign in to update a transaction." };
 
-  const { data: transaction } = await supabase.from("transactions").select("user_id, workspace_id").eq("id", transactionId).maybeSingle();
-  if (!transaction) return { error: "Transaction not found." };
-  if (transaction.user_id !== user.id) return { error: "You don't have permission to update this transaction." };
   if (await isLoanLedgerTransaction(supabase, transactionId)) {
     return { error: "Manage loan disbursements and repayments from the Loans page." };
   }
@@ -161,34 +120,23 @@ export async function updateTransaction(transactionId: string, formData: FormDat
     return { error: "Manage transfers from the Accounts page." };
   }
 
-  try {
-    const { description, merchant, category, loan_id, ...transactionData } = parsed.data;
-    if (!(await assertAccountInWorkspace(supabase, transaction.workspace_id, transactionData.account_id))) {
-      return { error: "Select a valid account." };
-    }
-    if (loan_id && !(await assertLoanInWorkspace(supabase, transaction.workspace_id, loan_id))) {
-      return { error: "Select a valid loan." };
-    }
-    const [categoryId, merchantId] = await Promise.all([
-      resolveCategoryId(supabase, transaction.workspace_id, type, category),
-      resolveMerchantId(supabase, transaction.workspace_id, merchant),
-    ]);
+  const { description, merchant, category, loan_id, account_id, amount, date } = parsed.data;
+  const { error } = await supabase.rpc("update_transaction_with_items", {
+    p_transaction_id: transactionId,
+    p_type: type,
+    p_account_id: account_id,
+    p_loan_id: loan_id || null,
+    p_category: category,
+    p_merchant: merchant,
+    p_amount: amount,
+    p_date: date,
+    p_notes: description ?? "",
+    p_items: items,
+  });
+  if (error) return { error: toTransactionError(error, "Failed to update transaction.") };
 
-    const { error } = await supabase.from("transactions").update({
-      ...transactionData,
-      category_id: categoryId,
-      merchant_id: merchantId,
-      loan_id: loan_id || null,
-      notes: description?.trim() || null,
-      amount: getSignedAmount(type, transactionData.amount),
-    }).eq("id", transactionId);
-    if (error) return { error: error.message };
-    await replaceTransactionItems(supabase, transactionId, items);
-    revalidatePath("/"); revalidatePath("/transactions");
-    return { success: true };
-  } catch (error) {
-    return { error: getActionErrorMessage(error, "Failed to update transaction.") };
-  }
+  revalidateTransactionPaths();
+  return { success: true };
 }
 
 export async function deleteTransaction(transactionId: string) {
@@ -208,6 +156,6 @@ export async function deleteTransaction(transactionId: string) {
 
   const { error } = await supabase.from("transactions").delete().eq("id", transactionId);
   if (error) return { error: error.message };
-  revalidatePath("/"); revalidatePath("/transactions");
+  revalidateTransactionPaths();
   return { success: true };
 }

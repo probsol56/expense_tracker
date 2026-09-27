@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { RefreshOnFocus } from "@/components/refresh-on-focus";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 
 // Every route under this layout is a signed-in user's private data — never let it be indexed.
@@ -19,6 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <AppShell workspace={workspace} profile={profile}>
+      <RefreshOnFocus />
       {children}
     </AppShell>
   );

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { toActionError } from "@/lib/errors";
 
 const categorySchema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -54,7 +55,7 @@ export async function createCategory(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/categories?error=${encodeURIComponent(error.message)}`);
+    redirect(`/categories?error=${encodeURIComponent(toActionError(error, "Failed to add the category.", { "23505": "That category already exists." }))}`);
   }
 
   // No redirect on success: we're already on /categories, and revalidatePath

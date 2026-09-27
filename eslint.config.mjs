@@ -11,9 +11,11 @@ export default tseslint.config(
     rules: {
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs["core-web-vitals"].rules,
-      // Warn until Phase 3 (boundary-validation) removes the existing violations, then flip to "error".
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-non-null-assertion": "warn",
+      // Phase 3 (boundary-validation) removed every existing violation of these two.
+      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-non-null-assertion": "error",
+      // no-floating-promises needs type-aware linting (a `project` parserOption),
+      // not yet set up here — leave it off rather than turn it on toothlessly.
       "no-empty": "warn",
       "@typescript-eslint/no-floating-promises": "off",
     },

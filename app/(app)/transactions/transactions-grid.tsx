@@ -40,14 +40,16 @@ function buildGroups(transactions: Transaction[], mode: GroupByMode) {
 
   for (const t of transactions) {
     const key = getGroupKey(t, mode);
-    if (!map.has(key)) {
+    const group = map.get(key);
+    if (group) {
+      group.push(t);
+    } else {
       order.push(key);
-      map.set(key, []);
+      map.set(key, [t]);
     }
-    map.get(key)!.push(t);
   }
 
-  return order.map((key) => ({ key, items: map.get(key)! }));
+  return order.map((key) => ({ key, items: map.get(key) ?? [] }));
 }
 
 // ── sub-components ─────────────────────────────────────────────────────────

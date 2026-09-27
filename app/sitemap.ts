@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { config } from "@/lib/config";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const siteUrl = config.siteUrl;
 
 // Everything under (app)/* and /onboarding requires a signed-in session and is
 // marked noindex — /login is the only page worth listing for crawlers.

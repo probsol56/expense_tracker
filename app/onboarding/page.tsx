@@ -10,12 +10,19 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login" as any);
+  if (!user) redirect("/login");
+
+  const { error } = await searchParams;
+  const errorMessage = typeof error === "string" ? error : null;
 
   return (
     <main className="relative grid min-h-screen place-items-center bg-sand bg-mesh dark:bg-ink-950 px-4 py-12 sm:p-6 overflow-hidden">
@@ -40,6 +47,11 @@ export default async function OnboardingPage() {
 
         {/* Card */}
         <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-6 sm:p-8 shadow-card backdrop-blur-xl dark:border-slate-700 dark:bg-ink-800/80 dark:shadow-none">
+          {errorMessage && (
+            <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">
+              {errorMessage}
+            </div>
+          )}
           <form action={createWorkspace} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { config } from "@/lib/config";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -8,7 +9,7 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const siteUrl = config.siteUrl;
 const title = "Wallo — Personal Finance, Elevated";
 const description = "A calmer, premium way to track and understand your money.";
 

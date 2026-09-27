@@ -33,18 +33,6 @@ export default function ImportPage() {
           >
             <div className="space-y-1.5">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-                Workspace UUID
-              </label>
-              <Input
-                name="workspace_id"
-                required
-                placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000"
-                className="h-11 font-mono text-xs"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
                 Bank Account UUID
               </label>
               <Input

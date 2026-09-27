@@ -1,10 +1,20 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { config as appConfig } from "@/lib/config";
+
 export async function middleware(request: NextRequest) {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return NextResponse.next();
   const response = NextResponse.next({ request });
-  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, { cookies: { getAll: () => request.cookies.getAll(), setAll: values => values.forEach(({ name, value, options }) => { response.cookies.set(name, value, options); }) } });
+
+  const supabase = createServerClient(appConfig.supabaseUrl, appConfig.supabaseAnonKey, {
+    cookies: {
+      getAll: () => request.cookies.getAll(),
+      setAll: (values) => values.forEach(({ name, value, options }) => response.cookies.set(name, value, options)),
+    },
+  });
+
   await supabase.auth.getUser();
   return response;
 }
+
+// Next.js requires this export to be named exactly `config`.
 export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"] };

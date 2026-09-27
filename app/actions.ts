@@ -3,10 +3,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { transactionSchema } from "@/lib/validations";
 import { createClient } from "@/lib/supabase/server";
-import type { PostgrestError } from "@supabase/supabase-js";
 import { getUserWorkspaceId, isLoanLedgerTransaction, isTransferLedgerTransaction } from "@/lib/ledger";
-
-const RAISE_EXCEPTION = "P0001";
+import { toActionError } from "@/lib/errors";
+import type { CategoryType } from "@/lib/category-options";
+import type { TransactionItem } from "@/lib/types";
 
 const transactionTypeSchema = z.enum(["expense", "income", "loan"]);
 
@@ -66,10 +66,6 @@ function normalizeFormData(formData: FormData) {
   return { type, items, parsed: transactionSchema.safeParse(normalized) };
 }
 
-function toTransactionError(error: PostgrestError, fallback: string) {
-  return error.code === RAISE_EXCEPTION ? error.message : fallback;
-}
-
 function revalidateTransactionPaths() {
   revalidatePath("/");
   revalidatePath("/transactions");
@@ -99,7 +95,7 @@ export async function createTransaction(formData: FormData) {
     p_notes: description ?? "",
     p_items: items,
   });
-  if (error) return { error: toTransactionError(error, "Failed to save transaction.") };
+  if (error) return { error: toActionError(error, "Failed to save transaction.") };
 
   revalidateTransactionPaths();
   return { success: true };
@@ -133,10 +129,91 @@ export async function updateTransaction(transactionId: string, formData: FormDat
     p_notes: description ?? "",
     p_items: items,
   });
-  if (error) return { error: toTransactionError(error, "Failed to update transaction.") };
+  if (error) return { error: toActionError(error, "Failed to update transaction.") };
 
   revalidateTransactionPaths();
   return { success: true };
+}
+
+/** Line items for a transaction being edited — RLS scopes this to the caller's workspace. */
+export async function getTransactionItemsForEdit(transactionId: string): Promise<TransactionItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("transaction_items")
+    .select("id, name, quantity, unit_price, total_price")
+    .eq("transaction_id", transactionId);
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return (data ?? []).map((item) => ({
+    id: item.id,
+    name: item.name,
+    quantity: Number(item.quantity) || 1,
+    unit_price: Number(item.unit_price) || 0,
+    total_price: Number(item.total_price) || 0,
+  }));
+}
+
+/** Category/merchant names already used in the caller's workspace, for the transaction form's suggestions. */
+export async function getWorkspaceSuggestions(): Promise<{
+  categories: Record<CategoryType, string[]>;
+  merchants: string[];
+}> {
+  const empty = { categories: { expense: [], income: [], loan: [] } as Record<CategoryType, string[]>, merchants: [] };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return empty;
+
+  const workspace = await getUserWorkspaceId(supabase, user.id);
+  if (!workspace) return empty;
+
+  const [{ data: categoryRows }, { data: merchantRows }] = await Promise.all([
+    supabase.from("categories").select("name, type").eq("workspace_id", workspace.id).order("name", { ascending: true }),
+    supabase.from("merchants").select("name").eq("workspace_id", workspace.id).order("name", { ascending: true }),
+  ]);
+
+  const categories: Record<CategoryType, string[]> = { expense: [], income: [], loan: [] };
+  for (const row of categoryRows ?? []) {
+    const type: CategoryType = row.type === "income" || row.type === "loan" ? row.type : "expense";
+    categories[type].push(row.name);
+  }
+
+  return { categories, merchants: (merchantRows ?? []).map((row) => row.name).filter(Boolean) };
+}
+
+/** Recent notes matching `query` in the caller's workspace, for the description field's autocomplete. */
+export async function searchTransactionNotes(query: string): Promise<string[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const workspace = await getUserWorkspaceId(supabase, user.id);
+  if (!workspace) return [];
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("notes")
+    .eq("workspace_id", workspace.id)
+    .not("notes", "is", null)
+    .ilike("notes", `%${trimmed.replace(/[%_]/g, " ")}%`)
+    .order("created_at", { ascending: false })
+    .limit(8);
+  if (error) {
+    console.error(error);
+    return [];
+  }
+
+  const suggestions = new Set(
+    (data ?? [])
+      .map((row) => row.notes?.trim())
+      .filter((value): value is string => Boolean(value) && value.toLowerCase() !== trimmed.toLowerCase()),
+  );
+  return [...suggestions].slice(0, 8);
 }
 
 export async function deleteTransaction(transactionId: string) {
@@ -155,7 +232,7 @@ export async function deleteTransaction(transactionId: string) {
   }
 
   const { error } = await supabase.from("transactions").delete().eq("id", transactionId);
-  if (error) return { error: error.message };
+  if (error) return { error: toActionError(error, "Failed to delete the transaction.") };
   revalidateTransactionPaths();
   return { success: true };
 }

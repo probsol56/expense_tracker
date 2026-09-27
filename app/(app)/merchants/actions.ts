@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { toActionError } from "@/lib/errors";
 
 const merchantSchema = z.object({
   name: z.string().trim().min(2).max(80),
@@ -45,7 +46,7 @@ export async function createMerchant(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/merchants?error=${encodeURIComponent(error.message)}`);
+    redirect(`/merchants?error=${encodeURIComponent(toActionError(error, "Failed to add the merchant.", { "23505": "That merchant already exists." }))}`);
   }
 
   // No redirect on success: we're already on /merchants, and revalidatePath

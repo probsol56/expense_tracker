@@ -15,8 +15,8 @@ export const metadata: Metadata = {
  * back to "/" to see it again.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, workspace, profile, supabase } = await getCurrentWorkspaceAndProfile();
-  if (supabase && !user) redirect("/login");
+  const { user, workspace, profile } = await getCurrentWorkspaceAndProfile();
+  if (!user) redirect("/login");
 
   return (
     <AppShell workspace={workspace} profile={profile}>

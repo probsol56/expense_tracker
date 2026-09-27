@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { recurringTransactionSchema, holidaySchema } from "@/lib/validations";
 import { assertAccountInWorkspace, getUserWorkspaceId, resolveCategoryId, resolveMerchantId } from "@/lib/ledger";
+import { toActionError, toCaughtActionError } from "@/lib/errors";
 
 function normalizeFormData(formData: FormData) {
   const rawData = Object.fromEntries(formData);
@@ -20,11 +21,6 @@ function normalizeFormData(formData: FormData) {
   // "true" value is the only reliable signal — there's no separate off-state to read.
   const skipHolidays = formData.get("skip_holidays") === "true";
   return { ...rawData, weekdays: weekdays.length ? weekdays : undefined, skip_holidays: skipHolidays };
-}
-
-function getActionErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error) return error.message;
-  return fallback;
 }
 
 export async function createRecurringTransaction(formData: FormData) {
@@ -66,9 +62,9 @@ export async function createRecurringTransaction(formData: FormData) {
       end_date: rest.end_date || null,
     });
 
-    if (error) return { error: error.message };
+    if (error) return { error: toActionError(error, "Failed to save the recurring transaction.") };
   } catch (error) {
-    return { error: getActionErrorMessage(error, "Failed to save the recurring transaction.") };
+    return { error: toCaughtActionError(error, "Failed to save the recurring transaction.") };
   }
 
   revalidatePath("/recurring");
@@ -120,9 +116,9 @@ export async function updateRecurringTransaction(recurringId: string, formData: 
       })
       .eq("id", recurringId);
 
-    if (error) return { error: error.message };
+    if (error) return { error: toActionError(error, "Failed to update the recurring transaction.") };
   } catch (error) {
-    return { error: getActionErrorMessage(error, "Failed to update the recurring transaction.") };
+    return { error: toCaughtActionError(error, "Failed to update the recurring transaction.") };
   }
 
   revalidatePath("/recurring");
@@ -146,7 +142,7 @@ export async function setRecurringTransactionActive(recurringId: string, isActiv
     .from("recurring_transactions")
     .update({ is_active: isActive })
     .eq("id", recurringId);
-  if (error) return { error: error.message };
+  if (error) return { error: toActionError(error, "Failed to update the recurring transaction.") };
 
   revalidatePath("/recurring");
   return { success: true };
@@ -166,7 +162,7 @@ export async function deleteRecurringTransaction(recurringId: string) {
   if (existing.user_id !== user.id) return { error: "You don't have permission to delete this recurring transaction." };
 
   const { error } = await supabase.from("recurring_transactions").delete().eq("id", recurringId);
-  if (error) return { error: error.message };
+  if (error) return { error: toActionError(error, "Failed to delete the recurring transaction.") };
 
   revalidatePath("/recurring");
   return { success: true };
@@ -189,7 +185,7 @@ export async function createHoliday(formData: FormData) {
     name: parsed.data.name,
   });
   if (error) {
-    return { error: error.code === "23505" ? "A holiday is already set for that date." : error.message };
+    return { error: toActionError(error, "Failed to add the holiday.", { "23505": "A holiday is already set for that date." }) };
   }
 
   revalidatePath("/recurring");
@@ -209,7 +205,7 @@ export async function deleteHoliday(holidayId: string) {
     .delete()
     .eq("id", holidayId)
     .eq("workspace_id", workspace.id);
-  if (error) return { error: error.message };
+  if (error) return { error: toActionError(error, "Failed to delete the holiday.") };
 
   revalidatePath("/recurring");
   return { success: true };

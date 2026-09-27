@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createTransaction, updateTransaction } from "@/app/actions";
-import { createClient } from "@/lib/supabase/client";
+import { createTransaction, getTransactionItemsForEdit, getWorkspaceSuggestions, searchTransactionNotes, updateTransaction } from "@/app/actions";
 import { getCategoryOptions, type CategoryType } from "@/lib/category-options";
 import { TransactionFormFields } from "@/components/transaction-form-fields";
 import { TransactionFormActions } from "@/components/transaction-form-actions";
@@ -48,32 +47,14 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
     if (!transaction?.id) return;
 
     let active = true;
-    (async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("transaction_items")
-        .select("id, name, quantity, unit_price, total_price")
-        .eq("transaction_id", transaction.id);
-
+    getTransactionItemsForEdit(transaction.id).then((loadedItems) => {
       if (!active) return;
-      if (error) {
-        setError(error.message);
-        return;
-      }
-
-      const loadedItems = (data ?? []).map((item: TransactionItem) => ({
-        id: item.id,
-        name: item.name,
-        quantity: Number(item.quantity) || 1,
-        unit_price: Number(item.unit_price) || 0,
-        total_price: Number(item.total_price) || 0,
-      }));
       setItems(loadedItems);
       setShowItemDetails(loadedItems.length > 0);
       if (loadedItems.length === 0) {
         setAmount(String(Math.abs(Number(transaction.amount || 0))));
       }
-    })();
+    });
 
     return () => {
       active = false;
@@ -82,70 +63,25 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
 
   useEffect(() => {
     let active = true;
-    (async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !active) return;
-      const workspace = await getWorkspace(supabase, user.id);
-      if (!workspace?.id) {
-        setCustomCategories({ expense: [], income: [], loan: [] });
-        setCustomMerchants([]);
-        return;
-      }
-      const [{ data: categoryRows, error: categoryError }, { data: merchantRows, error: merchantError }] = await Promise.all([
-        supabase.from("categories").select("name, type").eq("workspace_id", workspace.id).order("name", { ascending: true }),
-        supabase.from("merchants").select("name").eq("workspace_id", workspace.id).order("name", { ascending: true }),
-      ]);
+    getWorkspaceSuggestions().then(({ categories, merchants }) => {
       if (!active) return;
-      if (categoryError) setCustomCategories({ expense: [], income: [], loan: [] });
-      else setCustomCategories(buildCategories(categoryRows ?? []));
-      if (merchantError) setCustomMerchants([]);
-      else {
-        const rows = merchantRows ?? [];
-        const names = rows.map((row) => row.name).filter(Boolean);
-        setCustomMerchants(names);
-      }
-    })();
+      setCustomCategories(categories);
+      setCustomMerchants(merchants);
+    });
     return () => { active = false; };
   }, []);
 
   useEffect(() => {
-    const query = description.trim();
-    if (query.length < 2) {
+    if (description.trim().length < 2) {
       setDescriptionSuggestions([]);
       return;
     }
 
     let active = true;
-    const timeout = setTimeout(async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !active) return;
-      const workspace = await getWorkspace(supabase, user.id);
-      if (!workspace?.id || !active) return;
-
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("notes")
-        .eq("workspace_id", workspace.id)
-        .not("notes", "is", null)
-        .ilike("notes", `%${query}%`)
-        .order("created_at", { ascending: false })
-        .limit(8);
-
-      if (!active || error) return;
-
-      const suggestions = Array.from(
-        new Set(
-          (data ?? [])
-            .map((row) => row.notes)
-            .filter((value): value is string => Boolean(value))
-            .map((value) => value.trim())
-            .filter((value) => value && value.toLowerCase() !== query.toLowerCase())
-        )
-      );
-
-      setDescriptionSuggestions(suggestions.slice(0, 8));
+    const timeout = setTimeout(() => {
+      searchTransactionNotes(description).then((suggestions) => {
+        if (active) setDescriptionSuggestions(suggestions);
+      });
     }, 300);
 
     return () => {
@@ -190,21 +126,4 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
       <TransactionFormActions onClose={onClose} isEditing={isEditing} isDeleting={isDeleting} setIsDeleting={setIsDeleting} transaction={transaction} setError={setError} hasAccounts={accounts.length > 0} />
     </form>
   );
-}
-
-async function getWorkspace(supabase: any, userId: string) {
-  const { data: owned } = await supabase.from("workspaces").select("id").eq("owner_id", userId).limit(1).maybeSingle();
-  if (owned) return owned;
-  const { data: membership } = await supabase.from("workspace_members").select("workspace_id").eq("user_id", userId).limit(1).maybeSingle();
-  return membership ? { id: membership.workspace_id } : null;
-}
-
-function buildCategories(rows: any[]) {
-  const cats: Record<string, string[]> = { expense: [], income: [], loan: [] };
-  rows?.forEach(row => {
-    if (row.type === "income") cats.income.push(row.name);
-    else if (row.type === "loan") cats.loan.push(row.name);
-    else cats.expense.push(row.name);
-  });
-  return cats;
 }

@@ -131,6 +131,21 @@ export async function assertAccountInWorkspace(
   return Boolean(data);
 }
 
+/** Confirms `bankAccountId` belongs to `workspaceId` before an import writes against it. */
+export async function assertBankAccountInWorkspace(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  bankAccountId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("bank_accounts")
+    .select("id")
+    .eq("id", bankAccountId)
+    .eq("workspace_id", workspaceId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
 /** Confirms `loanId` belongs to `workspaceId` before a transaction is tagged with it. */
 export async function assertLoanInWorkspace(
   supabase: SupabaseClient,

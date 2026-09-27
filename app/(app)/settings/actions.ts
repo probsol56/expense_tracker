@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { toActionError } from "@/lib/errors";
 
 const settingsSchema = z.object({
   full_name: z.string().trim().min(1, "Name is required").max(100),
@@ -36,7 +37,7 @@ export async function updateSettings(
     id: user.id,
     full_name: parsed.data.full_name,
   });
-  if (profileError) return { success: false, message: profileError.message };
+  if (profileError) return { success: false, message: toActionError(profileError, "Failed to update your profile.") };
 
   const { data: workspace } = await supabase
     .from("workspaces")
@@ -53,7 +54,7 @@ export async function updateSettings(
         base_currency: parsed.data.base_currency,
       })
       .eq("id", workspace.id);
-    if (error) return { success: false, message: error.message };
+    if (error) return { success: false, message: toActionError(error, "Failed to update your workspace.") };
   } else {
     const { data: newWorkspace, error: wsError } = await supabase
       .from("workspaces")
@@ -66,14 +67,15 @@ export async function updateSettings(
       .select("id")
       .single();
 
-    if (wsError) return { success: false, message: wsError.message };
+    if (wsError) return { success: false, message: toActionError(wsError, "Failed to create your workspace.") };
 
     if (newWorkspace) {
-      await supabase.from("workspace_members").insert({
+      const { error: memberError } = await supabase.from("workspace_members").insert({
         workspace_id: newWorkspace.id,
         user_id: user.id,
         role: "owner",
       });
+      if (memberError) return { success: false, message: toActionError(memberError, "Failed to finish setting up your workspace.") };
     }
   }
 

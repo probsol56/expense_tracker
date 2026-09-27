@@ -2,10 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import type { Workspace, Profile } from "@/lib/types";
 
 export async function getCurrentWorkspaceAndProfile() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return { user: null, workspace: null, profile: null, supabase: null };
-  }
-  
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { user: null, workspace: null, profile: null, supabase };

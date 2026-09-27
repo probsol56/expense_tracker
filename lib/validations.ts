@@ -1,5 +1,54 @@
 import { z } from "zod";
 
+const ACCOUNT_TYPES = ["checking", "savings", "credit_card", "cash", "investment"] as const;
+
+export const accountSchema = z.object({
+  name: z.string().trim().min(1, "Account name is required.").max(100),
+  account_type: z.enum(ACCOUNT_TYPES),
+  institution: z.string().trim().max(100).optional().or(z.literal("")),
+  starting_balance: z.coerce.number().finite("Starting balance must be a number."),
+});
+
+export const transferSchema = z
+  .object({
+    from_account_id: z.string().uuid("Select both accounts for the transfer."),
+    to_account_id: z.string().uuid("Select both accounts for the transfer."),
+    amount: z.coerce.number().positive("Transfer amount must be greater than zero."),
+    date: z.string().date("Enter a valid date."),
+    notes: z.string().trim().max(250).optional().or(z.literal("")),
+  })
+  .refine((data) => data.from_account_id !== data.to_account_id, {
+    message: "Choose two different accounts.",
+    path: ["to_account_id"],
+  });
+
+export const loanSchema = z.object({
+  name: z.string().trim().min(1, "Loan name is required.").max(100),
+  lender: z.string().trim().min(1, "Lender is required.").max(100),
+  principal_amount: z.coerce.number().positive("Enter a valid loan amount."),
+  date_started: z.string().date("Enter a valid date."),
+  notes: z.string().trim().max(250).optional().or(z.literal("")),
+  account_id: z.string().uuid("Select which account received the loan."),
+});
+
+export const loanUpdateSchema = loanSchema.extend({
+  // A loan created before account tracking existed has no linked
+  // disbursement yet; leaving the account blank keeps it that way.
+  account_id: z.string().uuid("Select a valid account.").optional().or(z.literal("")),
+});
+
+export const loanPaymentSchema = z.object({
+  loan_id: z.string().uuid("Select a loan to make a payment."),
+  amount: z.coerce.number().positive("Payment amount must be greater than zero."),
+  date: z.string().date("Enter a valid date."),
+  notes: z.string().trim().max(250).optional().or(z.literal("")),
+  account_id: z.string().uuid("Select which account is paying this off."),
+});
+
+export const importSchema = z.object({
+  bank_account_id: z.string().uuid("Select a bank account."),
+});
+
 export const transactionSchema = z.object({
   merchant: z.string().trim().min(1).max(100),
   description: z.string().trim().max(250).optional().or(z.literal("")),

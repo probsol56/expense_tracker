@@ -7,28 +7,25 @@ import { SummaryCards } from "@/components/summary-cards";
 import { TransactionList } from "@/components/transaction-list";
 import { AccountList } from "@/components/account-list";
 import { AddTransactionModal } from "@/components/add-transaction-modal";
-import type { Account, Loan, LoanPayment, Transaction, Workspace, Profile } from "@/lib/types";
-import type { ActivityType } from "@/components/dashboard";
+import type { Account, Loan, Transaction, Workspace, Profile } from "@/lib/types";
+import type { ActivityType, DashboardSummary } from "@/lib/dashboard";
 
 export function DashboardShell({
-  transactions,
+  summary,
   listTransactions,
   accounts,
   loans,
-  loanPayments,
   workspace,
   profile,
   pagination,
   activityType,
   query,
 }: {
-  /** Full transaction set — used for summary cards. */
-  transactions: Transaction[];
+  summary: DashboardSummary;
   /** Current page of the filtered "Recent activity" list (computed on the server). */
   listTransactions: Transaction[];
   accounts: Account[];
   loans?: Loan[];
-  loanPayments?: LoanPayment[];
   workspace?: Workspace | null;
   profile?: Profile | null;
   pagination: {
@@ -72,10 +69,7 @@ export function DashboardShell({
         onAdd={() => setShowAdd(true)}
       />
       <SummaryCards
-        transactions={transactions}
-        accounts={accounts}
-        loans={loans || []}
-        loanPayments={loanPayments || []}
+        summary={summary}
         currency={currency}
       />
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">

@@ -1,49 +1,30 @@
 import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight, Landmark, TrendingUp, Wallet } from "lucide-react";
 import { Card } from "@/components/ui";
-import { isLoanCategory, isLoanTransaction, isTransferCategory, money } from "@/lib/utils";
-import type { Account, Loan, LoanPayment, Transaction } from "@/lib/types";
+import { money } from "@/lib/utils";
+import type { DashboardSummary } from "@/lib/dashboard";
 
 export function SummaryCards({
-  transactions,
-  accounts,
-  loans = [],
-  loanPayments = [],
+  summary,
   currency = "BDT",
 }: {
-  transactions: Transaction[];
-  accounts: Account[];
-  loans?: Loan[];
-  loanPayments?: LoanPayment[];
+  summary: DashboardSummary;
   currency?: string;
 }) {
-  const outstandingLoanBalance = loans.reduce((total, loan) => total + Number(loan.outstanding_balance), 0);
-  const loanPaid = loanPayments.reduce((total, payment) => total + Number(payment.amount), 0);
+  const {
+    month_spending: spending,
+    month_income: income,
+    month_expense_count: expenseCount,
+    account_count: accountCount,
+    outstanding_loan_balance: outstandingLoanBalance,
+    loan_paid: loanPaid,
+    active_loan_count: loanCount,
+  } = summary;
 
   // Net worth is assets minus liabilities — cash an account received from a
   // loan is real, but so is the debt it created, so the outstanding balance
   // has to come back out here rather than only showing up on its own card.
-  const netWorth = accounts.reduce((total, account) => total + Number(account.balance), 0) - outstandingLoanBalance;
-
-  const currentMonthPrefix = new Date().toISOString().slice(0, 7); // "YYYY-MM"
-  const thisMonthTransactions = transactions.filter((t) => t.date.startsWith(currentMonthPrefix));
-
-  const spending = thisMonthTransactions
-    .filter((transaction) => Number(transaction.amount) < 0 && !isLoanTransaction(transaction) && !isTransferCategory(transaction.category))
-    .reduce((total, transaction) => total + Math.abs(Number(transaction.amount)), 0);
-
-  // Loan disbursements land as positive-amount transactions so they show up
-  // in the account balance, but they're borrowed money, not earned income.
-  // Transfers between the user's own accounts are excluded the same way —
-  // moving money isn't earning or spending it.
-  const income = thisMonthTransactions
-    .filter((transaction) => Number(transaction.amount) > 0 && !isLoanCategory(transaction.category) && !isTransferCategory(transaction.category))
-    .reduce((total, transaction) => total + Number(transaction.amount), 0);
-
-  const expenseCount = thisMonthTransactions.filter(
-    (t) => Number(t.amount) < 0 && !isLoanTransaction(t) && !isTransferCategory(t.category),
-  ).length;
-  const loanCount = loans.length;
+  const netWorth = summary.accounts_balance - outstandingLoanBalance;
 
   return (
     <section className="mb-7 grid gap-4 grid-cols-1 md:grid-cols-4">
@@ -70,7 +51,7 @@ export function SummaryCards({
             <div className="flex items-center justify-between text-xs text-slate-400">
               <span className="flex items-center gap-1.5 text-teal-400 font-medium">
                 <Landmark size={13} />
-                {accounts.length} {accounts.length === 1 ? "account" : "accounts"} active
+                {accountCount} {accountCount === 1 ? "account" : "accounts"} active
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">
                 Live Balance

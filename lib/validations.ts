@@ -91,6 +91,35 @@ export const holidaySchema = z.object({
   name: z.string().trim().min(1).max(100),
 });
 
+// Keep in sync with Auth > Providers > Email > minimum password length in Supabase.
+export const PASSWORD_MIN_LENGTH = 8;
+// bcrypt, which Supabase Auth uses, ignores bytes past 72.
+const PASSWORD_MAX_LENGTH = 72;
+export const DELETE_ACCOUNT_CONFIRMATION = "DELETE";
+
+export const passwordResetRequestSchema = z.object({
+  email: z.string().trim().email("Enter a valid email address."),
+});
+
+export const newPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(PASSWORD_MIN_LENGTH, `Use at least ${PASSWORD_MIN_LENGTH} characters.`)
+      .max(PASSWORD_MAX_LENGTH, `Use at most ${PASSWORD_MAX_LENGTH} characters.`),
+    confirm_password: z.string(),
+  })
+  .refine((data) => data.password === data.confirm_password, {
+    message: "Passwords don't match.",
+    path: ["confirm_password"],
+  });
+
+export const deleteAccountSchema = z.object({
+  confirmation: z.literal(DELETE_ACCOUNT_CONFIRMATION, {
+    errorMap: () => ({ message: `Type ${DELETE_ACCOUNT_CONFIRMATION} to confirm.` }),
+  }),
+});
+
 /** A record id from the URL (e.g. `?edit=`). Anything that isn't a UUID is treated as absent. */
 export function parseRecordId(value: string | undefined): string | null {
   const parsed = z.string().uuid().safeParse(value);

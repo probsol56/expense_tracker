@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   accountSchema,
+  deleteAccountSchema,
   holidaySchema,
+  newPasswordSchema,
+  passwordResetRequestSchema,
   importSchema,
   loanPaymentSchema,
   loanSchema,
@@ -132,5 +135,24 @@ describe("loanPaymentSchema", () => {
 describe("importSchema", () => {
   it("requires a uuid bank account", () => {
     expect(importSchema.safeParse({ bank_account_id: "not-a-uuid" }).success).toBe(false);
+  });
+});
+
+describe("auth schemas", () => {
+  it("requires a valid email for a reset request", () => {
+    expect(passwordResetRequestSchema.safeParse({ email: " a@b.co " }).success).toBe(true);
+    expect(passwordResetRequestSchema.safeParse({ email: "not-an-email" }).success).toBe(false);
+  });
+
+  it("enforces password length and matching confirmation", () => {
+    expect(newPasswordSchema.safeParse({ password: "longenough", confirm_password: "longenough" }).success).toBe(true);
+    expect(newPasswordSchema.safeParse({ password: "short", confirm_password: "short" }).success).toBe(false);
+    expect(newPasswordSchema.safeParse({ password: "x".repeat(73), confirm_password: "x".repeat(73) }).success).toBe(false);
+    expect(newPasswordSchema.safeParse({ password: "longenough", confirm_password: "different1" }).success).toBe(false);
+  });
+
+  it("only accepts the exact delete confirmation word", () => {
+    expect(deleteAccountSchema.safeParse({ confirmation: "DELETE" }).success).toBe(true);
+    expect(deleteAccountSchema.safeParse({ confirmation: "delete" }).success).toBe(false);
   });
 });

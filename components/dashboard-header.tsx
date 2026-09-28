@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Calendar, Clock, MapPin, Plus } from "lucide-react";
+import { Calendar, Clock, MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Profile, Workspace } from "@/lib/types";
@@ -89,13 +89,6 @@ export function DashboardHeader({
 
       <div className="flex items-center gap-2.5 self-stretch sm:self-auto">
         <ThemeToggle />
-        <button
-          className="relative hidden sm:grid h-10 w-10 place-items-center rounded-xl border border-slate-200/80 bg-white/80 text-slate-500 shadow-sm backdrop-blur-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-ink-800/80 dark:text-slate-400 dark:hover:bg-ink-800 dark:hover:text-slate-100 dark:shadow-none"
-          aria-label="Notifications"
-        >
-          <Bell size={18} />
-          <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-teal-500 ring-2 ring-white dark:ring-ink-900" />
-        </button>
         <Button
           onClick={onAdd}
           className="flex-1 sm:flex-none justify-center bg-slate-900 text-white shadow-card hover:bg-slate-800 hover:shadow-glow hover:-translate-y-0.5 transition-all duration-200 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"

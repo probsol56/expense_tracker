@@ -27,7 +27,8 @@ export interface PaginationBarProps {
   /** Disables all controls, e.g. while a page navigation is in flight. */
   disabled?: boolean;
   onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
+  /** Omit for fixed-size lists; the "Rows per page" selector is then hidden. */
+  onPageSizeChange?: (size: number) => void;
 }
 
 export function PaginationBar({
@@ -65,7 +66,7 @@ export function PaginationBar({
 
   return (
     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      {showPageSize && (
+      {showPageSize && onPageSizeChange && (
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-500 dark:text-slate-400">
             Rows per page

@@ -3,6 +3,7 @@ import { ArrowLeft, BadgeDollarSign, CirclePlus, PiggyBank } from "lucide-react"
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
 import { createCategory } from "@/app/(app)/categories/actions";
 import { DEFAULT_CATEGORY_OPTIONS } from "@/lib/category-options";
+import { PICKER_LIMITS } from "@/lib/pagination";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 
 export default async function CategoriesPage({
@@ -25,12 +26,15 @@ export default async function CategoriesPage({
     );
   }
 
-  const { data: categories } = await supabase
+  // Shown grouped by type, so this is capped rather than paged.
+  const { data: categories, error: categoriesError } = await supabase
     .from("categories")
     .select("id, name, type, color")
     .eq("workspace_id", workspace.id)
     .order("type", { ascending: true })
-    .order("name", { ascending: true });
+    .order("name", { ascending: true })
+    .limit(PICKER_LIMITS.categories);
+  if (categoriesError) throw categoriesError;
 
   const storedExpenseCategories = (categories ?? []).filter((category) => category.type === "expense").map((category) => category.name);
   const storedIncomeCategories = (categories ?? []).filter((category) => category.type === "income").map((category) => category.name);

@@ -38,6 +38,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned: `latest` resolves via the GitHub API at run time, which fails
+          # intermittently. Must support db.major_version in supabase/config.toml
+          # (Postgres 17 needs CLI 2.x; 1.x rejects it).
+          version: 2.118.0
       - run: supabase db start
       - run: supabase test db

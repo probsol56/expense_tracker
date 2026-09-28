@@ -90,3 +90,9 @@ export const holidaySchema = z.object({
   date: z.string().min(1),
   name: z.string().trim().min(1).max(100),
 });
+
+/** A record id from the URL (e.g. `?edit=`). Anything that isn't a UUID is treated as absent. */
+export function parseRecordId(value: string | undefined): string | null {
+  const parsed = z.string().uuid().safeParse(value);
+  return parsed.success ? parsed.data : null;
+}

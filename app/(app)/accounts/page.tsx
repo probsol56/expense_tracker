@@ -4,54 +4,70 @@ import Link from "next/link";
 import { Badge, Card, Input, SubmitButton } from "@/components/ui";
 import { DeleteTransferButton } from "@/components/delete-transfer-button";
 import { EditDialog } from "@/components/edit-dialog";
+import { UrlPaginationBar } from "@/components/url-pagination-bar";
+import { LIST_PAGE_SIZE, PICKER_LIMITS, fetchPage, pageInfo, parsePage, type Page } from "@/lib/pagination";
 import { money } from "@/lib/utils";
+import { parseRecordId } from "@/lib/validations";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { createAccount, createTransfer, deleteTransfer, updateTransfer } from "@/app/(app)/accounts/actions";
 import type { Account, Transfer } from "@/lib/types";
 
+const TRANSFER_SELECT = "id, workspace_id, user_id, from_account_id, to_account_id, amount, date, notes, created_at";
+
 export default async function AccountsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; editTransfer?: string }>;
+  searchParams: Promise<{ error?: string; editTransfer?: string; page?: string }>;
 }) {
-  const { error, editTransfer } = await searchParams;
+  const { error, editTransfer, page } = await searchParams;
   const { user, workspace, supabase } = await getCurrentWorkspaceAndProfile();
-  if (!user || !supabase) {
+  if (!user || !supabase || !workspace) {
     return (
       <AccountsContent
         accounts={[]}
-        transfers={[]}
+        transfers={{ rows: [], page: 1, pageSize: LIST_PAGE_SIZE, totalPages: 1, totalCount: 0 }}
         currency="BDT"
         workspaceName="Personal Workspace"
         error={error}
-        editingTransferId={editTransfer}
       />
     );
   }
 
-  const [{ data: accountRows }, { data: transferRows }] = await Promise.all([
+  const editingTransferId = parseRecordId(editTransfer);
+  const [{ data: accountRows, error: accountsError }, transfers, editing] = await Promise.all([
     supabase
       .from("accounts")
       .select("id, name, account_type, balance, starting_balance, institution, last_synced_at")
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("transfers")
-      .select("id, from_account_id, to_account_id, amount, date, notes, created_at")
-      .order("date", { ascending: false })
-      .order("created_at", { ascending: false }),
+      .eq("workspace_id", workspace.id)
+      .order("created_at", { ascending: false })
+      .limit(PICKER_LIMITS.accounts),
+    fetchPage<Transfer>(
+      () =>
+        supabase
+          .from("transfers")
+          .select(TRANSFER_SELECT, { count: "exact" })
+          .eq("workspace_id", workspace.id)
+          .order("date", { ascending: false })
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false }),
+      parsePage(page ?? ""),
+      LIST_PAGE_SIZE,
+    ),
+    editingTransferId
+      ? supabase.from("transfers").select(TRANSFER_SELECT).eq("workspace_id", workspace.id).eq("id", editingTransferId).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
   ]);
-
-  const accounts = (accountRows ?? []) as Account[];
-  const transfers = (transferRows ?? []) as Transfer[];
+  if (accountsError) throw accountsError;
+  if (editing.error) throw editing.error;
 
   return (
     <AccountsContent
-      accounts={accounts}
+      accounts={(accountRows ?? []) as Account[]}
       transfers={transfers}
-      currency={workspace?.base_currency || "BDT"}
-      workspaceName={workspace?.name || "Personal Workspace"}
+      currency={workspace.base_currency || "BDT"}
+      workspaceName={workspace.name || "Personal Workspace"}
       error={error}
-      editingTransferId={editTransfer}
+      editingTransfer={editing.data ?? undefined}
     />
   );
 }
@@ -95,19 +111,16 @@ function AccountsContent({
   currency,
   workspaceName,
   error,
-  editingTransferId,
+  editingTransfer,
 }: {
   accounts: Account[];
-  transfers: Transfer[];
+  transfers: Page<Transfer>;
   currency: string;
   workspaceName: string;
   error?: string;
-  editingTransferId?: string;
+  editingTransfer?: Transfer;
 }) {
   const accountsById = new Map(accounts.map((account) => [account.id, account]));
-  const editingTransfer = editingTransferId
-    ? transfers.find((transfer) => transfer.id === editingTransferId)
-    : undefined;
   const canTransfer = accounts.length >= 2;
 
   return (
@@ -194,13 +207,13 @@ function AccountsContent({
           </EditDialog>
         )}
 
-        {transfers.length > 0 && (
+        {transfers.totalCount > 0 && (
           <Card className="mb-8 overflow-hidden shadow-card">
             <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
               <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Transfer history</h2>
             </div>
             <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {transfers.map((transfer) => {
+              {transfers.rows.map((transfer) => {
                 const fromAccount = accountsById.get(transfer.from_account_id);
                 const toAccount = accountsById.get(transfer.to_account_id);
                 return (
@@ -237,6 +250,9 @@ function AccountsContent({
                   </div>
                 );
               })}
+            </div>
+            <div className="border-t border-slate-100 px-5 pb-4 dark:border-slate-800">
+              <UrlPaginationBar pagination={pageInfo(transfers)} />
             </div>
           </Card>
         )}

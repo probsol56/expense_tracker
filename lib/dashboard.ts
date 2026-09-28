@@ -1,10 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { pageRange } from "@/lib/pagination";
 import { toTransaction, type TransactionRow } from "@/lib/transactions";
 import type { Transaction } from "@/lib/types";
 
-export const DEFAULT_PAGE_SIZE = 10;
-export const MAX_PAGE_SIZE = 100;
 export const MAX_DASHBOARD_LOANS = 100;
 export const MAX_DASHBOARD_ACCOUNTS = 100;
 
@@ -78,11 +77,6 @@ export function parseActivityType(value: string): ActivityType {
   return value === "expenses" || value === "income" || value === "loan" || value === "transfer" ? value : "all";
 }
 
-export function clampPageSize(value: number): number {
-  if (!Number.isFinite(value) || value < 1) return DEFAULT_PAGE_SIZE;
-  return Math.min(Math.floor(value), MAX_PAGE_SIZE);
-}
-
 export function getMonthRange(now: Date): { from: string; to: string } {
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth();
@@ -149,7 +143,6 @@ export async function fetchActivityPage(
     return request;
   };
 
-  const pageRange = (target: number): [number, number] => [(target - 1) * pageSize, target * pageSize - 1];
   const requestedPage = Math.max(1, page);
 
   const [{ count: totalRows, error: totalError }, first] = await Promise.all([
@@ -157,7 +150,7 @@ export async function fetchActivityPage(
       .from("transaction_activity")
       .select("id", { count: "exact", head: true })
       .eq("workspace_id", workspaceId),
-    buildQuery().range(...pageRange(requestedPage)),
+    buildQuery().range(...pageRange(requestedPage, pageSize)),
   ]);
   if (totalError) throw totalError;
   if (first.error) throw first.error;
@@ -168,7 +161,7 @@ export async function fetchActivityPage(
   const safePage = Math.min(requestedPage, totalPages);
 
   if (safePage !== requestedPage) {
-    const refetched = await buildQuery().range(...pageRange(safePage));
+    const refetched = await buildQuery().range(...pageRange(safePage, pageSize));
     if (refetched.error) throw refetched.error;
     rows = z.array(activityRowSchema).parse(refetched.data ?? []);
     totalCount = refetched.count ?? totalCount;

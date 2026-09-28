@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { toActionError } from "@/lib/errors";
+import { AUTH_ROUTES } from "@/lib/auth-routes";
+import { deleteAccountSchema } from "@/lib/validations";
 
 const settingsSchema = z.object({
   full_name: z.string().trim().min(1, "Name is required").max(100),
@@ -84,4 +86,25 @@ export async function updateSettings(
   revalidatePath("/accounts");
   revalidatePath("/transactions");
   return { success: true, message: "Settings updated successfully!" };
+}
+
+export type DeleteAccountState = { error: string } | null;
+
+export async function deleteAccount(_prev: DeleteAccountState, formData: FormData): Promise<DeleteAccountState> {
+  const parsed = deleteAccountSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Confirm to delete your account." };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect(AUTH_ROUTES.login);
+
+  const { error } = await supabase.rpc("delete_my_account");
+  if (error) return { error: toActionError(error, "Couldn't delete your account. Nothing was removed.") };
+
+  // The auth user is gone, so the server-side revoke may 404; local scope
+  // still clears the session cookies, which is all that matters here.
+  const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+  if (signOutError) console.error("sign-out after account deletion failed", signOutError.code ?? signOutError.status);
+
+  redirect(AUTH_ROUTES.login);
 }

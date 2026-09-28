@@ -9,6 +9,7 @@ import {
 } from "@/components/ui";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { SettingsForm } from "./settings-form";
+import { DeleteAccountForm } from "./delete-account-form";
 
 export default async function SettingsPage() {
   const { user, workspace, profile } = await getCurrentWorkspaceAndProfile();
@@ -57,6 +58,18 @@ export default async function SettingsPage() {
               initialWorkspaceName={workspace?.name ?? ""}
               initialBaseCurrency={workspace?.base_currency ?? "BDT"}
             />
+          </CardContent>
+        </Card>
+
+        <Card className="mt-8 overflow-hidden border-rose-200 shadow-card dark:border-rose-500/30">
+          <CardHeader className="border-b border-rose-100 bg-rose-50/60 p-6 dark:border-rose-500/20 dark:bg-rose-500/5">
+            <CardTitle className="text-lg sm:text-xl">Delete account</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">
+              Permanently remove your account and all of its data.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6 sm:p-7">
+            <DeleteAccountForm />
           </CardContent>
         </Card>
     </div>

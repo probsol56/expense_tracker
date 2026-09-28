@@ -10,7 +10,13 @@ const envSchema = z.object({
 });
 
 function loadConfig() {
-  const parsed = envSchema.safeParse(process.env);
+  // Each key must be referenced literally: Next.js inlines `process.env.NEXT_PUBLIC_*`
+  // into the browser bundle only by exact match, and `process.env` itself is empty there.
+  const parsed = envSchema.safeParse({
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  });
   if (!parsed.success) {
     throw new Error(`Invalid environment configuration:\n${parsed.error.issues.map((issue) => `- ${issue.path.join(".")}: ${issue.message}`).join("\n")}`);
   }

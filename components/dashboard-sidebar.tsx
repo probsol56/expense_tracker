@@ -15,7 +15,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { usePathname, useRouter } from "next/navigation";
 import { getInitials } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -94,7 +93,7 @@ export function DashboardSidebar({
   };
 
   const sidebarContent = (
-    <div className="flex h-full flex-col px-4 py-6">
+    <div className="flex h-full min-h-0 flex-col px-4 py-6">
       <div className="flex items-start justify-between px-3">
         <Link href="/" onClick={onClose} className="rounded-sm focus-visible:outline-brass">
           <span className="font-display text-lg font-semibold tracking-[0.3em] text-brass">WALLO</span>
@@ -119,18 +118,14 @@ export function DashboardSidebar({
         </p>
       </div>
 
-      <nav aria-label="Main" className="mt-6 flex-1">
+      {/* Nav scrolls on its own so the account footer (sign-out) stays reachable on short viewports */}
+      <nav aria-label="Main" className="-mx-1 mt-6 min-h-0 flex-1 overflow-y-auto px-1">
         <div className="space-y-1">{PRIMARY_NAV.map(renderNavItem)}</div>
         <p className="mb-2 mt-8 px-3 text-xs font-semibold uppercase tracking-widest text-cover-muted">Manage</p>
         <div className="space-y-1">{MANAGE_NAV.map(renderNavItem)}</div>
       </nav>
 
-      <ThemeToggle
-        showLabel
-        className="mt-6 flex w-full justify-start gap-3 border-0 bg-transparent px-3 text-sm font-medium text-cover-muted hover:bg-cover-fg/5 hover:text-cover-fg focus-visible:outline-brass"
-      />
-
-      <div className="mt-6 flex items-center gap-3 border-t border-cover-fg/10 px-3 pt-4">
+      <div className="mt-6 flex shrink-0 items-center gap-3 border-t border-cover-fg/10 px-3 pt-4">
         <span
           aria-hidden="true"
           className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-brass/60 font-display text-sm font-semibold text-brass"

@@ -5,7 +5,7 @@ import { Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // §17: persist an explicit user override on top of the OS preference.
-export function ThemeToggle({ className, showLabel = false }: { className?: string; showLabel?: boolean }) {
+export function ThemeToggle({ className }: { className?: string }) {
   const [isDark, setIsDark] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -33,14 +33,14 @@ export function ThemeToggle({ className, showLabel = false }: { className?: stri
     <button
       type="button"
       onClick={toggle}
-      aria-label={showLabel ? undefined : label}
+      aria-label={label}
+      title={label}
       className={cn(
         "grid h-11 w-11 shrink-0 place-items-center rounded-md border border-rule bg-paper text-fg-muted transition-colors duration-150 hover:text-fg",
         className
       )}
     >
       {isDark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
-      {showLabel && label}
     </button>
   );
 }

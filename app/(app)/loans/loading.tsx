@@ -1,28 +1,14 @@
 import { Skeleton } from "@/components/ui";
+import { PageSkeleton } from "@/components/page-skeleton";
 
 export default function Loading() {
   return (
-    <div className="mx-auto max-w-6xl">
-        <Skeleton className="h-7 w-40 rounded-xl" />
-
-        <div className="mt-6">
-          <Skeleton className="h-5 w-32 rounded-full" />
-          <Skeleton className="mt-2 h-8 w-72" />
-          <Skeleton className="mt-2 h-4 w-96 max-w-full" />
-        </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <Skeleton className="h-24 rounded-2xl" />
-          <Skeleton className="h-24 rounded-2xl" />
-          <Skeleton className="h-24 rounded-2xl" />
-        </div>
-
-        <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <Skeleton className="h-96 rounded-2xl" />
-          <Skeleton className="h-96 rounded-2xl" />
-        </div>
-
-        <Skeleton className="mt-8 h-64 rounded-2xl" />
-    </div>
+    <PageSkeleton label="Loading loans" figures>
+      <Skeleton className="h-80 rounded-lg" />
+      <div className="mt-10 grid gap-10 lg:grid-cols-2 lg:gap-8">
+        <Skeleton className="h-96 rounded-lg" />
+        <Skeleton className="h-96 rounded-lg" />
+      </div>
+    </PageSkeleton>
   );
 }

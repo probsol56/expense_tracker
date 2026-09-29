@@ -1,8 +1,12 @@
 import { EditDialog } from "@/components/edit-dialog";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CalendarOff, Pause, Pencil, Play, Plus, Repeat, Trash2 } from "lucide-react";
-import { Badge, Button, Card, Input } from "@/components/ui";
+import { Pause, Pencil, Play, Plus, Trash2 } from "lucide-react";
+import { Alert, Badge, Card, Field, Input, SubmitButton } from "@/components/ui";
+import { FigureStrip } from "@/components/figure-strip";
+import { PageHeader } from "@/components/page-header";
+import { Section } from "@/components/section";
+import { SignedOutNotice } from "@/components/signed-out-notice";
 import { RecurringTransactionForm } from "@/components/recurring-transaction-form";
 import {
   createHoliday,
@@ -17,7 +21,7 @@ import { fetchRecurringSummary } from "@/lib/list-summaries";
 import { LIST_PAGE_SIZE, PICKER_LIMITS, fetchPage, pageInfo, parsePage } from "@/lib/pagination";
 import { parseRecordId } from "@/lib/validations";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
-import { money } from "@/lib/utils";
+import { formatEntryDate, money } from "@/lib/utils";
 import type { Account, Holiday, RecurringTransaction } from "@/lib/types";
 import type { CategoryType } from "@/lib/category-options";
 
@@ -97,15 +101,10 @@ export default async function RecurringPage({
 
   if (!user || !supabase || !workspace) {
     return (
-      <div className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-card">
-        <h1 className="text-xl font-bold text-slate-900">Sign in to manage recurring transactions</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Create a workspace first, then return here to set up schedules for bills and fixed costs.
-        </p>
-        <Link href="/login" className="mt-6 inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-          Go to login
-        </Link>
-      </div>
+      <SignedOutNotice
+        title="Sign in to manage recurring transactions"
+        description="Create a workspace first, then return here to set up schedules for bills and fixed costs."
+      />
     );
   }
 
@@ -169,61 +168,41 @@ export default async function RecurringPage({
   const customMerchants = ((merchants ?? []) as Array<{ name: string }>).map((m) => m.name);
 
   const editingRecurring = editing.data ? toRecurring(editing.data) : undefined;
+  const currency = workspace.base_currency || "BDT";
+  const accountNames = new Map(accountList.map((account) => [account.id, account.name]));
+  const headClass = "px-4 pb-2 pt-3 text-xs font-semibold uppercase tracking-widest text-fg-muted";
+  const moneyCellClass = "hidden w-36 border-l border-brass/40 px-4 py-3 text-right align-top tabular-nums sm:table-cell";
+  const iconButtonClass =
+    "grid h-11 w-11 place-items-center rounded-md text-fg-muted transition-colors duration-150 hover:bg-rule/50 hover:text-fg";
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-teal-200/70 bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-800 dark:border-teal-500/40 dark:bg-teal-500/10 dark:text-teal-300">
-            <Repeat size={12} /> Recurring transactions
-          </div>
-          <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-            Recurring transactions & holidays
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Set a schedule once — commute fares, subscriptions, bills — and it posts itself daily via Supabase, skipping any dates you mark as holidays.
-          </p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-5xl">
+      <PageHeader
+        eyebrow={workspace.name}
+        title="Recurring"
+        description="Set a schedule once for fares, subscriptions or bills and it posts itself each day it's due, skipping dates you mark as holidays."
+      />
 
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
-        <Card className="p-5 shadow-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Active schedules</span>
-            <Repeat size={16} className="text-teal-600" />
-          </div>
-          <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{summary.active_count}</div>
-        </Card>
-        <Card className="p-5 shadow-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Est. monthly expense</span>
-          </div>
-          <div className="mt-3 text-2xl font-extrabold tracking-tight text-coral-600 dark:text-rose-400">
-            {money(summary.monthly_expense, workspace.base_currency || "BDT")}
-          </div>
-        </Card>
-        <Card className="p-5 shadow-card">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Est. monthly income</span>
-          </div>
-          <div className="mt-3 text-2xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">
-            {money(summary.monthly_income, workspace.base_currency || "BDT")}
-          </div>
-        </Card>
-      </div>
+      <FigureStrip
+        label="Recurring totals"
+        figures={[
+          { label: "Active schedules", value: summary.active_count },
+          { label: "Monthly out, estimated", value: money(summary.monthly_expense, currency) },
+          { label: "Monthly in, estimated", value: money(summary.monthly_income, currency), tone: "positive" },
+        ]}
+      />
 
       {!accountList.length && (
-        <div className="mt-8 rounded-2xl border border-amber-200/70 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+        <Alert tone="warning" className="mb-6">
           You need an account before you can add a recurring transaction.{" "}
-          <Link href="/accounts" className="font-semibold underline underline-offset-2">Add an account</Link>.
-        </div>
+          <Link href="/accounts" className="font-semibold underline underline-offset-2">
+            Add an account
+          </Link>
+          .
+        </Alert>
       )}
 
-      {error && !editingRecurring && (
-        <div className="mt-8 rounded-2xl border border-rose-200/70 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
-          {error}
-        </div>
-      )}
+      {error && !editingRecurring && <Alert className="mb-6">{error}</Alert>}
 
       {editingRecurring && (
         <EditDialog title="Edit schedule" closeHref="/recurring" error={error} wide>
@@ -232,138 +211,157 @@ export default async function RecurringPage({
             accounts={accountList}
             customCategories={customCategories}
             customMerchants={customMerchants}
-            currency={workspace.base_currency || "BDT"}
+            currency={currency}
             recurring={editingRecurring}
           />
         </EditDialog>
       )}
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <Card className="shadow-card">
-          <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Add a schedule</h2>
-          </div>
-          <div className="p-5">
+      <Section title="Schedules" className="mb-10">
+        <Card className="overflow-hidden">
+          {recurringList.length ? (
+            <table className="w-full table-fixed border-collapse text-left sm:table-auto">
+              <caption className="sr-only">Recurring schedules</caption>
+              <thead className="border-b-2 border-fg/70">
+                <tr>
+                  <th scope="col" className={headClass}>Schedule</th>
+                  <th scope="col" className={`${headClass} hidden border-l border-brass/40 text-right sm:table-cell`}>Money out</th>
+                  <th scope="col" className={`${headClass} hidden border-l border-brass/40 text-right sm:table-cell`}>Money in</th>
+                  <th scope="col" className={`${headClass} w-28 text-right sm:hidden`}>Amount</th>
+                  <th scope="col" className="w-36"><span className="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {recurringList.map((r) => {
+                  const isIncome = r.type === "income";
+                  const amount = money(r.amount, currency);
+                  const accountName = r.account_id ? accountNames.get(r.account_id) : undefined;
+                  return (
+                    <tr key={r.id} className={`border-b border-rule last:border-b-0 ${r.is_active ? "" : "text-fg-muted"}`}>
+                      <td className="break-words px-4 py-3 align-top">
+                        <p className="flex flex-wrap items-center gap-2">
+                          <span className={`font-medium ${r.is_active ? "text-fg" : ""}`}>{r.merchant}</span>
+                          {!r.is_active && <Badge variant="secondary" size="sm">Paused</Badge>}
+                        </p>
+                        <p className="mt-0.5 text-sm text-fg-muted">
+                          {r.category} · {FREQUENCY_LABEL[r.frequency](r)}
+                          {r.skip_holidays ? " · skips holidays" : ""}
+                          {accountName ? ` · ${accountName}` : ""}
+                        </p>
+                      </td>
+                      <td className={`${moneyCellClass} ${r.is_active ? "text-fg" : ""}`}>{isIncome ? null : amount}</td>
+                      <td className={`${moneyCellClass} ${r.is_active ? "text-moss" : ""}`}>{isIncome ? amount : null}</td>
+                      <td className={`py-3 pl-2 pr-1 text-right align-top font-medium tabular-nums sm:hidden ${isIncome && r.is_active ? "text-moss" : ""}`}>
+                        {isIncome ? "+" : "−"}
+                        {amount}
+                      </td>
+                      <td className="py-1.5 pr-2 align-top">
+                        <div className="flex justify-end">
+                          <form action={handleToggleActive}>
+                            <input type="hidden" name="recurring_id" value={r.id} />
+                            <input type="hidden" name="is_active" value={(!r.is_active).toString()} />
+                            <button
+                              type="submit"
+                              aria-label={`${r.is_active ? "Pause" : "Resume"} ${r.merchant}`}
+                              title={r.is_active ? "Pause" : "Resume"}
+                              className={iconButtonClass}
+                            >
+                              {r.is_active ? <Pause size={15} aria-hidden="true" /> : <Play size={15} aria-hidden="true" />}
+                            </button>
+                          </form>
+                          <Link href={`/recurring?edit=${r.id}`} aria-label={`Edit ${r.merchant}`} title="Edit" className={iconButtonClass}>
+                            <Pencil size={15} aria-hidden="true" />
+                          </Link>
+                          <form action={handleDelete}>
+                            <input type="hidden" name="recurring_id" value={r.id} />
+                            <button
+                              type="submit"
+                              aria-label={`Delete ${r.merchant}`}
+                              title="Delete"
+                              className={`${iconButtonClass} hover:bg-brick/10 hover:text-brick`}
+                            >
+                              <Trash2 size={15} aria-hidden="true" />
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <div className="px-6 py-12 text-center">
+              <p className="font-display text-xl font-medium text-fg">No schedules yet</p>
+              <p className="mx-auto mt-2 max-w-prose text-sm text-fg-muted">
+                Add a schedule below for anything you pay or receive on a regular cycle.
+              </p>
+            </div>
+          )}
+          {recurring.totalCount > 0 && (
+            <div className="border-t border-rule px-4 pb-4">
+              <UrlPaginationBar pagination={pageInfo(recurring)} />
+            </div>
+          )}
+        </Card>
+      </Section>
+
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-8">
+        <Section title="Add a schedule">
+          <Card className="p-5">
             <RecurringTransactionForm
               action={handleCreate}
               accounts={accountList}
               customCategories={customCategories}
               customMerchants={customMerchants}
-              currency={workspace.base_currency || "BDT"}
+              currency={currency}
             />
-          </div>
-        </Card>
+          </Card>
+        </Section>
 
-        <Card className="shadow-card">
-          <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Holidays</h2>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Dates a schedule with "Skip dates marked as holidays" won't post on.</p>
-          </div>
-          <div className="p-5">
-            <form action={handleCreateHoliday} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <div className="flex-1 space-y-1.5">
-                <label htmlFor="holiday-date" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</label>
-                <Input id="holiday-date" name="date" type="date" required className="h-11" />
-              </div>
-              <div className="flex-1 space-y-1.5">
-                <label htmlFor="holiday-name" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Name</label>
-                <Input id="holiday-name" name="name" required placeholder="e.g. Eid, Independence Day" className="h-11" />
-              </div>
-              <Button type="submit" className="h-11 shrink-0 bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white">
-                <Plus size={15} className="mr-1.5 inline" /> Add
-              </Button>
+        <Section title="Holidays" description="Schedules set to skip holidays won't post on these dates.">
+          <Card className="p-5">
+            <form action={handleCreateHoliday} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+              <Field label="Date" htmlFor="holiday-date">
+                <Input id="holiday-date" name="date" type="date" required />
+              </Field>
+              <Field label="Name" htmlFor="holiday-name">
+                <Input id="holiday-name" name="name" required placeholder="e.g. Eid" />
+              </Field>
+              <SubmitButton loadingText="Adding..." variant="outline">
+                <Plus size={16} aria-hidden="true" /> Add
+              </SubmitButton>
             </form>
 
-            <div className="mt-4 space-y-2">
-              {holidays.rows.length ? (
-                holidays.rows.map((holiday) => (
-                  <div key={holiday.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900/40">
-                    <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
-                      <CalendarOff size={14} className="text-slate-400" />
-                      <span className="font-semibold">{new Date(holiday.date).toLocaleDateString()}</span>
-                      <span className="text-slate-400">·</span>
-                      <span>{holiday.name}</span>
-                    </div>
+            {holidays.rows.length ? (
+              <ul className="mt-4 border-t-2 border-fg/70">
+                {holidays.rows.map((holiday) => (
+                  <li key={holiday.id} className="flex items-center justify-between gap-3 border-b border-rule py-1 pl-1 text-sm last:border-b-0">
+                    <span className="min-w-0 break-words text-fg">
+                      <time dateTime={holiday.date} className="font-medium tabular-nums">
+                        {formatEntryDate(holiday.date)}
+                      </time>
+                      <span className="text-fg-muted"> · {holiday.name}</span>
+                    </span>
                     <form action={handleDeleteHoliday}>
                       <input type="hidden" name="holiday_id" value={holiday.id} />
-                      <button type="submit" aria-label={`Remove ${holiday.name}`} className="text-slate-400 hover:text-rose-500">
-                        <Trash2 size={14} />
+                      <button
+                        type="submit"
+                        aria-label={`Remove ${holiday.name}`}
+                        className={`${iconButtonClass} hover:bg-brick/10 hover:text-brick`}
+                      >
+                        <Trash2 size={15} aria-hidden="true" />
                       </button>
                     </form>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-slate-500 dark:text-slate-400">No holidays added yet.</p>
-              )}
-            </div>
-            <UrlPaginationBar pagination={pageInfo(holidays)} pageParam="holidayPage" />
-          </div>
-        </Card>
-      </div>
-
-      <div className="mt-8">
-        <Card className="overflow-hidden shadow-card">
-          <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Schedules</h2>
-          </div>
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
-            {recurringList.length ? (
-              recurringList.map((r) => (
-                <div key={r.id} className="group flex flex-col gap-3 p-5 transition-colors hover:bg-slate-50/60 dark:hover:bg-ink-900/40 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white shadow-sm ${r.is_active ? "bg-slate-900 dark:bg-slate-100 dark:text-slate-900" : "bg-slate-300 dark:bg-slate-700"}`}>
-                      <Repeat size={18} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{r.merchant}</h3>
-                        <Badge variant={r.type === "income" ? "emerald" : "coral"} size="sm">{r.type === "income" ? "Income" : "Expense"}</Badge>
-                        {!r.is_active && <Badge variant="secondary" size="sm">Paused</Badge>}
-                        <Link href={`/recurring?edit=${r.id}`} aria-label={`Edit ${r.merchant}`} className="inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-xs font-semibold text-slate-400 opacity-0 transition hover:bg-slate-100 hover:text-slate-700 group-hover:opacity-100 dark:hover:bg-ink-800 dark:hover:text-slate-200">
-                          <Pencil size={12} /> Edit
-                        </Link>
-                      </div>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {r.category} · {FREQUENCY_LABEL[r.frequency](r)}
-                        {r.skip_holidays ? " · skips holidays" : ""}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className={`text-sm font-bold ${r.type === "income" ? "text-emerald-600" : "text-coral-600 dark:text-rose-400"}`}>
-                        {r.type === "income" ? "+" : "-"}{money(r.amount, workspace.base_currency || "BDT")}
-                      </div>
-                      <div className="text-[11px] text-slate-400">{r.account_id ? accountList.find((a) => a.id === r.account_id)?.name : ""}</div>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <form action={handleToggleActive}>
-                        <input type="hidden" name="recurring_id" value={r.id} />
-                        <input type="hidden" name="is_active" value={(!r.is_active).toString()} />
-                        <button type="submit" aria-label={r.is_active ? "Pause" : "Resume"} className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-ink-800 dark:hover:text-slate-200">
-                          {r.is_active ? <Pause size={14} /> : <Play size={14} />}
-                        </button>
-                      </form>
-                      <form action={handleDelete}>
-                        <input type="hidden" name="recurring_id" value={r.id} />
-                        <button type="submit" aria-label={`Delete ${r.merchant}`} className="grid h-8 w-8 place-items-center rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20 dark:hover:text-rose-400">
-                          <Trash2 size={14} />
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-              ))
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <div className="p-6 text-sm text-slate-500 dark:text-slate-400">No recurring transactions yet. Add your first schedule above.</div>
+              <p className="mt-4 text-sm text-fg-muted">No holidays added yet.</p>
             )}
-          </div>
-          <div className="border-t border-slate-100 px-5 pb-4 dark:border-slate-800">
-            <UrlPaginationBar pagination={pageInfo(recurring)} />
-          </div>
-        </Card>
+            <UrlPaginationBar pagination={pageInfo(holidays)} pageParam="holidayPage" />
+          </Card>
+        </Section>
       </div>
     </div>
   );

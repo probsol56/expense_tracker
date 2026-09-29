@@ -72,7 +72,7 @@ export function DashboardShell({
         summary={summary}
         currency={currency}
       />
-      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
+      <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-8">
         <TransactionList
           transactions={listTransactions}
           pagination={pagination}
@@ -82,12 +82,18 @@ export function DashboardShell({
           onQueryChange={(value) => setParam({ q: value || undefined, page: "1" })}
           onPageChange={(p) => setParam({ page: String(p) })}
           onPageSizeChange={(size) => setParam({ pageSize: String(size), page: "1" })}
+          onAdd={() => setShowAdd(true)}
           currency={currency}
           isPending={isPending}
           accounts={accounts}
           loans={loans}
         />
-        <AccountList accounts={accounts} currency={currency} />
+        <AccountList
+          accounts={accounts}
+          totalBalance={summary.accounts_balance}
+          totalCount={summary.account_count}
+          currency={currency}
+        />
       </div>
       {showAdd && <AddTransactionModal onClose={() => setShowAdd(false)} currency={currency} accounts={accounts} loans={loans} />}
     </>

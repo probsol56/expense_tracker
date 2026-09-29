@@ -1,61 +1,60 @@
 "use client";
 
-import { ArrowUpRight, Plus } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui";
+import type { ActivityType } from "@/lib/dashboard";
 
 interface TransactionListFiltersProps {
-  filterType: "all" | "expenses" | "income" | "loan" | "transfer";
-  setFilterType: (type: "all" | "expenses" | "income" | "loan" | "transfer") => void;
-  onAdd?: () => void;
+  filterType: ActivityType;
+  setFilterType: (type: ActivityType) => void;
 }
 
-export function TransactionListFilters({
-  filterType,
-  setFilterType,
-  onAdd,
-}: TransactionListFiltersProps) {
+const FILTERS: { value: ActivityType; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "expenses", label: "Expenses" },
+  { value: "income", label: "Income" },
+  { value: "loan", label: "Loans" },
+  { value: "transfer", label: "Transfers" },
+];
+
+export function TransactionListFilters({ filterType, setFilterType }: TransactionListFiltersProps) {
   return (
-    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
-          Recent activity
-        </h2>
-        <p className="text-xs text-slate-500">Real-time ledger updates</p>
+    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="font-display text-2xl font-medium text-fg">Recent activity</h2>
+        <Link
+          href="/transactions"
+          className="text-sm font-semibold text-brass-strong underline-offset-4 hover:underline sm:hidden"
+        >
+          View all
+        </Link>
       </div>
-      <div className="flex items-center gap-2">
-        <div className="flex items-center rounded-xl bg-slate-100/80 dark:bg-ink-800/80 p-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
-          {(["all", "expenses", "income", "loan", "transfer"] as const).map((f) => (
-            <button
-              key={f}
-              type="button"
-              aria-pressed={filterType === f}
-              onClick={() => setFilterType(f)}
-              className={`rounded-lg px-3 py-1 transition-all ${
-                filterType === f
-                  ? "bg-white text-slate-900 shadow-sm dark:bg-ink-950 dark:text-slate-100"
-                  : "hover:text-slate-900 dark:hover:text-slate-100"
-              }`}
-            >
-              {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
+
+      <div className="flex items-center gap-4">
+        <div role="group" aria-label="Filter by type" className="-mx-1 flex overflow-x-auto">
+          {FILTERS.map(({ value, label }) => {
+            const isSelected = filterType === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => setFilterType(value)}
+                className={`min-h-11 shrink-0 border-b-2 px-2 text-sm transition-colors duration-150 ${
+                  isSelected
+                    ? "border-brass font-semibold text-fg"
+                    : "border-transparent text-fg-muted hover:text-fg"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
-        {onAdd && (
-          <Button
-            type="button"
-            size="sm"
-            onClick={onAdd}
-            className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
-          >
-            <Plus size={14} />
-            Add
-          </Button>
-        )}
-        <Link href="/transactions">
-          <Button variant="ghost" size="sm" className="text-teal-700 hover:text-teal-800 hover:bg-teal-50 font-semibold">
-            View all <ArrowUpRight size={14} />
-          </Button>
+        <Link
+          href="/transactions"
+          className="hidden shrink-0 text-sm font-semibold text-brass-strong underline-offset-4 hover:underline sm:inline"
+        >
+          View all
         </Link>
       </div>
     </div>

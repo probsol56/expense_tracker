@@ -68,7 +68,7 @@ export function PaginationBar({
     <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       {showPageSize && onPageSizeChange && (
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="text-sm text-fg-muted">
             Rows per page
           </span>
           <Select
@@ -76,7 +76,7 @@ export function PaginationBar({
             onValueChange={(v) => onPageSizeChange(Number(v))}
             disabled={disabled}
           >
-            <SelectTrigger className="h-8 w-20 text-xs">
+            <SelectTrigger className="h-10 w-20 border-rule bg-paper text-sm text-fg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -90,8 +90,8 @@ export function PaginationBar({
         </div>
       )}
 
-      <div className="flex items-center gap-1">
-        <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm tabular-nums text-fg-muted">
           {rangeStart}–{rangeEnd} of {totalCount}
           {totalRows !== undefined && totalRows !== totalCount &&
             ` of ${totalRows} records`}
@@ -101,7 +101,7 @@ export function PaginationBar({
             type="button"
             disabled={disabled || safePage <= 1}
             onClick={() => onPageChange(safePage - 1)}
-            className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-ink-800 dark:text-slate-400 dark:hover:bg-ink-700 dark:hover:text-slate-100"
+            className="grid h-10 w-10 place-items-center rounded-lg border border-rule bg-paper text-fg-muted transition-colors duration-150 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Previous page"
           >
             <ChevronLeft size={14} />
@@ -113,7 +113,7 @@ export function PaginationBar({
               p === "…" ? (
                 <span
                   key={`ellipsis-${i}`}
-                  className="px-1 text-xs text-slate-400"
+                  className="px-1 text-sm text-fg-muted"
                 >
                   …
                 </span>
@@ -123,10 +123,10 @@ export function PaginationBar({
                   type="button"
                   disabled={disabled}
                   onClick={() => onPageChange(p as number)}
-                  className={`h-8 min-w-[2rem] rounded-lg px-2 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                  className={`h-10 min-w-10 rounded-lg px-2 text-sm font-medium tabular-nums transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${
                     p === safePage
-                      ? "bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900"
-                      : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-ink-800 dark:text-slate-300 dark:hover:bg-ink-700"
+                      ? "bg-fg font-semibold text-paper"
+                      : "border border-rule bg-paper text-fg hover:bg-rule/30"
                   }`}
                 >
                   {p}
@@ -139,7 +139,7 @@ export function PaginationBar({
             type="button"
             disabled={disabled || safePage >= totalPages}
             onClick={() => onPageChange(safePage + 1)}
-            className="grid h-8 w-8 place-items-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-ink-800 dark:text-slate-400 dark:hover:bg-ink-700 dark:hover:text-slate-100"
+            className="grid h-10 w-10 place-items-center rounded-lg border border-rule bg-paper text-fg-muted transition-colors duration-150 hover:text-fg disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="Next page"
           >
             <ChevronRight size={14} />

@@ -7,45 +7,28 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: {
-          DEFAULT: "#0f172a",
-          50: "#f8fafc",
-          100: "#f1f5f9",
-          800: "#1e293b",
-          900: "#0f172a",
-          950: "#090d16",
+        // Ledger-book identity for the product surface. Values live in
+        // globals.css as RGB channels so light/dark swap without `dark:` variants.
+        canvas: "rgb(var(--canvas) / <alpha-value>)",
+        paper: "rgb(var(--paper) / <alpha-value>)",
+        fg: {
+          DEFAULT: "rgb(var(--fg) / <alpha-value>)",
+          muted: "rgb(var(--fg-muted) / <alpha-value>)",
         },
-        mint: {
-          DEFAULT: "#e6f7f2",
-          50: "#f2fbf8",
-          100: "#e6f7f2",
-          200: "#c4eee1",
-          300: "#92decb",
+        rule: "rgb(var(--rule) / <alpha-value>)",
+        brass: {
+          DEFAULT: "rgb(var(--brass) / <alpha-value>)",
+          // Text-safe variant: plain brass is decorative-only on light paper (2.8:1).
+          strong: "rgb(var(--brass-strong) / <alpha-value>)",
         },
-        teal: {
-          DEFAULT: "#0d9488",
-          50: "#f0fdfa",
-          100: "#ccfbf1",
-          500: "#14b8a6",
-          600: "#0d9488",
-          700: "#0f766e",
-          800: "#115e59",
+        moss: "rgb(var(--moss) / <alpha-value>)",
+        brick: "rgb(var(--brick) / <alpha-value>)",
+        cover: {
+          DEFAULT: "rgb(var(--cover) / <alpha-value>)",
+          fg: "rgb(var(--cover-fg) / <alpha-value>)",
+          muted: "rgb(var(--cover-muted) / <alpha-value>)",
         },
-        coral: {
-          DEFAULT: "#f43f5e",
-          50: "#fff1f2",
-          100: "#ffe4e6",
-          500: "#f43f5e",
-          600: "#e11d48",
-        },
-        sand: {
-          DEFAULT: "#fbfbfa",
-          50: "#ffffff",
-          100: "#fbfbfa",
-          200: "#f4f3ef",
-          300: "#e9e7e1",
-        },
-        // Ledger-book identity — used on the auth surface only.
+        // Ledger-book identity — fixed values used by the auth surface.
         ledger: {
           page: "#EEF1EF",
           "page-dark": "#0B0F0C",
@@ -74,6 +57,7 @@ export default {
       fontFamily: {
         sans: ["var(--font-sans)", "Inter", "system-ui", "sans-serif"],
         ledger: ["var(--font-ledger-display)", "Georgia", "serif"],
+        display: ["var(--font-display)", "Georgia", "serif"],
       },
       zIndex: {
         base: "0",
@@ -86,26 +70,15 @@ export default {
         toast: "600",
       },
       boxShadow: {
-        soft: "0 2px 15px -3px rgba(15, 23, 42, 0.04), 0 10px 30px -4px rgba(15, 23, 42, 0.03)",
-        card: "0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 8px 24px -6px rgba(15, 23, 42, 0.06)",
         hover: "0 12px 36px -8px rgba(15, 23, 42, 0.1), 0 4px 12px -2px rgba(15, 23, 42, 0.05)",
-        glow: "0 0 20px -2px rgba(13, 148, 136, 0.25)",
-        "glow-coral": "0 0 20px -2px rgba(244, 63, 94, 0.25)",
       },
       animation: {
-        "pulse-subtle": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        wave: "wave 2s infinite ease-in-out",
-        shimmer: "shimmer 1.8s ease-in-out infinite",
+        settle: "settle 320ms cubic-bezier(0.2, 0.7, 0.2, 1) both",
       },
       keyframes: {
-        wave: {
-          "0%, 100%": { transform: "rotate(0deg)" },
-          "20%, 60%": { transform: "rotate(14deg)" },
-          "40%, 80%": { transform: "rotate(-10deg)" },
-        },
-        shimmer: {
-          "0%": { transform: "translateX(-100%)" },
-          "100%": { transform: "translateX(100%)" },
+        settle: {
+          from: { opacity: "0", transform: "translateY(4px)" },
+          to: { opacity: "1", transform: "none" },
         },
       },
     },

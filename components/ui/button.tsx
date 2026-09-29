@@ -5,30 +5,24 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold tracking-tight transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer active:scale-[0.98]",
+  "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-semibold transition-colors duration-150 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default:
-          "bg-slate-900 text-white shadow-sm hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white",
-        primary:
-          "bg-gradient-to-r from-teal-600 to-teal-500 text-white shadow-sm hover:from-teal-700 hover:to-teal-600 hover:shadow-glow hover:-translate-y-0.5",
-        destructive:
-          "bg-coral text-white shadow-sm hover:bg-coral-600 hover:shadow-glow-coral hover:-translate-y-0.5",
-        outline:
-          "border border-slate-200/90 bg-white/80 backdrop-blur-sm text-slate-800 hover:border-slate-300 hover:bg-slate-50/80 hover:text-slate-900 shadow-sm dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-ink-800 dark:hover:text-slate-100 dark:shadow-none",
-        secondary:
-          "bg-slate-100 text-slate-900 hover:bg-slate-200/90 shadow-sm dark:bg-ink-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:shadow-none",
-        ghost:
-          "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-ink-800 dark:hover:text-slate-100",
-        link:
-          "text-teal-600 underline-offset-4 hover:underline hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300",
+        default: "bg-fg text-paper hover:bg-fg/85",
+        primary: "bg-brass text-cover hover:bg-brass/85",
+        destructive: "bg-brick text-paper hover:bg-brick/85",
+        outline: "border border-rule bg-paper text-fg hover:border-fg/30 hover:bg-canvas",
+        secondary: "bg-rule/60 text-fg hover:bg-rule",
+        ghost: "text-fg-muted hover:bg-rule/50 hover:text-fg",
+        link: "text-brass-strong underline-offset-4 hover:underline",
       },
+      // Every size keeps a 44px hit area on touch (§ touch targets); `sm` is for dense desktop rows.
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-lg px-4 text-xs font-medium",
-        lg: "h-11 rounded-xl px-6 text-base",
-        icon: "h-9 w-9 rounded-lg",
+        default: "h-11 px-4",
+        sm: "h-10 px-3",
+        lg: "h-12 px-6 text-base",
+        icon: "h-11 w-11",
       },
     },
     defaultVariants: {

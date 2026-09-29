@@ -57,3 +57,13 @@ export function getSearchParam(
   if (Array.isArray(value)) return value[0] ?? "";
   return value ?? "";
 }
+
+/** Entry dates are calendar days ("2026-09-28"); formatting in UTC keeps them on the recorded day in every timezone. */
+export function formatEntryDate(
+  date: string,
+  options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", year: "numeric" },
+) {
+  const parsed = new Date(`${date.slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return date;
+  return parsed.toLocaleDateString("en-GB", { ...options, timeZone: "UTC" });
+}

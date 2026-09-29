@@ -1,15 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Landmark, Pencil, Plus, TrendingDown } from "lucide-react";
-import { Badge, Button, Card, Input } from "@/components/ui";
+import { Pencil, Plus, TrendingDown } from "lucide-react";
+import { Alert, Badge, Card, Field, Input, NativeSelect, SubmitButton, Textarea } from "@/components/ui";
 import { EditDialog } from "@/components/edit-dialog";
+import { FigureStrip } from "@/components/figure-strip";
+import { PageHeader } from "@/components/page-header";
+import { Section } from "@/components/section";
+import { SignedOutNotice } from "@/components/signed-out-notice";
 import { createLoan, createLoanPayment, updateLoan } from "@/app/(app)/loans/actions";
 import { UrlPaginationBar } from "@/components/url-pagination-bar";
 import { fetchLoanSummary } from "@/lib/list-summaries";
 import { LIST_PAGE_SIZE, PICKER_LIMITS, RECENT_REPAYMENTS_PER_LOAN, fetchPage, pageInfo, parsePage } from "@/lib/pagination";
 import { parseRecordId } from "@/lib/validations";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
-import { money } from "@/lib/utils";
+import { formatEntryDate, money } from "@/lib/utils";
 import type { Account, Loan, LoanPayment } from "@/lib/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -36,9 +40,9 @@ async function fetchRecentPayments(
   return new Map((data ?? []).map((loan): [string, RecentPayment[]] => [loan.id, loan.loan_payments]));
 }
 
-const LOAN_STATUS_BADGE: Record<Loan["status"], { variant: "amber" | "emerald" | "secondary"; label: string }> = {
-  active: { variant: "amber", label: "Active" },
-  paid: { variant: "emerald", label: "Paid off" },
+const LOAN_STATUS_BADGE: Record<Loan["status"], { variant: "warning" | "positive" | "secondary"; label: string }> = {
+  active: { variant: "warning", label: "Active" },
+  paid: { variant: "positive", label: "Paid off" },
   closed: { variant: "secondary", label: "Closed" },
 };
 
@@ -76,15 +80,10 @@ export default async function LoansPage({
 
   if (!user || !supabase || !workspace) {
     return (
-      <div className="mx-auto max-w-xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-card">
-        <h1 className="text-xl font-bold text-slate-900">Sign in to manage loans</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Create a workspace first, then return here to track each loan and its repayments.
-        </p>
-        <Link href="/login" className="mt-6 inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-          Go to login
-        </Link>
-      </div>
+      <SignedOutNotice
+        title="Sign in to manage loans"
+        description="Create a workspace first, then return here to track each loan and its repayments."
+      />
     );
   }
 
@@ -139,251 +138,216 @@ export default async function LoansPage({
     editingLoanAccountId = linkedTransaction?.account_id ?? "";
   }
 
+  const currency = workspace.base_currency || "BDT";
+  const accountOptions = accountList.map((account) => (
+    <option key={account.id} value={account.id}>
+      {account.name} — {money(Number(account.balance), currency)}
+    </option>
+  ));
+
   return (
-    <div className="mx-auto max-w-6xl">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-amber-200/70 bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
-              <Landmark size={12} /> Loan tracking
-            </div>
-            <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-              Loans & repayments
-            </h1>
-            <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Track each loan separately and record repayments against the correct balance.
-            </p>
-          </div>
-        </div>
+    <div className="mx-auto max-w-5xl">
+      <PageHeader
+        eyebrow={`${workspace.name} · ${loans.totalCount} ${loans.totalCount === 1 ? "loan" : "loans"}`}
+        title="Loans"
+        description="Track each loan on its own and record repayments against the right balance."
+      />
 
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <Card className="p-5 shadow-card">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Borrowed</span>
-              <Landmark size={16} className="text-amber-600" />
-            </div>
-            <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{money(summary.total_borrowed, workspace.base_currency || "BDT")}</div>
-          </Card>
+      <FigureStrip
+        label="Loan totals"
+        figures={[
+          { label: "Borrowed", value: money(summary.total_borrowed, currency) },
+          { label: "Repaid", value: money(summary.total_repaid, currency), tone: "positive" },
+          { label: "Still owed", value: money(summary.total_outstanding, currency) },
+        ]}
+      />
 
-          <Card className="p-5 shadow-card">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Repaid</span>
-              <TrendingDown size={16} className="text-teal-600" />
-            </div>
-            <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{money(summary.total_repaid, workspace.base_currency || "BDT")}</div>
-          </Card>
+      {!accountList.length && (
+        <Alert tone="warning" className="mb-6">
+          You need an account before you can add a loan or record a repayment, since that&apos;s where the cash lands and
+          leaves from.{" "}
+          <Link href="/accounts" className="font-semibold underline underline-offset-2">
+            Add an account
+          </Link>
+          .
+        </Alert>
+      )}
 
-          <Card className="p-5 shadow-card">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Remaining</span>
-              <Landmark size={16} className="text-coral-600" />
-            </div>
-            <div className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">{money(summary.total_outstanding, workspace.base_currency || "BDT")}</div>
-          </Card>
-        </div>
+      {error && !editingLoan && <Alert className="mb-6">{error}</Alert>}
 
-        {!accountList.length && (
-          <div className="mt-8 rounded-2xl border border-amber-200/70 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
-            You need an account before you can add a loan or record a repayment — that&apos;s where the cash lands and leaves from.{" "}
-            <Link href="/accounts" className="font-semibold underline underline-offset-2">Add an account</Link>.
-          </div>
-        )}
+      {editingLoan && (
+        <EditDialog title="Edit loan" closeHref="/loans" error={error}>
+          <LoanEditForm loan={editingLoan} accountId={editingLoanAccountId} accounts={accountList} currency={currency} />
+        </EditDialog>
+      )}
 
-        {error && !editingLoan && (
-          <div className="mt-8 rounded-2xl border border-rose-200/70 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
-            {error}
-          </div>
-        )}
-
-        {editingLoan && (
-          <EditDialog title="Edit loan" closeHref="/loans" error={error}>
-            <LoanEditForm loan={editingLoan} accountId={editingLoanAccountId} accounts={accountList} currency={workspace.base_currency || "BDT"} />
-          </EditDialog>
-        )}
-
-        <div className="mt-8 grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <Card className="shadow-card">
-            <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Add a loan</h2>
-            </div>
-            <div className="p-5">
-              <form action={handleCreateLoan} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Loan name</label>
-                  <Input name="name" required className="h-11" placeholder="e.g. Family support, Business loan" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Lender</label>
-                  <Input name="lender" required className="h-11" placeholder="e.g. X Person, Bank, Friend" />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount</label>
-                    <Input name="principal_amount" type="number" min="0.01" step="0.01" required className="h-11" placeholder="0.00" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date received</label>
-                    <Input name="date_started" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className="h-11" />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deposit into</label>
-                  <select name="account_id" required disabled={!accountList.length} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                    <option value="">Choose an account</option>
-                    {accountList.map((account) => (
-                      <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), workspace.base_currency || "BDT")}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</label>
-                  <textarea name="notes" rows={3} className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus-visible:border-teal-500 focus-visible:ring-4 focus-visible:ring-teal-500/10 dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-100 dark:placeholder:text-slate-500" placeholder="Optional details about this loan" />
-                </div>
-                <Button type="submit" disabled={!accountList.length} className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white">
-                  <Plus size={15} className="mr-2 inline" /> Add loan
-                </Button>
-              </form>
-            </div>
-          </Card>
-
-          <Card className="shadow-card">
-            <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Record a repayment</h2>
-            </div>
-            <div className="p-5">
-              <form action={handleCreateLoanPayment} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Select loan</label>
-                  <select name="loan_id" required className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                    <option value="">Choose a loan</option>
-                    {(repayableLoans ?? []).map((loan) => (
-                      <option key={loan.id} value={loan.id}>{loan.name} — {money(Number(loan.outstanding_balance), workspace.base_currency || "BDT")} remaining</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount paid</label>
-                    <Input name="amount" type="number" min="0.01" step="0.01" required className="h-11" placeholder="0.00" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</label>
-                    <Input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className="h-11" />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Pay from</label>
-                  <select name="account_id" required disabled={!accountList.length} className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-                    <option value="">Choose an account</option>
-                    {accountList.map((account) => (
-                      <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), workspace.base_currency || "BDT")}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Note</label>
-                  <textarea name="notes" rows={3} className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus-visible:border-teal-500 focus-visible:ring-4 focus-visible:ring-teal-500/10 dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-100 dark:placeholder:text-slate-500" placeholder="Optional description for this repayment" />
-                </div>
-                <Button type="submit" disabled={!accountList.length} className="w-full justify-center bg-emerald-600 text-white hover:bg-emerald-500">
-                  <TrendingDown size={15} className="mr-2 inline" /> Save repayment
-                </Button>
-              </form>
-            </div>
-          </Card>
-        </div>
-
-        <div className="mt-8">
-          <Card className="overflow-hidden shadow-card">
-            <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Loan list</h2>
-            </div>
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {loans.rows.length ? (
-                loans.rows.map((loan) => {
-                  const paymentsForLoan = recentPayments.get(loan.id) ?? [];
-                  const totalPaid = Number(loan.total_paid);
-                  const principal = Number(loan.principal_amount);
-                  const paidRatio = principal > 0 ? Math.min(1, totalPaid / principal) : 0;
-                  const statusBadge = LOAN_STATUS_BADGE[loan.status] ?? LOAN_STATUS_BADGE.active;
-                  return (
-                    <div key={loan.id} className="group p-5 transition-colors hover:bg-slate-50/60 dark:hover:bg-ink-900/40">
-                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <div className="flex items-start gap-3">
-                          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-white shadow-sm transition-transform group-hover:scale-105 dark:bg-slate-100 dark:text-slate-900">
-                            <Landmark size={18} />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{loan.name}</h3>
-                              <Badge variant={statusBadge.variant} size="sm">{statusBadge.label}</Badge>
-                              <Link
-                                href={`/loans?edit=${loan.id}`}
-                                aria-label={`Edit ${loan.name}`}
-                                className="inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-xs font-semibold text-slate-400 opacity-0 transition hover:bg-slate-100 hover:text-slate-700 group-hover:opacity-100 dark:hover:bg-ink-800 dark:hover:text-slate-200"
-                              >
-                                <Pencil size={12} /> Edit
-                              </Link>
-                            </div>
-                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Lender: {loan.lender}</p>
-                          </div>
+      <Section title="Loan book" className="mb-10">
+        <Card className="overflow-hidden">
+          {loans.rows.length ? (
+            <ul>
+              {loans.rows.map((loan) => {
+                const paymentsForLoan = recentPayments.get(loan.id) ?? [];
+                const totalPaid = Number(loan.total_paid);
+                const principal = Number(loan.principal_amount);
+                const paidPercent = principal > 0 ? Math.round(Math.min(1, totalPaid / principal) * 100) : 0;
+                const statusBadge = LOAN_STATUS_BADGE[loan.status] ?? LOAN_STATUS_BADGE.active;
+                return (
+                  <li key={loan.id} className="border-b border-rule p-5 last:border-b-0">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="break-words font-display text-xl font-medium text-fg">{loan.name}</h3>
+                          <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
                         </div>
-                        <div className="grid gap-2 text-right text-sm text-slate-600 dark:text-slate-300 sm:grid-cols-3">
-                          <div>
-                            <div className="text-[10px] uppercase tracking-wider text-slate-400">Borrowed</div>
-                            <div className="font-bold">{money(principal, workspace.base_currency || "BDT")}</div>
-                          </div>
-                          <div>
-                            <div className="text-[10px] uppercase tracking-wider text-slate-400">Paid</div>
-                            <div className="font-bold text-teal-600 dark:text-teal-400">{money(totalPaid, workspace.base_currency || "BDT")}</div>
-                          </div>
-                          <div>
-                            <div className="text-[10px] uppercase tracking-wider text-slate-400">Remaining</div>
-                            <div className="font-bold text-coral-600 dark:text-rose-400">{money(Number(loan.outstanding_balance), workspace.base_currency || "BDT")}</div>
-                          </div>
-                        </div>
+                        <p className="mt-1 text-sm text-fg-muted">
+                          From {loan.lender} · received {formatEntryDate(loan.date_started)}
+                        </p>
                       </div>
 
+                      <dl className="grid shrink-0 grid-cols-3 text-right tabular-nums md:w-96">
+                        <div className="pr-3">
+                          <dt className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Borrowed</dt>
+                          <dd className="mt-0.5 font-medium text-fg">{money(principal, currency)}</dd>
+                        </div>
+                        <div className="border-l border-brass/40 px-3">
+                          <dt className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Repaid</dt>
+                          <dd className="mt-0.5 font-medium text-moss">{money(totalPaid, currency)}</dd>
+                        </div>
+                        <div className="border-l border-brass/40 pl-3">
+                          <dt className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Owed</dt>
+                          <dd className="mt-0.5 font-medium text-fg">{money(Number(loan.outstanding_balance), currency)}</dd>
+                        </div>
+                      </dl>
+                    </div>
+
+                    <div className="mt-4 flex items-center gap-3">
                       <div
-                        className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
+                        className="h-1.5 flex-1 overflow-hidden rounded-full bg-rule/70"
                         role="progressbar"
-                        aria-label={`${loan.name} repayment progress`}
-                        aria-valuenow={Math.round(paidRatio * 100)}
+                        aria-label={`${loan.name} repaid`}
+                        aria-valuenow={paidPercent}
                         aria-valuemin={0}
                         aria-valuemax={100}
                       >
-                        <div
-                          className="h-full rounded-full bg-teal-500 transition-[width] duration-300"
-                          style={{ width: `${paidRatio * 100}%` }}
-                        />
+                        <div className="h-full rounded-full bg-moss" style={{ width: `${paidPercent}%` }} />
                       </div>
-
-                      {paymentsForLoan.length > 0 && (
-                        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-700 dark:bg-slate-900/40">
-                          <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Recent repayments</div>
-                          <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                            {paymentsForLoan.map((payment) => (
-                              <div key={payment.id} className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 shadow-sm dark:bg-slate-800/70">
-                                <div>
-                                  <div className="font-medium">{money(Number(payment.amount), workspace.base_currency || "BDT")}</div>
-                                  {payment.notes && <div className="text-[11px] text-slate-400">{payment.notes}</div>}
-                                </div>
-                                <div className="text-[11px] text-slate-400">{new Date(payment.date).toLocaleDateString()}</div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                      <span className="w-20 shrink-0 text-right text-sm tabular-nums text-fg-muted">{paidPercent}% repaid</span>
                     </div>
-                  );
-                })
-              ) : (
-                <div className="p-6 text-sm text-slate-500 dark:text-slate-400">No loans yet. Add the first loan to start tracking repayments.</div>
-              )}
+
+                    {paymentsForLoan.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Recent repayments</h4>
+                        <ul className="mt-1">
+                          {paymentsForLoan.map((payment) => (
+                            <li key={payment.id} className="flex items-baseline justify-between gap-4 border-b border-rule py-2 text-sm last:border-b-0">
+                              <span className="min-w-0 break-words text-fg-muted">
+                                <time dateTime={payment.date} className="tabular-nums">{formatEntryDate(payment.date)}</time>
+                                {payment.notes && <span> · {payment.notes}</span>}
+                              </span>
+                              <span className="shrink-0 font-medium tabular-nums text-fg">{money(Number(payment.amount), currency)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <Link
+                      href={`/loans?edit=${loan.id}`}
+                      className="mt-2 -ml-2 inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-sm font-semibold text-brass-strong transition-colors duration-150 hover:bg-rule/40 hover:text-fg"
+                    >
+                      <Pencil size={14} aria-hidden="true" /> Edit<span className="sr-only"> {loan.name}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="px-6 py-12 text-center">
+              <p className="font-display text-xl font-medium text-fg">No loans recorded</p>
+              <p className="mx-auto mt-2 max-w-prose text-sm text-fg-muted">
+                Add a loan below to track what you owe and each repayment against it.
+              </p>
             </div>
-            <div className="border-t border-slate-100 px-5 pb-4 dark:border-slate-800">
+          )}
+          {loans.totalCount > 0 && (
+            <div className="border-t border-rule px-5 pb-4">
               <UrlPaginationBar pagination={pageInfo(loans)} />
             </div>
+          )}
+        </Card>
+      </Section>
+
+      <div className="grid gap-10 lg:grid-cols-2 lg:gap-8">
+        <Section title="Add a loan">
+          <Card className="p-5">
+            <form action={handleCreateLoan} className="space-y-4">
+              <Field label="Loan name" htmlFor="loan-name">
+                <Input id="loan-name" name="name" required placeholder="e.g. Family support, Business loan" />
+              </Field>
+              <Field label="Lender" htmlFor="loan-lender">
+                <Input id="loan-lender" name="lender" required placeholder="e.g. a person, bank or friend" />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Amount" htmlFor="loan-amount">
+                  <Input id="loan-amount" name="principal_amount" type="number" min="0.01" step="0.01" inputMode="decimal" required placeholder="0.00" />
+                </Field>
+                <Field label="Date received" htmlFor="loan-date">
+                  <Input id="loan-date" name="date_started" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+                </Field>
+              </div>
+              <Field label="Deposit into" htmlFor="loan-account">
+                <NativeSelect id="loan-account" name="account_id" required disabled={!accountList.length}>
+                  <option value="">Choose an account</option>
+                  {accountOptions}
+                </NativeSelect>
+              </Field>
+              <Field label="Notes (optional)" htmlFor="loan-notes">
+                <Textarea id="loan-notes" name="notes" rows={3} placeholder="Details about this loan" />
+              </Field>
+              <SubmitButton loadingText="Adding loan..." disabled={!accountList.length} className="w-full">
+                <Plus size={16} aria-hidden="true" /> Add loan
+              </SubmitButton>
+            </form>
           </Card>
-        </div>
+        </Section>
+
+        <Section title="Record a repayment">
+          <Card className="p-5">
+            <form action={handleCreateLoanPayment} className="space-y-4">
+              <Field label="Loan" htmlFor="repayment-loan">
+                <NativeSelect id="repayment-loan" name="loan_id" required>
+                  <option value="">Choose a loan</option>
+                  {(repayableLoans ?? []).map((loan) => (
+                    <option key={loan.id} value={loan.id}>
+                      {loan.name} — {money(Number(loan.outstanding_balance), currency)} owed
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Amount paid" htmlFor="repayment-amount">
+                  <Input id="repayment-amount" name="amount" type="number" min="0.01" step="0.01" inputMode="decimal" required placeholder="0.00" />
+                </Field>
+                <Field label="Date" htmlFor="repayment-date">
+                  <Input id="repayment-date" name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+                </Field>
+              </div>
+              <Field label="Pay from" htmlFor="repayment-account">
+                <NativeSelect id="repayment-account" name="account_id" required disabled={!accountList.length}>
+                  <option value="">Choose an account</option>
+                  {accountOptions}
+                </NativeSelect>
+              </Field>
+              <Field label="Note (optional)" htmlFor="repayment-notes">
+                <Textarea id="repayment-notes" name="notes" rows={3} placeholder="Description for this repayment" />
+              </Field>
+              <SubmitButton loadingText="Saving repayment..." disabled={!accountList.length} className="w-full">
+                <TrendingDown size={16} aria-hidden="true" /> Save repayment
+              </SubmitButton>
+            </form>
+          </Card>
+        </Section>
+      </div>
     </div>
   );
 }
@@ -400,56 +364,64 @@ function LoanEditForm({
   currency: string;
 }) {
   return (
-      <form action={handleUpdateLoan} className="space-y-4">
-        <input type="hidden" name="loan_id" value={loan.id} />
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Loan name</label>
-          <Input name="name" required defaultValue={loan.name} className="h-11" />
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Lender</label>
-          <Input name="lender" required defaultValue={loan.lender} className="h-11" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount</label>
-            <Input name="principal_amount" type="number" min="0.01" step="0.01" required defaultValue={loan.principal_amount} className="h-11" />
-          </div>
-          <div className="space-y-1.5">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date received</label>
-            <Input name="date_started" type="date" defaultValue={loan.date_started} className="h-11" />
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Deposit into</label>
-          <select
-            name="account_id"
-            required={Boolean(loan.transaction_id)}
-            disabled={!accounts.length}
-            defaultValue={accountId}
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          >
-            <option value="">Choose an account</option>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), currency)}</option>
-            ))}
-          </select>
-          <p className="text-[11px] text-slate-400">
-            {loan.transaction_id
-              ? "Moving this to a different account shifts the disbursement there and recalculates both balances."
-              : "This loan predates account tracking. Choose an account to post the disbursement now and start tracking its balance impact."}
-          </p>
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</label>
-          <textarea name="notes" rows={3} defaultValue={loan.notes ?? ""} className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus-visible:border-teal-500 focus-visible:ring-4 focus-visible:ring-teal-500/10 dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-100 dark:placeholder:text-slate-500" placeholder="Optional details about this loan" />
-        </div>
-        <p className="text-xs text-slate-400">
-          Changing the amount adjusts the remaining balance by the difference — repayments already made aren&apos;t affected.
-        </p>
-        <Button type="submit" className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white">
-          Save changes
-        </Button>
-      </form>
+    <form action={handleUpdateLoan} className="space-y-4">
+      <input type="hidden" name="loan_id" value={loan.id} />
+      <Field label="Loan name" htmlFor="edit-loan-name">
+        <Input id="edit-loan-name" name="name" required defaultValue={loan.name} />
+      </Field>
+      <Field label="Lender" htmlFor="edit-loan-lender">
+        <Input id="edit-loan-lender" name="lender" required defaultValue={loan.lender} />
+      </Field>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Amount" htmlFor="edit-loan-amount">
+          <Input
+            id="edit-loan-amount"
+            name="principal_amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            inputMode="decimal"
+            required
+            defaultValue={loan.principal_amount}
+          />
+        </Field>
+        <Field label="Date received" htmlFor="edit-loan-date">
+          <Input id="edit-loan-date" name="date_started" type="date" defaultValue={loan.date_started} />
+        </Field>
+      </div>
+      <Field
+        label="Deposit into"
+        htmlFor="edit-loan-account"
+        hint={
+          loan.transaction_id
+            ? "Moving this to a different account shifts the disbursement there and recalculates both balances."
+            : "This loan predates account tracking. Choose an account to post the disbursement now and start tracking its balance impact."
+        }
+      >
+        <NativeSelect
+          id="edit-loan-account"
+          name="account_id"
+          required={Boolean(loan.transaction_id)}
+          disabled={!accounts.length}
+          defaultValue={accountId}
+        >
+          <option value="">Choose an account</option>
+          {accounts.map((account) => (
+            <option key={account.id} value={account.id}>
+              {account.name} — {money(Number(account.balance), currency)}
+            </option>
+          ))}
+        </NativeSelect>
+      </Field>
+      <Field label="Notes (optional)" htmlFor="edit-loan-notes">
+        <Textarea id="edit-loan-notes" name="notes" rows={3} defaultValue={loan.notes ?? ""} placeholder="Details about this loan" />
+      </Field>
+      <p className="text-sm text-fg-muted">
+        Changing the amount adjusts the remaining balance by the difference. Repayments already made aren&apos;t affected.
+      </p>
+      <SubmitButton loadingText="Saving..." className="w-full">
+        Save changes
+      </SubmitButton>
+    </form>
   );
 }

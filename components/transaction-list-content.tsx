@@ -1,6 +1,7 @@
 "use client";
 
-import { Receipt } from "lucide-react";
+import Link from "next/link";
+import { LedgerTable } from "@/components/ledger-table";
 import { TransactionListItem } from "@/components/transaction-list-item";
 import type { Transaction } from "@/lib/types";
 
@@ -11,6 +12,7 @@ interface TransactionListContentProps {
   filterType: "all" | "expenses" | "income" | "loan" | "transfer";
   onEdit: (transaction: Transaction) => void;
   onClearFilters: () => void;
+  onAdd: () => void;
 }
 
 export function TransactionListContent({
@@ -20,45 +22,58 @@ export function TransactionListContent({
   filterType,
   onEdit,
   onClearFilters,
+  onAdd,
 }: TransactionListContentProps) {
   if (transactions.length) {
     return (
-      <div className="divide-y divide-slate-100/80">
-        {transactions.map((transaction) => (
-          <TransactionListItem
-            key={transaction.id}
-            transaction={transaction}
-            currency={currency}
-            onEdit={onEdit}
-          />
-        ))}
-      </div>
+      <LedgerTable caption="Recent transactions">
+        <tbody>
+          {transactions.map((transaction) => (
+            <TransactionListItem
+              key={transaction.id}
+              transaction={transaction}
+              currency={currency}
+              onEdit={onEdit}
+            />
+          ))}
+        </tbody>
+      </LedgerTable>
     );
   }
 
+  const isFiltered = Boolean(query) || filterType !== "all";
+
   return (
-    <div className="py-12 px-4 text-center">
-      <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-ink-800">
-        <Receipt size={22} />
-      </div>
-      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-        {query || filterType !== "all"
-          ? "No transactions match the current filters"
-          : "No transactions recorded"}
+    <div className="px-6 py-12 text-center">
+      <p className="font-display text-xl font-medium text-fg">
+        {isFiltered ? "No entries match these filters" : "This page of the ledger is blank"}
       </p>
-      <p className="mt-1 text-xs text-slate-400">
-        {query || filterType !== "all"
-          ? "Your ledger has records, but none match this filter."
-          : "Add your first transaction to populate your financial ledger."}
+      <p className="mx-auto mt-2 max-w-prose text-sm text-fg-muted">
+        {isFiltered
+          ? "Other entries exist. Change or clear the filters to see them."
+          : "Record an expense or income and it will appear here."}
       </p>
-      {(query || filterType !== "all") && (
+      {isFiltered ? (
         <button
           type="button"
           onClick={onClearFilters}
-          className="mt-3 text-xs font-semibold text-teal-700 hover:text-teal-800 underline underline-offset-4"
+          className="mt-4 min-h-11 rounded-lg px-4 text-sm font-semibold text-brass-strong underline underline-offset-4 hover:text-fg"
         >
           Clear filters
         </button>
+      ) : (
+        <div className="mt-4 flex items-center justify-center gap-4">
+          <button
+            type="button"
+            onClick={onAdd}
+            className="min-h-11 rounded-lg bg-brass px-5 text-sm font-semibold text-cover transition-colors duration-150 hover:bg-brass/90"
+          >
+            Add transaction
+          </button>
+          <Link href="/import" className="text-sm font-semibold text-brass-strong underline underline-offset-4 hover:text-fg">
+            Import a statement
+          </Link>
+        </div>
       )}
     </div>
   );

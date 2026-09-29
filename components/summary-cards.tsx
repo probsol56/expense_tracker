@@ -1,8 +1,19 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowUpRight, Landmark, TrendingUp, Wallet } from "lucide-react";
-import { Card } from "@/components/ui";
 import { money } from "@/lib/utils";
 import type { DashboardSummary } from "@/lib/dashboard";
+
+const FIGURE_STAGGER_MS = 60;
+
+interface Figure {
+  label: string;
+  value: string;
+  detail: string;
+  href: string;
+}
+
+function pluralize(count: number, singular: string) {
+  return `${count} ${count === 1 ? singular : `${singular}s`}`;
+}
 
 export function SummaryCards({
   summary,
@@ -11,139 +22,72 @@ export function SummaryCards({
   summary: DashboardSummary;
   currency?: string;
 }) {
-  const {
-    month_spending: spending,
-    month_income: income,
-    month_expense_count: expenseCount,
-    account_count: accountCount,
-    outstanding_loan_balance: outstandingLoanBalance,
-    loan_paid: loanPaid,
-    active_loan_count: loanCount,
-  } = summary;
-
   // Net worth is assets minus liabilities — cash an account received from a
   // loan is real, but so is the debt it created, so the outstanding balance
-  // has to come back out here rather than only showing up on its own card.
-  const netWorth = summary.accounts_balance - outstandingLoanBalance;
+  // has to come back out here rather than only showing up on its own figure.
+  const netWorth = summary.accounts_balance - summary.outstanding_loan_balance;
+
+  const figures: Figure[] = [
+    {
+      label: "Spent this month",
+      value: money(summary.month_spending, currency),
+      detail: pluralize(summary.month_expense_count, "expense"),
+      href:"/transactions",
+    },
+    {
+      label: "Earned this month",
+      value: money(summary.month_income, currency),
+      detail: "All income recorded",
+      href:"/transactions",
+    },
+    {
+      label: "Loans owed",
+      value: money(summary.outstanding_loan_balance, currency),
+      detail: `${pluralize(summary.active_loan_count, "active loan")} · ${money(summary.loan_paid, currency)} repaid`,
+      href:"/loans",
+    },
+  ];
+
+  const figureLinkClass =
+    "group block rounded-sm animate-settle focus-visible:outline-offset-4";
 
   return (
-    <section className="mb-7 grid gap-4 grid-cols-1 md:grid-cols-4">
-      {/* Net Worth Card */}
-      <Link href="/accounts" className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/70 focus-visible:ring-offset-2 rounded-2xl">
-        <div className="relative overflow-hidden rounded-2xl border border-slate-900/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-5 sm:p-6 text-white shadow-hover">
-          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-teal-500/10 blur-2xl" />
-          <div className="relative z-10 flex flex-col justify-between h-full">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Total Net Worth
-              </span>
-              <div className="grid h-9 w-9 place-items-center rounded-xl bg-white/10 text-teal-400 backdrop-blur-md">
-                <Wallet size={18} />
-              </div>
-            </div>
-
-            <div className="my-3">
-              <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white truncate">
-                {money(netWorth, currency)}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-slate-400">
-              <span className="flex items-center gap-1.5 text-teal-400 font-medium">
-                <Landmark size={13} />
-                {accountCount} {accountCount === 1 ? "account" : "accounts"} active
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-300">
-                Live Balance
-              </span>
-            </div>
-          </div>
-        </div>
+    <section
+      aria-label="This month at a glance"
+      // A double rule is the ledger mark for a closing total.
+      className="mb-10 grid gap-6 border-b-[3px] border-double border-fg/50 pb-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)] lg:gap-8"
+    >
+      <Link href="/accounts" className={figureLinkClass}>
+        <p className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Net worth</p>
+        <p
+          className={`mt-2 break-words font-display text-4xl font-medium tabular-nums lining-nums tracking-tight sm:text-5xl ${
+            netWorth < 0 ? "text-brick" : "text-fg"
+          }`}
+        >
+          {money(netWorth, currency)}
+        </p>
+        <p className="mt-2 text-sm text-fg-muted">
+          {pluralize(summary.account_count, "account")}, less loans owed
+          <span aria-hidden="true" className="ml-1 inline-block transition-transform duration-150 group-hover:translate-x-0.5">→</span>
+        </p>
       </Link>
 
-      {/* Monthly Spending Card */}
-      <Link href="/transactions" className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-coral-500/70 focus-visible:ring-offset-2 rounded-2xl">
-        <Card className="relative overflow-hidden p-5 sm:p-6 shadow-card hover:shadow-hover transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              This Month&apos;s Spending
-            </span>
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-coral-50 text-coral-600 dark:bg-coral-500/10 dark:text-rose-400">
-              <ArrowDownRight size={18} />
-            </div>
-          </div>
-
-          <div className="my-3">
-            <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 truncate">
-              {money(-spending, currency)}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>{expenseCount} outgoing records</span>
-            <span className="inline-flex items-center gap-1 font-semibold text-coral-600 dark:text-rose-400">
-              Debits
-            </span>
-          </div>
-        </Card>
-      </Link>
-
-      {/* Loan Balance Card */}
-      <Link href="/loans" className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/70 focus-visible:ring-offset-2 rounded-2xl">
-        <Card className="relative overflow-hidden p-5 sm:p-6 shadow-card hover:shadow-hover transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Outstanding Loan
-            </span>
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
-              <Landmark size={18} />
-            </div>
-          </div>
-
-          <div className="my-3">
-            <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 truncate">
-              {money(outstandingLoanBalance, currency)}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>{loanCount} active loan{loanCount === 1 ? "" : "s"}</span>
-            <span className="inline-flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400">
-              {money(loanPaid, currency)} repaid
-            </span>
-          </div>
-        </Card>
-      </Link>
-
-      {/* Monthly Income Card */}
-      <Link href="/transactions" className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/70 focus-visible:ring-offset-2 rounded-2xl">
-        <Card className="relative overflow-hidden p-5 sm:p-6 shadow-card hover:shadow-hover transition-all duration-200">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              This Month&apos;s Income
-            </span>
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-600 dark:bg-teal-900/40 dark:text-teal-300">
-              <TrendingUp size={18} />
-            </div>
-          </div>
-
-          <div className="my-3">
-            <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 truncate">
-              {money(income, currency)}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Recorded inflows</span>
-            <span className="inline-flex items-center gap-1 font-semibold text-teal-600 dark:text-teal-400">
-              <ArrowUpRight size={14} />
-              Credits
-            </span>
-          </div>
-        </Card>
-      </Link>
+      <div className="grid gap-6 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-rule lg:border-l lg:border-rule">
+        {figures.map((figure, index) => (
+          <Link
+            key={figure.label}
+            href={figure.href}
+            className={`${figureLinkClass} sm:px-6 sm:first:pl-0 lg:first:pl-6 lg:self-end`}
+            style={{ animationDelay: `${(index + 1) * FIGURE_STAGGER_MS}ms` }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-fg-muted">{figure.label}</p>
+            <p className="mt-2 break-words font-display text-2xl font-medium tabular-nums lining-nums tracking-tight text-fg">
+              {figure.value}
+            </p>
+            <p className="mt-1 truncate text-sm text-fg-muted group-hover:text-fg">{figure.detail}</p>
+          </Link>
+        ))}
+      </div>
     </section>
   );
 }
-
-

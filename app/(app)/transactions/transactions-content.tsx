@@ -3,9 +3,10 @@
 import { useCallback, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
-import { CalendarDays, Filter, Plus, Upload, X } from "lucide-react";
-import { Button, Card, Input, LoadingOverlay, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
+import { Plus, Upload, X } from "lucide-react";
+import { Button, Input, Label, LoadingOverlay, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
 import { AddTransactionModal } from "@/components/add-transaction-modal";
+import { PageHeader } from "@/components/page-header";
 import { TransactionsGrid } from "@/app/(app)/transactions/transactions-grid";
 import { PaginationBar } from "@/components/pagination-bar";
 import type { GroupByMode } from "@/app/(app)/transactions/transactions-grid";
@@ -100,63 +101,28 @@ export function TransactionsPageContent({
     setEditingTransaction(transaction);
   };
 
+  const recordCount = `${totalCount}${totalRows !== totalCount ? ` of ${totalRows}` : ""} ${totalRows === 1 ? "entry" : "entries"}`;
+
   return (
-    <div className="mx-auto max-w-4xl">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-200/70 bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-800 dark:border-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
-                {workspaceName}
-              </span>
-              <span className="text-xs text-slate-400">
-                · {totalCount}
-                {totalRows !== totalCount && ` of ${totalRows}`} records
-              </span>
-            </div>
-            <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-              Transactions Ledger
-            </h1>
-            <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Full chronological transaction history across all connected accounts.
-            </p>
-          </div>
-
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <Button
-              onClick={() => setShowAddTransaction(true)}
-              className="w-full justify-center bg-slate-900 text-white shadow-card hover:bg-slate-800 hover:shadow-glow hover:-translate-y-0.5 transition-all duration-200 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white sm:w-auto"
-            >
-              <Plus size={15} className="mr-1.5 inline" />
-              Add transaction
-            </Button>
-            <Link href="/import" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full justify-center sm:w-auto">
-                <Upload size={15} className="mr-2 inline" /> Import CSV
-              </Button>
+    <div className="mx-auto max-w-5xl">
+        <PageHeader eyebrow={`${workspaceName} · ${recordCount}`} title="Transactions">
+          <Button variant="outline" asChild>
+            <Link href="/import">
+              <Upload size={16} aria-hidden="true" />
+              Import statement
             </Link>
-          </div>
-        </div>
+          </Button>
+          <Button variant="primary" onClick={() => setShowAddTransaction(true)}>
+            <Plus size={16} aria-hidden="true" />
+            Add transaction
+          </Button>
+        </PageHeader>
 
-        {/* ── Filter bar ── */}
-        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-slate-700/80 dark:bg-ink-900/60 sm:flex-row sm:items-end">
-          {/* Filter icon + label */}
-          <div className="flex items-center gap-1.5 self-center text-xs font-semibold text-slate-500 dark:text-slate-400 sm:self-auto">
-            <Filter size={13} />
-            <span>Filters</span>
-            {activeFilterCount > 0 && (
-              <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-teal-500 text-[10px] font-bold text-white">
-                {activeFilterCount}
-              </span>
-            )}
-          </div>
-
-          {/* Category */}
-          <div className="flex flex-1 flex-col gap-1 min-w-0">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              Category
-            </label>
-                        <Select value={filterCategory} onValueChange={(v) => setParam({ category: v === "all" ? undefined : v, page: "1" })}>
-              <SelectTrigger className="h-9 text-sm">
+        <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="filter-category" className="text-xs uppercase tracking-widest text-fg-muted">Category</Label>
+            <Select value={filterCategory} onValueChange={(v) => setParam({ category: v === "all" ? undefined : v, page: "1" })}>
+              <SelectTrigger id="filter-category">
                 <SelectValue placeholder="All categories" />
               </SelectTrigger>
               <SelectContent>
@@ -170,88 +136,70 @@ export function TransactionsPageContent({
             </Select>
           </div>
 
-          {/* Date From */}
-          <div className="flex flex-1 flex-col gap-1 min-w-0">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              From
-            </label>
-            <div className="relative">
-              <CalendarDays size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input
-                type="date"
-                value={filterDateFrom}
-                                onChange={(e) => setParam({ dateFrom: e.target.value, page: "1" })}
-                max={filterDateTo || undefined}
-                className="h-9 pl-8 text-sm"
-              />
-            </div>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="filter-from" className="text-xs uppercase tracking-widest text-fg-muted">From</Label>
+            <Input
+              id="filter-from"
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setParam({ dateFrom: e.target.value, page: "1" })}
+              max={filterDateTo || undefined}
+            />
           </div>
 
-          {/* Date To */}
-          <div className="flex flex-1 flex-col gap-1 min-w-0">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              To
-            </label>
-            <div className="relative">
-              <CalendarDays size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input
-                type="date"
-                value={filterDateTo}
-                                onChange={(e) => setParam({ dateTo: e.target.value, page: "1" })}
-                min={filterDateFrom || undefined}
-                className="h-9 pl-8 text-sm"
-              />
-            </div>
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Label htmlFor="filter-to" className="text-xs uppercase tracking-widest text-fg-muted">To</Label>
+            <Input
+              id="filter-to"
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setParam({ dateTo: e.target.value, page: "1" })}
+              min={filterDateFrom || undefined}
+            />
           </div>
 
-          {/* Clear */}
-          {activeFilterCount > 0 && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="h-9 shrink-0 gap-1.5 self-end text-xs text-slate-500 hover:text-rose-600"
-            >
-              <X size={13} />
-              Clear
-            </Button>
-          )}
-          {/* Group by */}
-          <div className="flex flex-col gap-1 shrink-0">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              Group by
-            </label>
-            <div className="flex items-center rounded-xl bg-slate-100/80 dark:bg-ink-800/80 p-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
-              {(["none", "category", "date"] as const).map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  aria-pressed={groupBy === g}
-                                    onClick={() => setParam({ groupBy: g })}
-                  className={`rounded-lg px-3 py-1 transition-all ${
-                    groupBy === g
-                      ? "bg-white text-slate-900 shadow-sm dark:bg-ink-950 dark:text-slate-100"
-                      : "hover:text-slate-900 dark:hover:text-slate-100"
-                  }`}
-                >
-                  {g === "none" ? "None" : g.charAt(0).toUpperCase() + g.slice(1)}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-end">
+            {activeFilterCount > 0 && (
+              <Button type="button" variant="ghost" onClick={clearFilters}>
+                <X size={15} aria-hidden="true" />
+                Clear {activeFilterCount === 1 ? "filter" : `${activeFilterCount} filters`}
+              </Button>
+            )}
           </div>
         </div>
 
-        <Card className="relative overflow-hidden shadow-card">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-2xl font-medium text-fg">Entries</h2>
+          <div role="group" aria-label="Group entries by" className="flex items-center gap-1">
+            <span className="mr-1 text-sm text-fg-muted">Group by</span>
+            {(["none", "category", "date"] as const).map((g) => (
+              <button
+                key={g}
+                type="button"
+                aria-pressed={groupBy === g}
+                onClick={() => setParam({ groupBy: g })}
+                className={`min-h-11 border-b-2 px-2 text-sm capitalize transition-colors duration-150 ${
+                  groupBy === g ? "border-brass font-semibold text-fg" : "border-transparent text-fg-muted hover:text-fg"
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative overflow-hidden rounded-lg border border-rule bg-paper">
           <TransactionsGrid
             transactions={transactions}
             currency={currency}
             groupBy={groupBy}
+            isFiltered={activeFilterCount > 0}
             onEdit={handleEdit}
             onAdd={() => setShowAddTransaction(true)}
+            onClearFilters={clearFilters}
           />
           <LoadingOverlay show={isPending} />
-        </Card>
+        </div>
 
         {/* ── Pagination bar (server-driven via URL params) ── */}
         <PaginationBar

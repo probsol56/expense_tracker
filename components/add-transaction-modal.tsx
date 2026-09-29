@@ -55,7 +55,7 @@ export function AddTransactionModal({ onClose, transaction, currency = "BDT", ac
   return (
     <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div
-        className="fixed inset-0 z-overlay bg-slate-950/40 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 z-overlay bg-cover/60 transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -66,25 +66,26 @@ export function AddTransactionModal({ onClose, transaction, currency = "BDT", ac
         aria-modal="true"
         aria-labelledby="add-transaction-title"
         tabIndex={-1}
-        className="relative z-modal w-full max-w-lg rounded-b-none sm:rounded-2xl rounded-t-3xl border border-slate-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-slate-700 dark:bg-ink-900 dark:shadow-none animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto focus:outline-none"
+        className="relative z-modal w-full max-w-lg rounded-b-none sm:rounded-lg rounded-t-lg border border-rule bg-paper p-6 sm:p-7 shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto focus:outline-none"
       >
-        <div className="mx-auto -mt-2 mb-4 h-1.5 w-12 rounded-full bg-slate-200 dark:bg-slate-700 sm:hidden" />
+        <div className="mx-auto -mt-2 mb-4 h-1.5 w-12 rounded-full bg-rule sm:hidden" />
 
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">
-              {isEditing ? "Edit Entry" : "New Entry"}
+            <span className="text-xs font-semibold uppercase tracking-widest text-brass-strong">
+              {isEditing ? "Edit entry" : "New entry"}
             </span>
-            <h2 id="add-transaction-title" className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            <h2 id="add-transaction-title" className="font-display text-2xl font-medium text-fg">
               {isEditing ? "Edit transaction" : "Record transaction"}
             </h2>
           </div>
           <button
             onClick={onClose}
             aria-label="Close dialog"
-            className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-ink-800 dark:hover:text-slate-200 transition-colors"
+            type="button"
+            className="-mr-2 grid h-11 w-11 place-items-center rounded-md text-fg-muted transition-colors duration-150 hover:bg-rule/50 hover:text-fg"
           >
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 

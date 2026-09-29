@@ -1,12 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui";
+import { Button, Card } from "@/components/ui";
+import { PageHeader } from "@/components/page-header";
+import { Section } from "@/components/section";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { SettingsForm } from "./settings-form";
 import { DeleteAccountForm } from "./delete-account-form";
@@ -18,63 +14,34 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-teal-200/70 bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-800 dark:border-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
-            Account Management
-          </div>
-          <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-            Settings & Preferences
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            Configure your personal profile details and workspace default currency.
-          </p>
-        </div>
+      <PageHeader
+        eyebrow={workspace?.name}
+        title="Settings"
+        description="Your profile and the workspace's default currency."
+      >
+        <Button variant="outline" asChild>
+          <Link href="/categories">Categories</Link>
+        </Button>
+        <Button variant="outline" asChild>
+          <Link href="/merchants">Merchants</Link>
+        </Button>
+      </PageHeader>
 
-        <Card className="overflow-hidden shadow-card">
-          <CardHeader className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-ink-900/60 p-6">
-            <CardTitle className="text-lg sm:text-xl">Workspace Preferences</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Changes will immediately reflect across your financial calculations and dashboards.
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-5 p-6 sm:p-7">
-            <div className="flex justify-end gap-2">
-              <Link
-                href="/categories"
-                className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-ink-900 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:text-slate-100"
-              >
-                Manage categories
-              </Link>
-              <Link
-                href="/merchants"
-                className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-ink-900 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:text-slate-100"
-              >
-                Manage merchants
-              </Link>
-            </div>
-            <SettingsForm
-              initialProfileName={profile?.full_name ?? ""}
-              initialWorkspaceName={workspace?.name ?? ""}
-              initialBaseCurrency={workspace?.base_currency ?? "BDT"}
-            />
-          </CardContent>
+      <Section title="Profile & workspace" description="Changes apply across your figures and reports straight away." className="mb-10">
+        <Card className="p-5 sm:p-6">
+          <SettingsForm
+            initialProfileName={profile?.full_name ?? ""}
+            initialWorkspaceName={workspace?.name ?? ""}
+            initialBaseCurrency={workspace?.base_currency ?? "BDT"}
+          />
         </Card>
+      </Section>
 
-        <Card className="mt-8 overflow-hidden border-rose-200 shadow-card dark:border-rose-500/30">
-          <CardHeader className="border-b border-rose-100 bg-rose-50/60 p-6 dark:border-rose-500/20 dark:bg-rose-500/5">
-            <CardTitle className="text-lg sm:text-xl">Delete account</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              Permanently remove your account and all of its data.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6 sm:p-7">
-            <DeleteAccountForm />
-          </CardContent>
+      <Section title="Delete account">
+        <Card className="border-brick/40 p-5 sm:p-6">
+          <DeleteAccountForm />
         </Card>
+      </Section>
     </div>
   );
 }
-
-
-

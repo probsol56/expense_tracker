@@ -17,11 +17,11 @@ export function LoadingOverlay({ show, className }: LoadingOverlayProps) {
       role="status"
       aria-label="Loading"
       className={cn(
-        "absolute inset-0 z-10 grid place-items-center bg-white/70 backdrop-blur-[1px] dark:bg-ink-950/60",
+        "absolute inset-0 z-10 grid place-items-center bg-paper/70",
         className
       )}
     >
-      <Loader2 className="h-6 w-6 animate-spin text-teal-600 dark:text-teal-400" />
+      <Loader2 className="h-6 w-6 animate-spin text-brass-strong" />
     </div>
   );
 }

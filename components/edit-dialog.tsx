@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import { Alert } from "@/components/ui";
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -58,7 +59,7 @@ export function EditDialog({
   return (
     <div className="fixed inset-0 z-modal flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div
-        className="fixed inset-0 z-overlay bg-slate-950/40 backdrop-blur-md animate-in fade-in duration-200"
+        className="fixed inset-0 z-overlay bg-cover/60 animate-in fade-in duration-200"
         onClick={close}
         aria-hidden="true"
       />
@@ -68,12 +69,12 @@ export function EditDialog({
         aria-modal="true"
         aria-labelledby="edit-dialog-title"
         tabIndex={-1}
-        className={`relative z-modal max-h-[90vh] w-full ${wide ? "max-w-2xl" : "max-w-lg"} overflow-y-auto rounded-b-none rounded-t-3xl border border-slate-200/80 bg-white p-6 shadow-2xl animate-in slide-in-from-bottom duration-200 focus:outline-none dark:border-slate-700 dark:bg-ink-900 dark:shadow-none sm:rounded-2xl sm:p-7 sm:zoom-in-95`}
+        className={`relative z-modal max-h-[90vh] w-full ${wide ? "max-w-2xl" : "max-w-lg"} overflow-y-auto rounded-b-none rounded-t-lg border border-rule bg-paper p-6 shadow-2xl animate-in slide-in-from-bottom duration-200 focus:outline-none sm:rounded-lg sm:p-7 sm:zoom-in-95`}
       >
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">Edit Entry</span>
-            <h2 id="edit-dialog-title" className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            <span className="text-xs font-semibold uppercase tracking-widest text-brass-strong">Edit entry</span>
+            <h2 id="edit-dialog-title" className="font-display text-2xl font-medium text-fg">
               {title}
             </h2>
           </div>
@@ -81,16 +82,14 @@ export function EditDialog({
             type="button"
             onClick={close}
             aria-label="Close dialog"
-            className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-ink-800 dark:hover:text-slate-200"
+            className="-mr-2 grid h-11 w-11 place-items-center rounded-md text-fg-muted transition-colors duration-150 hover:bg-rule/50 hover:text-fg"
           >
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
         {error && (
-          <div role="alert" className="mb-4 rounded-xl border border-rose-200/70 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
-            {error}
-          </div>
+          <Alert className="mb-4">{error}</Alert>
         )}
 
         {children}

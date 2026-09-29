@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Input, LoadingOverlay } from "@/components/ui";
 import { Search } from "lucide-react";
+import { LoadingOverlay } from "@/components/ui";
 import { TransactionListContent } from "@/components/transaction-list-content";
 import { TransactionListFilters } from "@/components/transaction-list-filters";
 import { AddTransactionModal } from "@/components/add-transaction-modal";
@@ -27,6 +27,7 @@ interface TransactionListProps {
   onQueryChange: (value: string) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (pageSize: number) => void;
+  onAdd: () => void;
   currency?: string;
   /** True while a page/filter navigation is in flight. */
   isPending?: boolean;
@@ -43,13 +44,13 @@ export function TransactionList({
   onQueryChange,
   onPageChange,
   onPageSizeChange,
+  onAdd,
   currency = "BDT",
   isPending = false,
   accounts,
   loans = [],
 }: TransactionListProps) {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [showAdd, setShowAdd] = useState(false);
 
   // Filtering, sorting and pagination all happen on the server (see
   // `components/dashboard.tsx`); the client only renders the page it receives.
@@ -59,20 +60,36 @@ export function TransactionList({
   };
 
   return (
-    <section>
-      <TransactionListFilters
-        filterType={filterType}
-        setFilterType={setFilterType}
-        onAdd={() => setShowAdd(true)}
-      />
-      <Card className="relative overflow-hidden shadow-card">
-        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-ink-900/60 px-4 py-3">
-          <Search size={16} className="shrink-0 text-slate-400" />
-          <Input value={query} onChange={(e) => onQueryChange(e.target.value)} placeholder="Search transactions by merchant, note, or category..." className="border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 placeholder:text-slate-400" />
-        </div>
-        <TransactionListContent transactions={transactions} currency={currency} query={query} filterType={filterType} onEdit={handleEdit} onClearFilters={() => { onQueryChange(""); setFilterType("all"); }} />
-        <LoadingOverlay show={isPending} />
-      </Card>
+    <section className="min-w-0">
+      <TransactionListFilters filterType={filterType} setFilterType={setFilterType} />
+
+      <div className="relative overflow-hidden rounded-lg border border-rule bg-paper">
+        <label className="flex items-center gap-3 border-b border-rule px-4 focus-within:outline focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-brass-strong">
+          <Search size={16} aria-hidden="true" className="shrink-0 text-fg-muted" />
+          <span className="sr-only">Search transactions</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder="Merchant, note or category"
+            className="h-12 w-full bg-transparent text-base text-fg placeholder:text-fg-muted/80 focus-visible:outline-none"
+          />
+        </label>
+        <TransactionListContent
+          transactions={transactions}
+          currency={currency}
+          query={query}
+          filterType={filterType}
+          onEdit={handleEdit}
+          onClearFilters={() => {
+            onQueryChange("");
+            setFilterType("all");
+          }}
+          onAdd={onAdd}
+        />
+        <LoadingOverlay show={isPending} className="bg-paper/70 dark:bg-paper/70" />
+      </div>
+
       <PaginationBar
         page={pagination.page}
         pageSize={pagination.pageSize}
@@ -83,8 +100,16 @@ export function TransactionList({
         onPageSizeChange={onPageSizeChange}
         disabled={isPending}
       />
-      {editingTransaction && <AddTransactionModal transaction={editingTransaction} onClose={() => setEditingTransaction(null)} currency={currency} accounts={accounts} loans={loans} />}
-      {showAdd && <AddTransactionModal onClose={() => setShowAdd(false)} currency={currency} accounts={accounts} loans={loans} />}
+
+      {editingTransaction && (
+        <AddTransactionModal
+          transaction={editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          currency={currency}
+          accounts={accounts}
+          loans={loans}
+        />
+      )}
     </section>
   );
 }

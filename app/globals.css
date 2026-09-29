@@ -3,32 +3,53 @@
 @tailwind utilities;
 
 @layer base {
+  /* Ledger palette as RGB channels (consumed by tailwind.config.ts). Contrast
+     checked against WCAG AA in both themes; `--brass` is decorative-only on light paper. */
+  :root {
+    --canvas: 238 241 239;
+    --paper: 251 248 241;
+    --fg: 27 42 34;
+    --fg-muted: 92 103 88;
+    --rule: 228 220 200;
+    --brass: 180 144 63;
+    --brass-strong: 135 106 38;
+    --moss: 46 106 77;
+    --brick: 162 62 43;
+    --cover: 22 33 27;
+    --cover-fg: 237 227 200;
+    --cover-muted: 169 175 158;
+  }
+
+  .dark {
+    --canvas: 11 15 12;
+    --paper: 26 30 25;
+    --fg: 241 236 221;
+    --fg-muted: 169 162 142;
+    --rule: 52 56 46;
+    --brass: 201 164 85;
+    --brass-strong: 212 176 98;
+    --moss: 140 196 160;
+    --brick: 232 144 124;
+    --cover: 20 28 23;
+    --cover-fg: 231 218 176;
+    --cover-muted: 156 165 149;
+  }
+
   * {
     box-sizing: border-box;
-    border-color: rgba(226, 232, 240, 0.8);
+    border-color: rgb(var(--rule));
   }
 
   body {
     margin: 0;
-    background-color: #fbfbfa;
-    color: #0f172a;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-color: rgb(var(--canvas));
+    color: rgb(var(--fg));
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* §17: Dark mode is a re-mapped palette — lighter surfaces carry elevation via borders */
   .dark {
     color-scheme: dark;
-  }
-
-  .dark body {
-    background-color: #0b1120;
-    color: #e2e8f0;
-  }
-
-  .dark * {
-    border-color: rgba(51, 65, 85, 0.7);
   }
 
   button, input, select, textarea {
@@ -37,7 +58,7 @@
 
   /* §6: Visible focus ring for all interactive elements */
   :focus-visible {
-    outline: 2px solid #0d9488;
+    outline: 2px solid rgb(var(--brass-strong));
     outline-offset: 2px;
   }
 }
@@ -54,59 +75,7 @@
   }
 }
 
-/* Luxury ambient background & mesh styles */
-.bg-mesh {
-  background-image:
-    radial-gradient(at 0% 0%, rgba(13, 148, 136, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(244, 63, 94, 0.03) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(13, 148, 136, 0.03) 0px, transparent 50%);
-}
-
-.dark .bg-mesh {
-  background-image:
-    radial-gradient(at 0% 0%, rgba(13, 148, 136, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(244, 63, 94, 0.04) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(13, 148, 136, 0.05) 0px, transparent 50%);
-}
-
-.grid-lines {
-  background-image: 
-    linear-gradient(to right, rgba(226, 232, 240, 0.5) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(226, 232, 240, 0.5) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-
-.subtle-dots {
-  background-image: radial-gradient(rgba(148, 163, 184, 0.25) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-/* Glassmorphism surfaces */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-}
-
-.glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-}
-
-.dark .glass-panel {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(51, 65, 85, 0.6);
-}
-
-.dark .glass-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.75) 100%);
-  border: 1px solid rgba(51, 65, 85, 0.7);
-}
-
-/* Smooth custom scrollbars */
+/* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -117,20 +86,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: rgb(var(--rule));
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: #334155;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgb(var(--fg-muted));
 }
 
 /* Ledger-book auth identity: ruled-paper texture for the login page only */

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // §17: persist an explicit user override on top of the OS preference.
-export function ThemeToggle() {
+export function ThemeToggle({ className, showLabel = false }: { className?: string; showLabel?: boolean }) {
   const [isDark, setIsDark] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -23,17 +24,23 @@ export function ThemeToggle() {
   };
 
   if (isDark === null) {
-    return <span className="h-10 w-10" aria-hidden="true" />;
+    return <span className={cn("block h-11 w-11 shrink-0", className)} aria-hidden="true" />;
   }
+
+  const label = isDark ? "Switch to light mode" : "Switch to dark mode";
 
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200/80 bg-white/80 text-slate-500 shadow-sm backdrop-blur-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-ink-800/80 dark:text-slate-400 dark:hover:bg-ink-800 dark:hover:text-slate-100"
+      aria-label={showLabel ? undefined : label}
+      className={cn(
+        "grid h-11 w-11 shrink-0 place-items-center rounded-md border border-rule bg-paper text-fg-muted transition-colors duration-150 hover:text-fg",
+        className
+      )}
     >
-      {isDark ? <Sun size={18} /> : <Moon size={18} />}
+      {isDark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+      {showLabel && label}
     </button>
   );
 }

@@ -17,7 +17,14 @@ export function AppShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-sand bg-mesh dark:bg-ink-950 lg:flex">
+    <div className="min-h-screen bg-canvas text-fg lg:flex">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-toast focus:rounded-lg focus:bg-paper focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-fg"
+      >
+        Skip to content
+      </a>
+
       <DashboardSidebar
         workspace={workspace}
         profile={profile}
@@ -26,20 +33,19 @@ export function AppShell({
       />
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between border-b border-slate-200/70 bg-white/70 px-4 py-3 backdrop-blur-sm dark:border-slate-800 dark:bg-ink-900/60 lg:hidden">
-          <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            Wallo
-          </span>
+        <div className="flex items-center justify-between bg-cover px-4 py-2 lg:hidden">
+          <span className="font-display text-base font-semibold tracking-[0.3em] text-brass">WALLO</span>
           <button
+            type="button"
             onClick={() => setMobileNavOpen(true)}
             aria-label="Open navigation"
-            className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-ink-800 dark:text-slate-300 dark:hover:bg-ink-900"
+            className="grid h-11 w-11 place-items-center rounded-lg text-cover-fg transition-colors duration-150 hover:bg-cover-fg/10 focus-visible:outline-brass"
           >
-            <Menu size={18} />
+            <Menu size={20} />
           </button>
         </div>
 
-        <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 md:px-8 lg:px-10">
+        <main id="main" className="mx-auto w-full max-w-[1440px] px-4 py-6 md:px-6 md:py-8 lg:px-8">
           {children}
         </main>
       </div>

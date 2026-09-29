@@ -1,11 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Fraunces, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 import { config } from "@/lib/config";
 
-const jakarta = Plus_Jakarta_Sans({
+const bodyFont = Instrument_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+// Headings and headline figures only — body copy stays in the sans face.
+const displayFont = Fraunces({
+  subsets: ["latin"],
+  axes: ["opsz"],
+  variable: "--font-display",
   display: "swap",
 });
 
@@ -68,11 +76,11 @@ export default function RootLayout({
   const themeScript = `(function(){try{var t=localStorage.getItem("theme");var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d);}catch(e){}})();`;
 
   return (
-    <html lang="en" className={jakarta.variable} suppressHydrationWarning>
+    <html lang="en" className={`${bodyFont.variable} ${displayFont.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="font-sans antialiased text-slate-900 dark:text-slate-100 bg-sand dark:bg-ink-950 min-h-screen selection:bg-teal selection:text-white">
+      <body className="min-h-screen bg-canvas font-sans text-fg antialiased selection:bg-brass/30 selection:text-fg">
         {children}
       </body>
     </html>

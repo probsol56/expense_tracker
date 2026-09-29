@@ -2,13 +2,13 @@
 
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
+import { Alert, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
 import { TransactionTypeToggle } from "@/components/transaction-type-toggle";
 import type { CategoryType } from "@/lib/category-options";
 import type { Account, Loan, Transaction, TransactionItem } from "@/lib/types";
 import { money } from "@/lib/utils";
 
-const FIELD_LABEL = "block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400";
+const FIELD_LABEL = "block text-sm font-medium text-fg";
 
 interface TransactionFormFieldsProps {
   type: CategoryType;
@@ -125,7 +125,7 @@ export function TransactionFormFields({
           <>
             <input type="hidden" name="account_id" value={accountId} />
             <Select value={accountId || undefined} onValueChange={setAccountId}>
-              <SelectTrigger aria-labelledby="tx-account-label" className="h-11">
+              <SelectTrigger aria-labelledby="tx-account-label">
                 <SelectValue placeholder="Select account" />
               </SelectTrigger>
               <SelectContent position="popper" className="z-popover">
@@ -136,7 +136,7 @@ export function TransactionFormFields({
             </Select>
           </>
         ) : (
-          <p className="rounded-xl border border-amber-200/70 bg-amber-50 px-3 py-2.5 text-xs font-medium text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+          <p className="rounded-md border border-brass/40 bg-brass/10 px-3 py-2.5 text-sm text-fg">
             You need an account before you can record transactions. Add one from the Accounts page first.
           </p>
         )}
@@ -147,7 +147,7 @@ export function TransactionFormFields({
           <label className={FIELD_LABEL} id="tx-loan-label">Linked loan (optional)</label>
           <input type="hidden" name="loan_id" value={loanId} />
           <Select value={loanId || "none"} onValueChange={(value) => setLoanId(value === "none" ? "" : value)}>
-            <SelectTrigger aria-labelledby="tx-loan-label" className="h-11">
+            <SelectTrigger aria-labelledby="tx-loan-label">
               <SelectValue placeholder="None" />
             </SelectTrigger>
             <SelectContent position="popper" className="z-popover">
@@ -157,7 +157,7 @@ export function TransactionFormFields({
               ))}
             </SelectContent>
           </Select>
-          <p className="text-[11px] text-slate-400">Tag this expense as paid using loan funds, for your own tracking.</p>
+          <p className="text-sm text-fg-muted">Tag this expense as paid using loan funds, for your own tracking.</p>
         </div>
       )}
 
@@ -174,10 +174,9 @@ export function TransactionFormFields({
             onFocus={() => setShowMerchantSuggestions(true)}
             onBlur={() => setShowMerchantSuggestions(false)}
             placeholder="e.g. Apple Store, Whole Foods, Freelance Client"
-            className="h-11"
           />
           {showMerchantSuggestions && merchantSuggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-ink-800">
+            <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-md border border-rule bg-paper shadow-lg">
               {merchantSuggestions.map((opt) => (
                 <button
                   key={opt}
@@ -187,7 +186,7 @@ export function TransactionFormFields({
                     setMerchant(opt);
                     setShowMerchantSuggestions(false);
                   }}
-                  className="block w-full border-b border-slate-100 px-3 py-2 text-left text-xs text-slate-700 last:border-b-0 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700/70"
+                  className="block min-h-10 w-full border-b border-rule px-3 py-2 text-left text-sm text-fg last:border-b-0 hover:bg-canvas"
                 >
                   {opt}
                 </button>
@@ -206,16 +205,15 @@ export function TransactionFormFields({
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Optional note or reference"
-            className="h-11"
           />
           {descriptionSuggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-ink-800">
+            <div className="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-md border border-rule bg-paper shadow-lg">
               {descriptionSuggestions.map((item) => (
                 <button
                   key={item}
                   type="button"
                   onClick={() => setDescription(item)}
-                  className="block w-full border-b border-slate-100 px-3 py-2 text-left text-xs text-slate-700 last:border-b-0 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700/70"
+                  className="block min-h-10 w-full border-b border-rule px-3 py-2 text-left text-sm text-fg last:border-b-0 hover:bg-canvas"
                 >
                   {item}
                 </button>
@@ -227,26 +225,27 @@ export function TransactionFormFields({
 
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <label className={FIELD_LABEL}>Item or service details</label>
+          <span className={FIELD_LABEL}>Item or service details</span>
           <button
             type="button"
             onClick={addItem}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-800 dark:text-teal-400 dark:hover:text-teal-300"
+            className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-brass-strong underline-offset-4 hover:underline"
           >
-            <Plus size={12} /> {hasItems ? "Add another" : "Add details"}
+            <Plus size={14} aria-hidden="true" /> {hasItems ? "Add another" : "Add details"}
           </button>
         </div>
 
         {hasItemDetails && (
           <>
-            <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-900/40">
+            <div className="space-y-3 rounded-md border border-rule bg-canvas p-3">
               {items.map((item, index) => (
-                <div key={item.id || index} className="grid grid-cols-[minmax(0,1.7fr)_80px_110px_100px_26px] gap-2">
+                <div key={item.id || index} className="grid grid-cols-[64px_minmax(0,1fr)_minmax(0,1fr)_44px] gap-2 sm:grid-cols-[minmax(0,1.7fr)_64px_96px_96px_44px]">
                   <Input
                     value={item.name}
                     onChange={(event) => updateItem(item.id || `${index}`, { name: event.target.value })}
                     placeholder="Item or service"
-                    className="h-10 text-sm"
+                    aria-label={`Item ${index + 1} name`}
+                    className="col-span-4 sm:col-span-1"
                   />
                   <Input
                     type="number"
@@ -254,8 +253,8 @@ export function TransactionFormFields({
                     step="1"
                     value={item.quantity || 1}
                     onChange={(event) => updateItem(item.id || `${index}`, { quantity: Number(event.target.value || 1) })}
-                    placeholder="Qty (opt)"
-                    className="h-10 text-sm"
+                    placeholder="Qty"
+                    aria-label={`Item ${index + 1} quantity`}
                   />
                   <Input
                     type="number"
@@ -263,27 +262,27 @@ export function TransactionFormFields({
                     step="0.01"
                     value={item.unit_price || 0}
                     onChange={(event) => updateItem(item.id || `${index}`, { unit_price: Number(event.target.value || 0) })}
-                    placeholder="Amount (opt)"
-                    className="h-10 text-sm"
+                    placeholder="Price"
+                    aria-label={`Item ${index + 1} unit price`}
                   />
-                  <div className="flex items-center justify-end rounded-xl border border-slate-200 bg-white px-2 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  <div className="flex items-center justify-end px-1 text-sm font-medium tabular-nums text-fg">
                     {money(Number(item.total_price || 0), currency)}
                   </div>
                   <button
                     type="button"
                     onClick={() => removeItem(item.id || `${index}`)}
-                    className="grid place-items-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:text-rose-500 dark:border-slate-700 dark:bg-slate-800"
-                    aria-label="Remove item"
+                    className="grid h-11 w-11 place-items-center rounded-md text-fg-muted transition-colors duration-150 hover:bg-brick/10 hover:text-brick"
+                    aria-label={`Remove item ${index + 1}`}
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={15} aria-hidden="true" />
                   </button>
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-teal-200 bg-teal-50/60 px-3 py-2 text-sm dark:border-teal-500/30 dark:bg-teal-500/10">
-              <span className="font-medium text-slate-600 dark:text-slate-300">Total</span>
-              <span className="text-base font-bold text-teal-700 dark:text-teal-300">{money(computedAmount, currency)}</span>
+            <div className="flex items-baseline justify-between border-b-[3px] border-double border-fg/50 px-1 py-2">
+              <span className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Items total</span>
+              <span className="font-display text-lg font-medium tabular-nums lining-nums text-fg">{money(computedAmount, currency)}</span>
             </div>
           </>
         )}
@@ -291,7 +290,7 @@ export function TransactionFormFields({
 
       <div className="space-y-1.5">
         <label htmlFor="tx-date" className={FIELD_LABEL}>Date</label>
-        <Input id="tx-date" name="date" type="date" required defaultValue={transaction?.date || new Date().toISOString().slice(0, 10)} className="h-11" />
+        <Input id="tx-date" name="date" type="date" required defaultValue={transaction?.date || new Date().toISOString().slice(0, 10)} />
       </div>
 
       <div className="space-y-1.5">
@@ -310,9 +309,9 @@ export function TransactionFormFields({
             onChange={(event) => setAmount(event.target.value)}
             placeholder="0.00"
             aria-invalid={Boolean(error) || undefined}
-            className="h-11 pl-4 pr-12 text-base font-bold disabled:cursor-default disabled:opacity-100"
+            className="pl-4 pr-14 font-display text-lg font-medium tabular-nums disabled:cursor-default disabled:opacity-100"
           />
-          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-fg-muted">
             {type === "income" ? "IN" : type === "loan" ? "LOAN" : "OUT"}
           </span>
         </div>
@@ -331,10 +330,9 @@ export function TransactionFormFields({
             onFocus={() => setShowCategorySuggestions(true)}
             onBlur={() => setShowCategorySuggestions(false)}
             placeholder="e.g. Groceries, Internet bill"
-            className="h-11"
           />
           {showCategorySuggestions && categorySuggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-ink-800">
+            <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-md border border-rule bg-paper shadow-lg">
               {categorySuggestions.map((opt) => (
                 <button
                   key={opt}
@@ -344,7 +342,7 @@ export function TransactionFormFields({
                     setCategory(opt);
                     setShowCategorySuggestions(false);
                   }}
-                  className="block w-full border-b border-slate-100 px-3 py-2 text-left text-xs text-slate-700 last:border-b-0 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700/70"
+                  className="block min-h-10 w-full border-b border-rule px-3 py-2 text-left text-sm text-fg last:border-b-0 hover:bg-canvas"
                 >
                   {opt}
                 </button>
@@ -355,9 +353,7 @@ export function TransactionFormFields({
       </div>
 
       {error && (
-        <p role="alert" className="flex items-start gap-2 rounded-xl border border-coral-100 bg-coral-50 px-3 py-2 text-xs font-medium text-coral-600 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-400">
-          {error}
-        </p>
+        <Alert>{error}</Alert>
       )}
     </>
   );

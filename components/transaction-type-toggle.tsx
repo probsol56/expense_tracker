@@ -10,22 +10,22 @@ interface TransactionTypeToggleProps {
 
 export function TransactionTypeToggle({ type, setType }: TransactionTypeToggleProps) {
   const types: { value: CategoryType; label: string; icon: React.ReactNode; color: string }[] = [
-    { value: "expense", label: "Expense", icon: <ArrowDownRight size={15} />, color: "text-coral-600 dark:text-rose-400" },
-    { value: "income", label: "Income", icon: <ArrowUpRight size={15} />, color: "text-teal-700 dark:text-teal-400" },
+    { value: "expense", label: "Expense", icon: <ArrowDownRight size={15} aria-hidden="true" />, color: "text-fg" },
+    { value: "income", label: "Income", icon: <ArrowUpRight size={15} aria-hidden="true" />, color: "text-moss" },
   ];
 
   return (
-    <div className="mb-5 grid grid-cols-2 gap-2 rounded-xl bg-slate-100/90 dark:bg-ink-800 p-1">
+    <div role="group" aria-label="Transaction type" className="mb-5 grid grid-cols-2 gap-1 rounded-md bg-rule/60 p-1">
       {types.map(({ value, label, icon, color }) => (
         <button
           key={value}
           type="button"
           aria-pressed={type === value}
           onClick={() => setType(value)}
-          className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-all ${
+          className={`flex min-h-10 items-center justify-center gap-1.5 rounded-sm text-sm font-semibold transition-colors duration-150 ${
             type === value
-              ? `bg-white shadow-sm dark:bg-ink-950 ${color}`
-              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              ? `bg-paper shadow-sm ${color}`
+              : "text-fg-muted hover:text-fg"
           }`}
         >
           {icon}

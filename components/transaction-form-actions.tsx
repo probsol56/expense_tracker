@@ -53,16 +53,16 @@ export function TransactionFormActions({
           Cancel
         </Button>
         {isEditing && (
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={() => setConfirmOpen(true)}
             disabled={isDeleting}
-            className="rounded-lg border border-red-200/80 bg-red-50 px-4 py-2.5 text-xs font-bold text-red-600 shadow-sm transition-all hover:bg-red-100 hover:text-red-700 disabled:opacity-50 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
-            aria-label="Delete transaction"
+            className="border-brick/30 text-brick hover:border-brick/50 hover:bg-brick/10"
           >
-            <Trash2 size={14} className="inline mr-1.5" />
+            <Trash2 size={15} aria-hidden="true" />
             {isDeleting ? "Deleting..." : "Delete"}
-          </button>
+          </Button>
         )}
         <ConfirmDialog
           open={confirmOpen}
@@ -76,9 +76,9 @@ export function TransactionFormActions({
       <SubmitButton
         loadingText={isEditing ? "Updating..." : "Recording..."}
         disabled={!hasAccounts}
-        className="w-full sm:w-auto bg-slate-900 text-white shadow-card hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white dark:shadow-none"
+        className="w-full sm:w-auto"
       >
-        <Plus size={16} className="mr-1.5" />
+        <Plus size={16} aria-hidden="true" />
         {isEditing ? "Update transaction" : "Save transaction"}
       </SubmitButton>
     </div>

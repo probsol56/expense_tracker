@@ -1,12 +1,14 @@
 import { redirect } from "next/navigation";
-import { Landmark, Pencil, Plus, Repeat } from "lucide-react";
+import { Pencil, Plus, Repeat } from "lucide-react";
 import Link from "next/link";
-import { Badge, Card, Input, SubmitButton } from "@/components/ui";
+import { Alert, Card, Field, Input, NativeSelect, SubmitButton, Textarea } from "@/components/ui";
 import { DeleteTransferButton } from "@/components/delete-transfer-button";
 import { EditDialog } from "@/components/edit-dialog";
+import { PageHeader } from "@/components/page-header";
+import { Section } from "@/components/section";
 import { UrlPaginationBar } from "@/components/url-pagination-bar";
 import { LIST_PAGE_SIZE, PICKER_LIMITS, fetchPage, pageInfo, parsePage, type Page } from "@/lib/pagination";
-import { money } from "@/lib/utils";
+import { formatEntryDate, money } from "@/lib/utils";
 import { parseRecordId } from "@/lib/validations";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { createAccount, createTransfer, deleteTransfer, updateTransfer } from "@/app/(app)/accounts/actions";
@@ -105,6 +107,8 @@ async function handleDeleteTransfer(formData: FormData) {
   if (result?.error) redirect(`/accounts?error=${encodeURIComponent(result.error)}`);
 }
 
+const tableHeadClass = "px-4 pb-2 pt-3 text-xs font-semibold uppercase tracking-widest text-fg-muted";
+
 function AccountsContent({
   accounts,
   transfers,
@@ -122,189 +126,206 @@ function AccountsContent({
 }) {
   const accountsById = new Map(accounts.map((account) => [account.id, account]));
   const canTransfer = accounts.length >= 2;
+  const totalBalance = accounts.reduce((sum, account) => sum + Number(account.balance), 0);
 
   return (
-    <div className="mx-auto max-w-4xl">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-200/70 bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-800 dark:border-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
-                {workspaceName}
-              </span>
-              <span className="text-xs text-slate-400">· {accounts.length} linked accounts</span>
-            </div>
-            <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-              Financial Accounts
-            </h1>
-            <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Connected bank, credit card, and digital depository accounts. Balances update
-              automatically from the transactions, loans, and repayments you record against them.
+    <div className="mx-auto max-w-5xl">
+      <PageHeader
+        eyebrow={`${workspaceName} · ${accounts.length} ${accounts.length === 1 ? "account" : "accounts"}`}
+        title="Accounts"
+        description="Balances update from the transactions, loans and repayments you record against each account."
+      />
+
+      {error && !editingTransfer && <Alert className="mb-6">{error}</Alert>}
+
+      <Section title="Balances" className="mb-10">
+        {accounts.length ? (
+          <Card className="overflow-hidden">
+            <table className="w-full border-collapse text-left">
+              <caption className="sr-only">Account balances</caption>
+              <thead className="border-b-2 border-fg/70">
+                <tr>
+                  <th scope="col" className={tableHeadClass}>Account</th>
+                  <th scope="col" className={`${tableHeadClass} hidden sm:table-cell`}>Type</th>
+                  <th scope="col" className={`${tableHeadClass} border-l border-brass/40 text-right`}>Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {accounts.map((account) => {
+                  const accountType = account.account_type?.replace("_", " ") || "deposit";
+                  return (
+                    <tr key={account.id} className="border-b border-rule last:border-b-0">
+                      <td className="break-words px-4 py-3 align-top">
+                        <p className="font-medium text-fg">{account.name}</p>
+                        <p className="text-sm text-fg-muted">
+                          <span className="capitalize sm:hidden">{accountType}</span>
+                          {account.institution && (
+                            <>
+                              <span className="sm:hidden"> · </span>
+                              {account.institution}
+                            </>
+                          )}
+                        </p>
+                      </td>
+                      <td className="hidden px-4 py-3 align-top text-sm capitalize text-fg-muted sm:table-cell">{accountType}</td>
+                      <td
+                        className={`border-l border-brass/40 px-4 py-3 text-right align-top font-medium tabular-nums ${
+                          Number(account.balance) < 0 ? "text-brick" : "text-fg"
+                        }`}
+                      >
+                        {money(Number(account.balance), currency)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot className="border-t-2 border-fg/70">
+                <tr className="border-b-[3px] border-double border-fg/50">
+                  <th scope="row" className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-fg-muted">
+                    Total
+                  </th>
+                  <td className="hidden sm:table-cell" />
+                  <td
+                    className={`border-l border-brass/40 px-4 py-3 text-right font-display text-xl font-medium tabular-nums lining-nums ${
+                      totalBalance < 0 ? "text-brick" : "text-fg"
+                    }`}
+                  >
+                    {money(totalBalance, currency)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </Card>
+        ) : (
+          <Card className="px-6 py-12 text-center">
+            <p className="font-display text-xl font-medium text-fg">No accounts yet</p>
+            <p className="mx-auto mt-2 max-w-prose text-sm text-fg-muted">
+              Add a bank account, card or cash wallet below to start tracking its balance.
             </p>
-          </div>
-        </div>
-
-        {error && !editingTransfer && (
-          <div className="mb-6 rounded-2xl border border-rose-200/70 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
-            {error}
-          </div>
+          </Card>
         )}
+      </Section>
 
-        <Card className="mb-8 shadow-card">
-          <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Add an account</h2>
-          </div>
-          <div className="p-5">
+      {transfers.totalCount > 0 && (
+        <Section title="Transfers" className="mb-10">
+          <Card className="overflow-hidden">
+            <table className="w-full table-fixed border-collapse text-left sm:table-auto">
+              <caption className="sr-only">Transfer history</caption>
+              <thead className="border-b-2 border-fg/70">
+                <tr>
+                  <th scope="col" className={`${tableHeadClass} hidden w-32 sm:table-cell`}>Date</th>
+                  <th scope="col" className={tableHeadClass}>From → To</th>
+                  <th scope="col" className={`${tableHeadClass} w-32 border-l border-brass/40 text-right sm:w-40`}>Amount</th>
+                  <th scope="col" className="w-24"><span className="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {transfers.rows.map((transfer) => {
+                  const fromAccount = accountsById.get(transfer.from_account_id);
+                  const toAccount = accountsById.get(transfer.to_account_id);
+                  const entryDate = formatEntryDate(transfer.date);
+                  return (
+                    <tr key={transfer.id} className="border-b border-rule last:border-b-0">
+                      <td className="hidden px-4 py-3 align-top text-sm tabular-nums text-fg-muted sm:table-cell">
+                        <time dateTime={transfer.date}>{entryDate}</time>
+                      </td>
+                      <td className="break-words px-4 py-3 align-top">
+                        <p className="font-medium text-fg">
+                          {fromAccount?.name ?? "Deleted account"} → {toAccount?.name ?? "Deleted account"}
+                        </p>
+                        <p className="text-sm text-fg-muted">
+                          <span className="sm:hidden">{entryDate}</span>
+                          {transfer.notes && (
+                            <>
+                              <span className="sm:hidden"> · </span>
+                              {transfer.notes}
+                            </>
+                          )}
+                        </p>
+                      </td>
+                      <td className="border-l border-brass/40 px-4 py-3 text-right align-top font-medium tabular-nums text-fg">
+                        {money(Number(transfer.amount), currency)}
+                      </td>
+                      <td className="py-1.5 pr-2 align-top">
+                        <div className="flex justify-end">
+                          <Link
+                            href={`/accounts?editTransfer=${transfer.id}`}
+                            aria-label={`Edit transfer on ${entryDate}`}
+                            className="grid h-11 w-11 place-items-center rounded-md text-fg-muted transition-colors duration-150 hover:bg-rule/50 hover:text-fg"
+                          >
+                            <Pencil size={15} aria-hidden="true" />
+                          </Link>
+                          <DeleteTransferButton transferId={transfer.id} action={handleDeleteTransfer} />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <div className="border-t border-rule px-4 pb-4">
+              <UrlPaginationBar pagination={pageInfo(transfers)} />
+            </div>
+          </Card>
+        </Section>
+      )}
+
+      <div className="grid gap-10 lg:grid-cols-2 lg:gap-8">
+        <Section title="Add an account">
+          <Card className="p-5">
             <form action={handleCreateAccount} className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Account name</label>
-                <Input name="name" required className="h-11" placeholder="e.g. Main Checking, Cash Wallet" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Type</label>
-                <select name="account_type" defaultValue="checking" className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+              <Field label="Account name" htmlFor="account-name" className="sm:col-span-2">
+                <Input id="account-name" name="name" required placeholder="e.g. Main checking, Cash wallet" />
+              </Field>
+              <Field label="Type" htmlFor="account-type">
+                <NativeSelect id="account-type" name="account_type" defaultValue="checking">
                   <option value="checking">Checking</option>
                   <option value="savings">Savings</option>
                   <option value="credit_card">Credit card</option>
                   <option value="cash">Cash</option>
                   <option value="investment">Investment</option>
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Institution</label>
-                <Input name="institution" className="h-11" placeholder="Optional, e.g. City Bank" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Starting balance</label>
-                <Input name="starting_balance" type="number" step="0.01" defaultValue="0" className="h-11" placeholder="0.00" />
-              </div>
+                </NativeSelect>
+              </Field>
+              <Field label="Starting balance" htmlFor="account-starting-balance">
+                <Input
+                  id="account-starting-balance"
+                  name="starting_balance"
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  defaultValue="0"
+                />
+              </Field>
+              <Field label="Institution (optional)" htmlFor="account-institution" className="sm:col-span-2">
+                <Input id="account-institution" name="institution" placeholder="e.g. City Bank" />
+              </Field>
               <div className="sm:col-span-2">
-                <SubmitButton loadingText="Adding account..." className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white sm:w-auto">
-                  <Plus size={15} className="mr-2 inline" /> Add account
+                <SubmitButton loadingText="Adding account..." className="w-full sm:w-auto">
+                  <Plus size={16} aria-hidden="true" /> Add account
                 </SubmitButton>
               </div>
             </form>
-          </div>
-        </Card>
-
-        <Card className="mb-8 shadow-card">
-          <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Transfer funds</h2>
-          </div>
-          <div className="p-5">
-            {!canTransfer ? (
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Add a second account — e.g. a Cash in Hand wallet — before you can move money between accounts.
-              </p>
-            ) : (
-              <TransferForm accounts={accounts} currency={currency} />
-            )}
-          </div>
-        </Card>
-
-        {editingTransfer && canTransfer && (
-          <EditDialog title="Edit transfer" closeHref="/accounts" error={error}>
-            <TransferForm accounts={accounts} currency={currency} transfer={editingTransfer} />
-          </EditDialog>
-        )}
-
-        {transfers.totalCount > 0 && (
-          <Card className="mb-8 overflow-hidden shadow-card">
-            <div className="border-b border-slate-100 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-ink-900/60">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Transfer history</h2>
-            </div>
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {transfers.rows.map((transfer) => {
-                const fromAccount = accountsById.get(transfer.from_account_id);
-                const toAccount = accountsById.get(transfer.to_account_id);
-                return (
-                  <div key={transfer.id} className="group flex flex-col gap-3 p-5 transition-colors hover:bg-slate-50/60 dark:hover:bg-ink-900/40 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900">
-                        <Repeat size={16} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                          {fromAccount?.name ?? "Deleted account"} → {toAccount?.name ?? "Deleted account"}
-                        </p>
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                          {new Date(transfer.date).toLocaleDateString()}
-                          {transfer.notes ? ` · ${transfer.notes}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 self-end sm:self-auto">
-                      <span className="text-base font-extrabold tabular-nums tracking-tight text-slate-900 dark:text-slate-100">
-                        {money(Number(transfer.amount), currency)}
-                      </span>
-                      <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
-                        <Link
-                          href={`/accounts?editTransfer=${transfer.id}`}
-                          aria-label="Edit transfer"
-                          className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-ink-800 dark:hover:text-slate-200"
-                        >
-                          <Pencil size={14} />
-                        </Link>
-                        <DeleteTransferButton transferId={transfer.id} action={handleDeleteTransfer} />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="border-t border-slate-100 px-5 pb-4 dark:border-slate-800">
-              <UrlPaginationBar pagination={pageInfo(transfers)} />
-            </div>
           </Card>
-        )}
+        </Section>
 
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-          {accounts.map((account) => (
-            <div
-              key={account.id}
-              className="group relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-card transition-all duration-200 hover:border-teal-300 hover:shadow-hover hover:-translate-y-0.5 dark:border-slate-700 dark:bg-ink-800/70 dark:shadow-none dark:hover:border-teal-700"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-900 text-white shadow-sm transition-transform group-hover:scale-105 dark:bg-slate-100 dark:text-slate-900">
-                    <Landmark size={20} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-base font-bold text-slate-900 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors">
-                      {account.name}
-                    </p>
-                    <p className="truncate text-xs text-slate-400 capitalize">
-                      {account.account_type || "Deposit"} · {account.institution || "Bank Account"}
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="teal" size="sm">
-                  Active
-                </Badge>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-baseline justify-between">
-                <span className="text-xs font-medium text-slate-400">
-                  Available balance
-                </span>
-                <p className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 truncate">
-                  {money(Number(account.balance), currency)}
-                </p>
-              </div>
-            </div>
-          ))}
-
-          {!accounts.length && (
-            <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-white/60 p-12 text-center dark:border-slate-700 dark:bg-ink-800/50">
-              <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-400 dark:bg-ink-800">
-                <Landmark size={22} />
-              </div>
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200">No bank accounts linked yet</p>
-              <p className="mt-1 text-xs text-slate-400">
-                Import transactions or link an institution to see live account balances.
+        <Section title="Transfer funds">
+          <Card className="p-5">
+            {canTransfer ? (
+              <TransferForm accounts={accounts} currency={currency} />
+            ) : (
+              <p className="text-sm text-fg-muted">
+                Add a second account, such as a cash wallet, before you can move money between accounts.
               </p>
-            </div>
-          )}
-        </div>
+            )}
+          </Card>
+        </Section>
+      </div>
+
+      {editingTransfer && canTransfer && (
+        <EditDialog title="Edit transfer" closeHref="/accounts" error={error}>
+          <TransferForm accounts={accounts} currency={currency} transfer={editingTransfer} />
+        </EditDialog>
+      )}
     </div>
   );
 }
@@ -318,58 +339,57 @@ function TransferForm({
   currency: string;
   transfer?: Transfer;
 }) {
+  // The inline form and the edit dialog render together, so ids are scoped per mode.
+  const idPrefix = transfer ? "edit-transfer" : "new-transfer";
+  const accountOptions = accounts.map((account) => (
+    <option key={account.id} value={account.id}>
+      {account.name} — {money(Number(account.balance), currency)}
+    </option>
+  ));
+
   return (
     <form action={transfer ? handleUpdateTransfer : handleCreateTransfer} className="space-y-4">
       {transfer && <input type="hidden" name="transfer_id" value={transfer.id} />}
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">From account</label>
-          <select
-            name="from_account_id"
-            required
-            defaultValue={transfer?.from_account_id ?? ""}
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          >
+        <Field label="From account" htmlFor={`${idPrefix}-from`}>
+          <NativeSelect id={`${idPrefix}-from`} name="from_account_id" required defaultValue={transfer?.from_account_id ?? ""}>
             <option value="">Choose an account</option>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), currency)}</option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">To account</label>
-          <select
-            name="to_account_id"
-            required
-            defaultValue={transfer?.to_account_id ?? ""}
-            className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-          >
+            {accountOptions}
+          </NativeSelect>
+        </Field>
+        <Field label="To account" htmlFor={`${idPrefix}-to`}>
+          <NativeSelect id={`${idPrefix}-to`} name="to_account_id" required defaultValue={transfer?.to_account_id ?? ""}>
             <option value="">Choose an account</option>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>{account.name} — {money(Number(account.balance), currency)}</option>
-            ))}
-          </select>
-        </div>
+            {accountOptions}
+          </NativeSelect>
+        </Field>
+        <Field label="Amount" htmlFor={`${idPrefix}-amount`}>
+          <Input
+            id={`${idPrefix}-amount`}
+            name="amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            inputMode="decimal"
+            required
+            defaultValue={transfer?.amount}
+            placeholder="0.00"
+          />
+        </Field>
+        <Field label="Date" htmlFor={`${idPrefix}-date`}>
+          <Input
+            id={`${idPrefix}-date`}
+            name="date"
+            type="date"
+            defaultValue={transfer?.date ?? new Date().toISOString().slice(0, 10)}
+          />
+        </Field>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Amount</label>
-          <Input name="amount" type="number" min="0.01" step="0.01" required defaultValue={transfer?.amount} className="h-11" placeholder="0.00" />
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</label>
-          <Input name="date" type="date" defaultValue={transfer?.date ?? new Date().toISOString().slice(0, 10)} className="h-11" />
-        </div>
-      </div>
-      <div className="space-y-1.5">
-        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</label>
-        <textarea name="notes" rows={2} defaultValue={transfer?.notes ?? ""} className="w-full rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition-all duration-150 placeholder:text-slate-400 focus-visible:border-teal-500 focus-visible:ring-4 focus-visible:ring-teal-500/10 dark:border-slate-700 dark:bg-ink-800/70 dark:text-slate-100 dark:placeholder:text-slate-500" placeholder="Optional, e.g. ATM withdrawal" />
-      </div>
-      <SubmitButton
-        loadingText={transfer ? "Saving..." : "Transferring..."}
-        className="w-full justify-center bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white sm:w-auto"
-      >
-        <Repeat size={15} className="mr-2 inline" /> {transfer ? "Save changes" : "Transfer funds"}
+      <Field label="Notes (optional)" htmlFor={`${idPrefix}-notes`}>
+        <Textarea id={`${idPrefix}-notes`} name="notes" rows={2} defaultValue={transfer?.notes ?? ""} placeholder="e.g. ATM withdrawal" />
+      </Field>
+      <SubmitButton loadingText={transfer ? "Saving..." : "Transferring..."} className="w-full sm:w-auto">
+        <Repeat size={16} aria-hidden="true" /> {transfer ? "Save changes" : "Transfer funds"}
       </SubmitButton>
     </form>
   );

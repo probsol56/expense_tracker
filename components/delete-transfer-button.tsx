@@ -29,9 +29,9 @@ export function DeleteTransferButton({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Delete transfer"
-        className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+        className="grid h-11 w-11 place-items-center rounded-md text-fg-muted transition-colors duration-150 hover:bg-brick/10 hover:text-brick"
       >
-        <Trash2 size={14} />
+        <Trash2 size={15} aria-hidden="true" />
       </button>
       <ConfirmDialog
         open={open}

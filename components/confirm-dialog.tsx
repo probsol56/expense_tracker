@@ -70,7 +70,7 @@ export function ConfirmDialog({
   return createPortal(
     <div className="fixed inset-0 z-popover flex items-center justify-center p-4">
       <div
-        className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm animate-in fade-in duration-150"
+        className="fixed inset-0 bg-cover/60 animate-in fade-in duration-150"
         onClick={pending ? undefined : onCancel}
         aria-hidden="true"
       />
@@ -80,17 +80,17 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-description"
-        className="relative w-full max-w-sm rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 dark:border-slate-700 dark:bg-ink-900 dark:shadow-none"
+        className="relative w-full max-w-sm rounded-lg border border-rule bg-paper p-6 shadow-2xl animate-in zoom-in-95 duration-150"
       >
         <div className="flex items-start gap-4">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">
-            <AlertTriangle size={18} />
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-brick/10 text-brick">
+            <AlertTriangle size={18} aria-hidden="true" />
           </div>
           <div>
-            <h2 id="confirm-dialog-title" className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
+            <h2 id="confirm-dialog-title" className="font-display text-xl font-medium text-fg">
               {title}
             </h2>
-            <p id="confirm-dialog-description" className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            <p id="confirm-dialog-description" className="mt-1 text-sm text-fg-muted">
               {description}
             </p>
           </div>

@@ -2,9 +2,10 @@
 
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { CalendarDays, PieChart, Wallet, X } from "lucide-react";
-import { Button, Card, Input, LoadingOverlay, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
+import { X } from "lucide-react";
+import { Button, Input, Label, LoadingOverlay, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
 import { AddTransactionModal } from "@/components/add-transaction-modal";
+import { PageHeader } from "@/components/page-header";
 import { TransactionsGrid } from "@/app/(app)/transactions/transactions-grid";
 import { PaginationBar } from "@/components/pagination-bar";
 import { isLoanCategory, isTransferCategory, money } from "@/lib/utils";
@@ -82,11 +83,6 @@ export function ReportsPageContent({
     [accounts, filterAccountId],
   );
 
-  const netTotal = useMemo(
-    () => transactions.reduce((sum, t) => sum + Number(t.amount), 0),
-    [transactions],
-  );
-
   // Loan disbursements/repayments are posted automatically from the Loans
   // page and keep a loan's outstanding balance in sync — editing them here
   // would desync that balance, so send people there instead. Transfers are
@@ -96,48 +92,24 @@ export function ReportsPageContent({
     setEditingTransaction(transaction);
   };
 
+  const recordCount = `${totalCount}${totalRows !== totalCount ? ` of ${totalRows}` : ""} ${totalRows === 1 ? "entry" : "entries"}`;
+
   return (
-    <div className="mx-auto max-w-4xl">
-      <div className="mb-8">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-teal-200/70 bg-teal-50 px-2.5 py-0.5 text-xs font-bold text-teal-800 dark:border-teal-800 dark:bg-teal-900/40 dark:text-teal-300">
-            {workspaceName}
-          </span>
-          <span className="text-xs text-slate-400">
-            · {totalCount}
-            {totalRows !== totalCount && ` of ${totalRows}`} records
-          </span>
-        </div>
-        <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-          Reports by Account
-        </h1>
-        <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-          Pick an account — Cash in Hand, Cash at Bank, etc. — to see only its transactions.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl">
+      <PageHeader
+        eyebrow={`${workspaceName} · ${recordCount}`}
+        title="Account statements"
+        description="Pick an account, such as cash in hand or a bank account, to see only its entries."
+      />
 
-      {/* ── Filter bar ── */}
-      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-slate-700/80 dark:bg-ink-900/60 sm:flex-row sm:items-end">
-        <div className="flex items-center gap-1.5 self-center text-xs font-semibold text-slate-500 dark:text-slate-400 sm:self-auto">
-          <PieChart size={13} />
-          <span>Filters</span>
-          {activeFilterCount > 0 && (
-            <span className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-teal-500 text-[10px] font-bold text-white">
-              {activeFilterCount}
-            </span>
-          )}
-        </div>
-
-        {/* Account */}
-        <div className="flex flex-1 flex-col gap-1 min-w-0">
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            Account
-          </label>
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor="report-account" className="text-xs uppercase tracking-widest text-fg-muted">Account</Label>
           <Select
             value={filterAccountId}
             onValueChange={(v) => setParam({ accountId: v === "all" ? undefined : v, page: "1" })}
           >
-            <SelectTrigger className="h-9 text-sm">
+            <SelectTrigger id="report-account">
               <SelectValue placeholder="All accounts" />
             </SelectTrigger>
             <SelectContent>
@@ -151,97 +123,76 @@ export function ReportsPageContent({
           </Select>
         </div>
 
-        {/* Date From */}
-        <div className="flex flex-1 flex-col gap-1 min-w-0">
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            From
-          </label>
-          <div className="relative">
-            <CalendarDays size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input
-              type="date"
-              value={filterDateFrom}
-              onChange={(e) => setParam({ dateFrom: e.target.value, page: "1" })}
-              max={filterDateTo || undefined}
-              className="h-9 pl-8 text-sm"
-            />
-          </div>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor="report-from" className="text-xs uppercase tracking-widest text-fg-muted">From</Label>
+          <Input
+            id="report-from"
+            type="date"
+            value={filterDateFrom}
+            onChange={(e) => setParam({ dateFrom: e.target.value, page: "1" })}
+            max={filterDateTo || undefined}
+          />
         </div>
 
-        {/* Date To */}
-        <div className="flex flex-1 flex-col gap-1 min-w-0">
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            To
-          </label>
-          <div className="relative">
-            <CalendarDays size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <Input
-              type="date"
-              value={filterDateTo}
-              onChange={(e) => setParam({ dateTo: e.target.value, page: "1" })}
-              min={filterDateFrom || undefined}
-              className="h-9 pl-8 text-sm"
-            />
-          </div>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor="report-to" className="text-xs uppercase tracking-widest text-fg-muted">To</Label>
+          <Input
+            id="report-to"
+            type="date"
+            value={filterDateTo}
+            onChange={(e) => setParam({ dateTo: e.target.value, page: "1" })}
+            min={filterDateFrom || undefined}
+          />
         </div>
 
-        {/* Clear */}
-        {activeFilterCount > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={clearFilters}
-            className="h-9 shrink-0 gap-1.5 self-end text-xs text-slate-500 hover:text-rose-600"
-          >
-            <X size={13} />
-            Clear
-          </Button>
+        <div className="flex items-end">
+          {activeFilterCount > 0 && (
+            <Button type="button" variant="ghost" onClick={clearFilters}>
+              <X size={15} aria-hidden="true" />
+              Clear {activeFilterCount === 1 ? "filter" : `${activeFilterCount} filters`}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-x-6 gap-y-2 border-b-[3px] border-double border-fg/50 pb-3">
+        <div className="min-w-0">
+          <h2 className="break-words font-display text-2xl font-medium text-fg">
+            {selectedAccount ? selectedAccount.name : "All accounts"}
+          </h2>
+          {selectedAccount && (
+            <p className="text-sm capitalize text-fg-muted">
+              {selectedAccount.institution ? `${selectedAccount.institution} · ` : null}
+              {selectedAccount.account_type || "deposit"}
+            </p>
+          )}
+        </div>
+        {selectedAccount && (
+          <div className="text-left sm:text-right">
+            <p className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Current balance</p>
+            <p
+              className={`font-display text-3xl font-medium tabular-nums lining-nums ${
+                Number(selectedAccount.balance) < 0 ? "text-brick" : "text-fg"
+              }`}
+            >
+              {money(Number(selectedAccount.balance), currency)}
+            </p>
+          </div>
         )}
       </div>
 
-      {/* ── Selected account summary ── */}
-      {selectedAccount && (
-        <div className="mb-4 flex flex-col gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card dark:border-slate-700 dark:bg-ink-800/70 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-900">
-              <Wallet size={20} />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-base font-bold text-slate-900 dark:text-slate-100">
-                {selectedAccount.name}
-              </p>
-              <p className="truncate text-xs text-slate-400 capitalize">
-                {selectedAccount.account_type || "Deposit"} · Current balance {money(Number(selectedAccount.balance), currency)}
-              </p>
-            </div>
-          </div>
-          <div className="text-left sm:text-right">
-            <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              Net for filtered range
-            </span>
-            <p
-              className={`text-xl font-extrabold tabular-nums tracking-tight ${
-                netTotal >= 0 ? "text-teal-600 dark:text-teal-400" : "text-slate-900 dark:text-slate-100"
-              }`}
-            >
-              {netTotal > 0 ? "+" : ""}
-              {money(netTotal, currency)}
-            </p>
-          </div>
-        </div>
-      )}
-
-      <Card className="relative overflow-hidden shadow-card">
+      <div className="relative overflow-hidden rounded-lg border border-rule bg-paper">
         <TransactionsGrid
           transactions={transactions}
           currency={currency}
           groupBy="none"
+          isFiltered={activeFilterCount > 0}
           onEdit={handleEdit}
           onAdd={() => router.push("/transactions")}
+          onClearFilters={clearFilters}
         />
         <LoadingOverlay show={isPending} />
-      </Card>
+      </div>
 
       <PaginationBar
         page={page}

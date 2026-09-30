@@ -29,7 +29,7 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
   });
   const [customCategories, setCustomCategories] = useState<Record<CategoryType, string[]>>({ expense: [], income: [], loan: [] });
   const [customMerchants, setCustomMerchants] = useState<string[]>([]);
-  const [category, setCategory] = useState<string>(() => isEditing ? (transaction.category || getCategoryOptions("expense")[0]) : getCategoryOptions("expense")[0]);
+  const [category, setCategory] = useState<string>(() => isEditing ? (transaction.category || getCategoryOptions("expense")[0] || "") : getCategoryOptions("expense")[0] ?? "");
   const [merchant, setMerchant] = useState<string>(() => isEditing ? (transaction.merchant || "") : "");
   const [description, setDescription] = useState<string>(() => isEditing ? (transaction.notes || "") : "");
   const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);

@@ -22,10 +22,10 @@ export function getInitials(name?: string | null): string {
   const trimmed = name.trim();
   if (!trimmed) return "W";
   const parts = trimmed.split(/\s+/);
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  const first = parts[0] ?? "";
+  const last = parts[parts.length - 1] ?? "";
+  if (parts.length === 1) return first.slice(0, 2).toUpperCase();
+  return ((first[0] ?? "") + (last[0] ?? "")).toUpperCase();
 }
 
 export function isLoanCategory(category?: string | null): boolean {

@@ -17,7 +17,8 @@ export function toActionError(
   fallback: string,
   overrides?: Record<string, string>,
 ): string {
-  if (overrides?.[error.code]) return overrides[error.code];
+  const override = overrides?.[error.code];
+  if (override) return override;
   if (error.code === RAISE_EXCEPTION) return error.message;
 
   reportError(error);

@@ -18,6 +18,7 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

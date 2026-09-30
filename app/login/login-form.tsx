@@ -9,6 +9,7 @@ import { AUTH_ROUTES, authCallbackUrl } from "@/lib/auth-routes";
 import { PASSWORD_MIN_LENGTH } from "@/lib/validations";
 import { Button } from "@/components/ui";
 import { AuthCard, AuthField, AuthMessage, authButtonClass, authLinkClass } from "@/components/auth-card";
+import { SignUpConfirmation } from "./sign-up-confirmation";
 
 type Mode = "sign-in" | "sign-up";
 type Notice = { tone: "error" | "success"; text: string };
@@ -22,6 +23,13 @@ export function LoginForm({ linkError }: { linkError: boolean }) {
   const [mode, setMode] = useState<Mode>("sign-in");
   const [notice, setNotice] = useState<Notice | null>(linkError ? LINK_ERROR_NOTICE : null);
   const [loading, setLoading] = useState(false);
+  const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
+
+  function switchMode(next: Mode) {
+    setMode(next);
+    setNotice(null);
+    setConfirmationSentTo(null);
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,10 +56,18 @@ export function LoginForm({ linkError }: { linkError: boolean }) {
     setLoading(false);
     if (error) return setNotice({ tone: "error", text: error.message });
     // With email confirmation on, sign-up returns no session until the link is clicked.
-    if (!signUp.session) {
-      return setNotice({ tone: "success", text: `Check ${email} for a confirmation link to finish creating your account.` });
-    }
+    if (!signUp.session) return setConfirmationSentTo(email);
     window.location.href = AUTH_ROUTES.onboarding;
+  }
+
+  if (confirmationSentTo) {
+    return (
+      <SignUpConfirmation
+        email={confirmationSentTo}
+        onUseDifferentEmail={() => switchMode("sign-up")}
+        onBackToSignIn={() => switchMode("sign-in")}
+      />
+    );
   }
 
   return (
@@ -70,10 +86,7 @@ export function LoginForm({ linkError }: { linkError: boolean }) {
             type="button"
             role="tab"
             aria-selected={mode === tab}
-            onClick={() => {
-              setMode(tab);
-              setNotice(null);
-            }}
+            onClick={() => switchMode(tab)}
             className={`-mb-px border-b-2 pb-2.5 text-sm font-semibold transition-colors focus-visible:outline-ledger-brass dark:focus-visible:outline-ledger-brass-dark ${
               mode === tab
                 ? "border-ledger-brass text-ledger-ink dark:border-ledger-brass-dark dark:text-ledger-ink-dark"

@@ -47,14 +47,21 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
     if (!transaction?.id) return;
 
     let active = true;
-    getTransactionItemsForEdit(transaction.id).then((loadedItems) => {
-      if (!active) return;
-      setItems(loadedItems);
-      setShowItemDetails(loadedItems.length > 0);
-      if (loadedItems.length === 0) {
-        setAmount(String(Math.abs(Number(transaction.amount || 0))));
+    async function loadItems(transactionId: string) {
+      try {
+        const loadedItems = await getTransactionItemsForEdit(transactionId);
+        if (!active) return;
+        setItems(loadedItems);
+        setShowItemDetails(loadedItems.length > 0);
+        if (loadedItems.length === 0) {
+          setAmount(String(Math.abs(Number(transaction?.amount || 0))));
+        }
+      } catch {
+        // Saving now would replace the real line items with none, so say so.
+        if (active) setError("Couldn't load this transaction's line items. Close and reopen it before saving.");
       }
-    });
+    }
+    void loadItems(transaction.id);
 
     return () => {
       active = false;
@@ -63,11 +70,17 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
 
   useEffect(() => {
     let active = true;
-    getWorkspaceSuggestions().then(({ categories, merchants }) => {
-      if (!active) return;
-      setCustomCategories(categories);
-      setCustomMerchants(merchants);
-    });
+    async function loadSuggestions() {
+      try {
+        const { categories, merchants } = await getWorkspaceSuggestions();
+        if (!active) return;
+        setCustomCategories(categories);
+        setCustomMerchants(merchants);
+      } catch {
+        // Suggestions are a convenience; the form works with the built-in categories.
+      }
+    }
+    void loadSuggestions();
     return () => { active = false; };
   }, []);
 
@@ -78,11 +91,16 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
     }
 
     let active = true;
-    const timeout = setTimeout(() => {
-      searchTransactionNotes(description).then((suggestions) => {
+    async function loadDescriptionSuggestions(query: string) {
+      try {
+        const suggestions = await searchTransactionNotes(query);
         if (active) setDescriptionSuggestions(suggestions);
-      });
-    }, 300);
+      } catch {
+        // Autocomplete is best-effort; typing must never surface an error.
+        if (active) setDescriptionSuggestions([]);
+      }
+    }
+    const timeout = setTimeout(() => void loadDescriptionSuggestions(description), 300);
 
     return () => {
       active = false;

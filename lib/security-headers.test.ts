@@ -13,6 +13,16 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).toContain("connect-src 'self' https://abc123.supabase.co wss://abc123.supabase.co");
   });
 
+  it("allows the Sentry ingest origin, without the DSN's public key", () => {
+    const csp = buildContentSecurityPolicy({
+      supabaseUrl: SUPABASE_URL,
+      sentryDsn: "https://examplekey@o123.ingest.de.sentry.io/456",
+      isProduction: true,
+    });
+    expect(csp).toContain("https://o123.ingest.de.sentry.io");
+    expect(csp).not.toContain("examplekey");
+  });
+
   it("uses ws: for a local http Supabase", () => {
     const csp = buildContentSecurityPolicy({ supabaseUrl: "http://127.0.0.1:54321", isProduction: false });
     expect(csp).toContain("ws://127.0.0.1:54321");

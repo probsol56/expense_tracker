@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import type { PostgrestError } from "@supabase/supabase-js";
 
 // Deliberate `raise exception` inside an RPC — the message is written for the
@@ -19,8 +20,15 @@ export function toActionError(
   if (overrides?.[error.code]) return overrides[error.code];
   if (error.code === RAISE_EXCEPTION) return error.message;
 
-  console.error(error);
+  reportError(error);
   return fallback;
+}
+
+// Server actions return these errors instead of throwing, so the framework
+// hook never sees them; report them explicitly.
+function reportError(error: unknown): void {
+  console.error(error);
+  Sentry.captureException(error);
 }
 
 /** Same mapping for an error thrown as a JS exception rather than returned by Supabase. */
@@ -28,6 +36,6 @@ export function toCaughtActionError(error: unknown, fallback: string): string {
   if (error && typeof error === "object" && "code" in error && "message" in error) {
     return toActionError(error as PostgrestError, fallback);
   }
-  console.error(error);
+  reportError(error);
   return fallback;
 }

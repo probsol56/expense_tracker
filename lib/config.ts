@@ -7,6 +7,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
 }).refine(
   (env) => process.env.NODE_ENV !== "production" || env.NEXT_PUBLIC_SITE_URL !== undefined,
   { path: ["NEXT_PUBLIC_SITE_URL"], message: "required in production" },
@@ -19,6 +20,7 @@ function loadConfig() {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN || undefined,
   });
   if (!parsed.success) {
     throw new Error(`Invalid environment configuration:\n${parsed.error.issues.map((issue) => `- ${issue.path.join(".")}: ${issue.message}`).join("\n")}`);
@@ -29,6 +31,7 @@ function loadConfig() {
     supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     siteUrl: env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+    sentryDsn: env.NEXT_PUBLIC_SENTRY_DSN,
     isProduction: process.env.NODE_ENV === "production",
   });
 }

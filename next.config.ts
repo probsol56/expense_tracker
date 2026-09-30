@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: buildSecurityHeaders({
           supabaseUrl: config.supabaseUrl,
+          sentryDsn: config.sentryDsn,
           isProduction: config.isProduction,
         }),
       },

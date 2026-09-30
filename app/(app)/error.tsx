@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { Button } from "@/components/ui";
 
 // Server errors reach the client with the message stripped in production;
@@ -8,6 +9,8 @@ import { Button } from "@/components/ui";
 export default function AppError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
     console.error(error);
+    // Server errors carry a digest and are already reported by onRequestError.
+    if (!error.digest) Sentry.captureException(error);
   }, [error]);
 
   return (

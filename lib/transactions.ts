@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import { pageRange } from "@/lib/pagination";
 import type { Transaction } from "@/lib/types";
 
@@ -56,6 +57,32 @@ export type TransactionPageResult = {
   totalCount: number;
   totalRows: number;
 };
+
+const transactionTotalsSchema = z.object({
+  money_out: z.coerce.number(),
+  money_in: z.coerce.number(),
+});
+
+export type TransactionTotals = { moneyOut: number; moneyIn: number };
+
+/** Sums the whole filtered range in Postgres, not just the visible page. */
+export async function fetchTransactionTotals(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  { accountId, dateFrom, dateTo }: Pick<TransactionPageParams, "accountId" | "dateFrom" | "dateTo">,
+): Promise<TransactionTotals> {
+  const { data, error } = await supabase
+    .rpc("transaction_totals", {
+      p_workspace_id: workspaceId,
+      p_account_id: accountId && accountId !== "all" ? accountId : null,
+      p_from: dateFrom || null,
+      p_to: dateTo || null,
+    })
+    .single();
+  if (error) throw error;
+  const parsed = transactionTotalsSchema.parse(data);
+  return { moneyOut: parsed.money_out, moneyIn: parsed.money_in };
+}
 
 /**
  * Fetches one page of the transaction ledger with filtering and counting done

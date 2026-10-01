@@ -1,7 +1,7 @@
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { ReportsPageContent } from "@/app/(app)/reports/reports-content";
 import { getSearchParam } from "@/lib/utils";
-import { fetchTransactionsPage } from "@/lib/transactions";
+import { fetchTransactionTotals, fetchTransactionsPage } from "@/lib/transactions";
 import { DEFAULT_PAGE_SIZE, PICKER_LIMITS, clampPageSize, parsePage } from "@/lib/pagination";
 import type { Account, Loan } from "@/lib/types";
 
@@ -41,7 +41,12 @@ export default async function ReportsPage({
 
   const params = readParams(sp);
 
-  const [result, { data: accounts }, { data: loans }] = await Promise.all([
+  const [rangeTotals, result, { data: accounts }, { data: loans }] = await Promise.all([
+    fetchTransactionTotals(supabase, workspace.id, {
+      accountId: params.accountId,
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo,
+    }),
     fetchTransactionsPage(supabase, {
       page: params.page,
       pageSize: params.pageSize,
@@ -66,6 +71,7 @@ export default async function ReportsPage({
   return (
     <ReportsPageContent
       transactions={result.transactions}
+      rangeTotals={rangeTotals}
       currency={currency}
       workspaceName={workspaceName}
       pagination={{

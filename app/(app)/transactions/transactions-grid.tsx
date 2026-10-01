@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui";
-import { LEDGER_COLUMN_COUNT, LedgerTable, LedgerTotalsRow, sumLedger } from "@/components/ledger-table";
+import { LEDGER_COLUMN_COUNT, LedgerTable, LedgerTotalsRows, sumLedger } from "@/components/ledger-table";
+import type { TransactionTotals } from "@/lib/transactions";
 import { TransactionListItem } from "@/components/transaction-list-item";
 import { formatEntryDate, money } from "@/lib/utils";
 import type { Transaction } from "@/lib/types";
@@ -19,6 +20,8 @@ interface TransactionsGridProps {
   onEdit: (transaction: Transaction) => void;
   onAdd: () => void;
   onClearFilters: () => void;
+  rangeTotals?: TransactionTotals;
+  rangeTotalsLabel?: string;
 }
 
 function getGroupKey(t: Transaction, mode: GroupByMode): string {
@@ -101,6 +104,8 @@ export function TransactionsGrid({
   onEdit,
   onAdd,
   onClearFilters,
+  rangeTotals,
+  rangeTotalsLabel = "All pages total",
 }: TransactionsGridProps) {
   if (!transactions.length) {
     return (
@@ -131,7 +136,16 @@ export function TransactionsGrid({
     );
   }
 
-  const totals = <LedgerTotalsRow label="Page total" transactions={transactions} currency={currency} />;
+  const pageSum = sumLedger(transactions);
+  const totals = (
+    <LedgerTotalsRows
+      currency={currency}
+      totals={[
+        { label: "Page total", moneyOut: pageSum.moneyOut, moneyIn: pageSum.moneyIn },
+        ...(rangeTotals ? [{ label: rangeTotalsLabel, ...rangeTotals }] : []),
+      ]}
+    />
+  );
 
   if (groupBy === "none") {
     return (

@@ -9,10 +9,12 @@ import { PageHeader } from "@/components/page-header";
 import { TransactionsGrid } from "@/app/(app)/transactions/transactions-grid";
 import { PaginationBar } from "@/components/pagination-bar";
 import { isLoanCategory, isTransferCategory, money } from "@/lib/utils";
+import type { TransactionTotals } from "@/lib/transactions";
 import type { Account, Loan, Transaction } from "@/lib/types";
 
 interface ReportsPageContentProps {
   transactions: Transaction[];
+  rangeTotals?: TransactionTotals;
   currency: string;
   workspaceName: string;
   pagination: {
@@ -33,6 +35,7 @@ interface ReportsPageContentProps {
 
 export function ReportsPageContent({
   transactions,
+  rangeTotals,
   currency,
   workspaceName,
   pagination,
@@ -186,6 +189,8 @@ export function ReportsPageContent({
           transactions={transactions}
           currency={currency}
           groupBy="none"
+          rangeTotals={rangeTotals}
+          rangeTotalsLabel={activeFilterCount > 0 ? "Filtered total" : "Grand total"}
           isFiltered={activeFilterCount > 0}
           onEdit={handleEdit}
           onAdd={() => router.push("/transactions")}

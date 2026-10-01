@@ -39,33 +39,36 @@ export function sumLedger(transactions: Transaction[]) {
   return { moneyOut, moneyIn, net: moneyIn - moneyOut };
 }
 
-/** Column totals closed with the accountant's double rule. */
-export function LedgerTotalsRow({
-  label,
-  transactions,
-  currency,
-}: {
-  label: string;
-  transactions: Transaction[];
-  currency: string;
-}) {
-  const { moneyOut, moneyIn, net } = sumLedger(transactions);
+export type LedgerTotal = { label: string; moneyOut: number; moneyIn: number };
 
+/** Column totals closed with the accountant's double rule. */
+export function LedgerTotalsRows({ totals, currency }: { totals: LedgerTotal[]; currency: string }) {
   return (
     <tfoot className="border-t-2 border-fg/70">
-      <tr className="border-b-[3px] border-double border-fg/50 font-display text-lg font-medium lining-nums">
-        <td className="hidden sm:table-cell" />
-        <th scope="row" className="py-3 pl-4 pr-2 text-left font-sans text-xs font-semibold uppercase tracking-widest text-fg-muted">
-          {label}
-        </th>
-        <td className={`${moneyCellClass} text-fg`}>{money(moneyOut, currency)}</td>
-        <td className={`${moneyCellClass} text-moss`}>{money(moneyIn, currency)}</td>
-        <td className={`py-3 pl-2 pr-1 text-right tabular-nums sm:hidden ${net < 0 ? "text-fg" : "text-moss"}`}>
-          {net < 0 ? "−" : "+"}
-          {money(Math.abs(net), currency)}
-        </td>
-        <td />
-      </tr>
+      {totals.map(({ label, moneyOut, moneyIn }, index) => {
+        const net = moneyIn - moneyOut;
+        const isLast = index === totals.length - 1;
+        return (
+          <tr
+            key={label}
+            className={`font-display text-lg font-medium lining-nums ${
+              isLast ? "border-b-[3px] border-double border-fg/50" : "border-b border-rule"
+            }`}
+          >
+            <td className="hidden sm:table-cell" />
+            <th scope="row" className="py-3 pl-4 pr-2 text-left font-sans text-xs font-semibold uppercase tracking-widest text-fg-muted">
+              {label}
+            </th>
+            <td className={`${moneyCellClass} text-fg`}>{money(moneyOut, currency)}</td>
+            <td className={`${moneyCellClass} text-moss`}>{money(moneyIn, currency)}</td>
+            <td className={`py-3 pl-2 pr-1 text-right tabular-nums sm:hidden ${net < 0 ? "text-fg" : "text-moss"}`}>
+              {net < 0 ? "−" : "+"}
+              {money(Math.abs(net), currency)}
+            </td>
+            <td />
+          </tr>
+        );
+      })}
     </tfoot>
   );
 }

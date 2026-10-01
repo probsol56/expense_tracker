@@ -26,7 +26,7 @@ export function TransactionListContent({
 }: TransactionListContentProps) {
   if (transactions.length) {
     return (
-      <LedgerTable caption="Recent transactions">
+      <LedgerTable caption="This month's transactions">
         <tbody>
           {transactions.map((transaction) => (
             <TransactionListItem
@@ -46,12 +46,12 @@ export function TransactionListContent({
   return (
     <div className="px-6 py-12 text-center">
       <p className="font-display text-xl font-medium text-fg">
-        {isFiltered ? "No entries match these filters" : "This page of the ledger is blank"}
+        {isFiltered ? "No entries match these filters" : "Nothing recorded this month"}
       </p>
       <p className="mx-auto mt-2 max-w-prose text-sm text-fg-muted">
         {isFiltered
           ? "Other entries exist. Change or clear the filters to see them."
-          : "Record an expense or income and it will appear here."}
+          : "Record an expense or income and it will appear here. Earlier months are under Transactions."}
       </p>
       {isFiltered ? (
         <button
@@ -72,6 +72,9 @@ export function TransactionListContent({
           </button>
           <Link href="/import" className="text-sm font-semibold text-brass-strong underline underline-offset-4 hover:text-fg">
             Import a statement
+          </Link>
+          <Link href="/transactions" className="text-sm font-semibold text-brass-strong underline underline-offset-4 hover:text-fg">
+            View all transactions
           </Link>
         </div>
       )}

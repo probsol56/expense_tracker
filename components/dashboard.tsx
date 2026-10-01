@@ -39,9 +39,10 @@ export async function Dashboard({
     );
   }
 
+  const now = new Date();
   const [summary, activity, { data: accounts }, { data: loans }] = await Promise.all([
-    fetchDashboardSummary(supabase, workspace.id, new Date()),
-    fetchActivityPage(supabase, workspace.id, { page, pageSize, type: activityType, query }),
+    fetchDashboardSummary(supabase, workspace.id, now),
+    fetchActivityPage(supabase, workspace.id, { page, pageSize, type: activityType, query, now }),
     supabase
       .from("accounts")
       .select("id, name, account_type, balance, starting_balance, institution, last_synced_at")

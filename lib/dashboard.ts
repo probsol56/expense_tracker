@@ -63,6 +63,7 @@ export type ActivityPageParams = {
   pageSize: number;
   type: ActivityType;
   query: string;
+  now: Date;
 };
 
 export type ActivityPageResult = {
@@ -124,9 +125,11 @@ export async function fetchDashboardSummary(
 export async function fetchActivityPage(
   supabase: SupabaseClient,
   workspaceId: string,
-  { page, pageSize, type, query }: ActivityPageParams,
+  { page, pageSize, type, query, now }: ActivityPageParams,
 ): Promise<ActivityPageResult> {
   const trimmedQuery = query.trim();
+  // Search stays global so older entries remain findable from the overview.
+  const monthRange = trimmedQuery ? null : getMonthRange(now);
 
   const buildQuery = () => {
     let request = supabase
@@ -135,6 +138,7 @@ export async function fetchActivityPage(
       .eq("workspace_id", workspaceId)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
+    if (monthRange) request = request.gte("date", monthRange.from).lt("date", monthRange.to);
     if (type !== "all") request = request.eq("kind", ACTIVITY_KIND_BY_TYPE[type]);
     if (trimmedQuery) {
       const pattern = toSearchPattern(trimmedQuery);
@@ -145,11 +149,14 @@ export async function fetchActivityPage(
 
   const requestedPage = Math.max(1, page);
 
+  let totalRowsQuery = supabase
+    .from("transaction_activity")
+    .select("id", { count: "exact", head: true })
+    .eq("workspace_id", workspaceId);
+  if (monthRange) totalRowsQuery = totalRowsQuery.gte("date", monthRange.from).lt("date", monthRange.to);
+
   const [{ count: totalRows, error: totalError }, first] = await Promise.all([
-    supabase
-      .from("transaction_activity")
-      .select("id", { count: "exact", head: true })
-      .eq("workspace_id", workspaceId),
+    totalRowsQuery,
     buildQuery().range(...pageRange(requestedPage, pageSize)),
   ]);
   if (totalError) throw totalError;

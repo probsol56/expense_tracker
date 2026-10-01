@@ -37,7 +37,7 @@ export function SummaryCards({
     {
       label: "Earned this month",
       value: money(summary.month_income, currency),
-      detail: "All income recorded",
+      detail: "Income recorded",
       href:"/transactions",
     },
     {
@@ -53,7 +53,7 @@ export function SummaryCards({
 
   return (
     <section
-      aria-label="This month at a glance"
+      aria-label="Financial summary"
       // A double rule is the ledger mark for a closing total.
       className="mb-10 grid gap-6 border-b-[3px] border-double border-fg/50 pb-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,2fr)] lg:gap-8"
     >

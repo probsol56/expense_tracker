@@ -9,8 +9,12 @@ function geminiBody(text: string) {
   return { candidates: [{ finishReason: "STOP", content: { parts: [{ text }] } }] };
 }
 
-function mockFetch(response: Response | Error) {
-  const fetchMock = vi.fn(() => (response instanceof Error ? Promise.reject(response) : Promise.resolve(response)));
+function mockFetch(...responses: (Response | Error)[]) {
+  let call = 0;
+  const fetchMock = vi.fn(() => {
+    const response = responses[Math.min(call++, responses.length - 1)];
+    return response instanceof Response ? Promise.resolve(response) : Promise.reject(response);
+  });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
@@ -61,6 +65,7 @@ describe("GeminiReceiptExtractor", () => {
 
   it.each([
     [new Response("", { status: 429 }), "gemini_429"],
+    [new Response("", { status: 503 }), "gemini_503"],
     [new Response("", { status: 500 }), "gemini_http_500"],
     [Response.json({ candidates: [{ finishReason: "SAFETY" }] }), "gemini_empty_safety"],
     [Response.json(geminiBody("not json")), "gemini_invalid_json"],
@@ -68,6 +73,31 @@ describe("GeminiReceiptExtractor", () => {
   ])("maps a failed response to a coded error (%#)", async (response, code) => {
     mockFetch(response);
     expect((await extractError()).code).toBe(code);
+  });
+
+  it("falls back to the next model when the first is busy", async () => {
+    const fetchMock = mockFetch(
+      new Response("", { status: 503 }),
+      Response.json(geminiBody(JSON.stringify({ merchant: "Naturo", items: [] }))),
+    );
+    await expect(new GeminiReceiptExtractor().extract(FILE, CONTEXT)).resolves.toMatchObject({ merchant: "Naturo" });
+
+    const urls = fetchMock.mock.calls.map((args) => String((args as unknown as [string])[0]));
+    expect(urls).toHaveLength(2);
+    expect(urls[0]).not.toBe(urls[1]);
+  });
+
+  it("tells the user it's busy, not unreadable, when every model is busy", async () => {
+    const fetchMock = mockFetch(new Response("", { status: 503 }), new Response("", { status: 429 }));
+    const error = await extractError();
+    expect(error.userMessage).toMatch(/busy/);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not fall back on a non-busy failure", async () => {
+    const fetchMock = mockFetch(new Response("", { status: 400 }));
+    expect((await extractError()).code).toBe("gemini_http_400");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("maps network failures and timeouts", async () => {

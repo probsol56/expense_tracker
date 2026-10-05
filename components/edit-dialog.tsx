@@ -61,7 +61,6 @@ export function EditDialog({
     <div className="fixed inset-0 z-modal flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div
         className="fixed inset-0 z-overlay bg-cover/60 animate-in fade-in duration-200"
-        onClick={close}
         aria-hidden="true"
       />
       <div

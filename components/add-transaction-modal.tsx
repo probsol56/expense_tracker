@@ -57,7 +57,6 @@ export function AddTransactionModal({ onClose, transaction, currency = "BDT", ac
     <div className="fixed inset-0 z-modal flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div
         className="fixed inset-0 z-overlay bg-cover/60 transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
         aria-hidden="true"
       />
 

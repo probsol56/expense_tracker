@@ -72,7 +72,6 @@ export function ConfirmDialog({
     <div className="fixed inset-0 z-popover flex items-center justify-center p-4">
       <div
         className="fixed inset-0 bg-cover/60 animate-in fade-in duration-150"
-        onClick={pending ? undefined : onCancel}
         aria-hidden="true"
       />
       <div

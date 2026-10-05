@@ -184,7 +184,7 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
             </Button>
           </div>
           <p className="text-xs text-fg-muted">
-            Photo or PDF. Scans are processed by Google Gemini, which may use them to improve its services.
+            Photo or PDF. Scans are processed by AI, which may use them to improve its services.
           </p>
         </>
       ) : null}

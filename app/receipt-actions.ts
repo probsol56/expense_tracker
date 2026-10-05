@@ -4,7 +4,14 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getUserWorkspaceId } from "@/lib/ledger";
 import { toActionError } from "@/lib/errors";
-import { isReceiptMimeType, MAX_RECEIPT_BYTES, RECEIPT_FILE_EXTENSIONS, RECEIPTS_BUCKET } from "@/lib/receipts/constants";
+import {
+  isReceiptMimeType,
+  MAX_RECEIPT_BYTES,
+  RECEIPT_FILE_EXTENSIONS,
+  RECEIPT_MIME_TYPES,
+  RECEIPT_PATH_PATTERN,
+  RECEIPTS_BUCKET,
+} from "@/lib/receipts/constants";
 import { toReceiptDraft, type ReceiptDraft } from "@/lib/receipts/draft";
 import { RECEIPT_READ_FAILED, ReceiptExtractionError } from "@/lib/receipts/extractor";
 import { GeminiReceiptExtractor } from "@/lib/receipts/gemini";
@@ -14,11 +21,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 const MAX_PROMPT_CATEGORIES = 100;
 const DEFAULT_CURRENCY = "BDT";
 
-// `{workspace_id}/{uuid}.{ext}` — the shape the upload step writes.
-const UUID_PATTERN = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
-const receiptPathSchema = z
-  .string()
-  .regex(new RegExp(`^${UUID_PATTERN}/${UUID_PATTERN}\\.(${Object.values(RECEIPT_FILE_EXTENSIONS).join("|")})$`));
+const receiptPathSchema = z.string().regex(RECEIPT_PATH_PATTERN);
 
 export type ExtractReceiptResult = { error: string } | { success: true; draft: ReceiptDraft };
 
@@ -108,4 +111,47 @@ export async function extractReceipt(receiptPath: string): Promise<ExtractReceip
     Sentry.captureException(error);
     return { error: RECEIPT_READ_FAILED };
   }
+}
+
+// Signed URLs only need to outlive one upload or one "view receipt" click.
+const RECEIPT_VIEW_URL_TTL_SECONDS = 5 * 60;
+
+export type PrepareReceiptUploadResult = { error: string } | { success: true; path: string; token: string };
+
+/**
+ * The server picks the object path so the browser can only upload to
+ * `{workspace_id}/{random}.{ext}`; storage RLS re-checks the workspace.
+ */
+export async function prepareReceiptUpload(mimeType: string): Promise<PrepareReceiptUploadResult> {
+  const parsedMimeType = z.enum(RECEIPT_MIME_TYPES).safeParse(mimeType);
+  if (!parsedMimeType.success) return { error: "Use a JPG, PNG, WebP or PDF receipt." };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Sign in to scan a receipt." };
+
+  const workspace = await getUserWorkspaceId(supabase, user.id);
+  if (!workspace) return { error: "Create a workspace before scanning receipts." };
+
+  const path = `${workspace.id}/${crypto.randomUUID()}.${RECEIPT_FILE_EXTENSIONS[parsedMimeType.data]}`;
+  const { data, error } = await supabase.storage.from(RECEIPTS_BUCKET).createSignedUploadUrl(path);
+  if (error) {
+    console.error("createSignedUploadUrl failed", error.name);
+    Sentry.captureException(error);
+    return { error: "Couldn't prepare the upload. Try again." };
+  }
+  return { success: true, path: data.path, token: data.token };
+}
+
+export async function getReceiptViewUrl(receiptPath: string): Promise<{ error: string } | { success: true; url: string }> {
+  const parsedPath = receiptPathSchema.safeParse(receiptPath);
+  if (!parsedPath.success) return { error: "Invalid receipt." };
+
+  // RLS on storage.objects limits this to the caller's workspaces.
+  const supabase = await createClient();
+  const { data, error } = await supabase.storage
+    .from(RECEIPTS_BUCKET)
+    .createSignedUrl(parsedPath.data, RECEIPT_VIEW_URL_TTL_SECONDS);
+  if (error) return { error: "Couldn't open the receipt." };
+  return { success: true, url: data.signedUrl };
 }

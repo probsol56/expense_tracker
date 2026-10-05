@@ -34,7 +34,14 @@ interface TransactionFormFieldsProps {
   setShowItemDetails: Dispatch<SetStateAction<boolean>>;
   amount: string;
   setAmount: Dispatch<SetStateAction<string>>;
+  itemsSubtotal: number;
   computedAmount: number;
+  taxAmount: string;
+  setTaxAmount: (value: string) => void;
+  discountAmount: string;
+  setDiscountAmount: (value: string) => void;
+  date: string;
+  setDate: (value: string) => void;
   currency: string;
   error: string | null;
   transaction?: Transaction;
@@ -64,7 +71,14 @@ export function TransactionFormFields({
   setShowItemDetails,
   amount,
   setAmount,
+  itemsSubtotal,
   computedAmount,
+  taxAmount,
+  setTaxAmount,
+  discountAmount,
+  setDiscountAmount,
+  date,
+  setDate,
   currency,
   error,
   transaction,
@@ -280,8 +294,44 @@ export function TransactionFormFields({
               ))}
             </div>
 
+            <div className="flex items-baseline justify-between px-1 pt-1 text-sm text-fg-muted">
+              <span>Subtotal</span>
+              <span className="tabular-nums">{money(itemsSubtotal, currency)}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label htmlFor="tx-tax" className="block text-xs font-medium text-fg-muted">VAT / tax / service charge</label>
+                <Input
+                  id="tx-tax"
+                  name="tax_amount"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  value={taxAmount}
+                  onChange={(event) => setTaxAmount(event.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-1">
+                <label htmlFor="tx-discount" className="block text-xs font-medium text-fg-muted">Discount</label>
+                <Input
+                  id="tx-discount"
+                  name="discount_amount"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  value={discountAmount}
+                  onChange={(event) => setDiscountAmount(event.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
             <div className="flex items-baseline justify-between border-b-[3px] border-double border-fg/50 px-1 py-2">
-              <span className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Items total</span>
+              <span className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Total</span>
               <span className="font-display text-lg font-medium tabular-nums lining-nums text-fg">{money(computedAmount, currency)}</span>
             </div>
           </>
@@ -290,7 +340,7 @@ export function TransactionFormFields({
 
       <div className="space-y-1.5">
         <label htmlFor="tx-date" className={FIELD_LABEL}>Date</label>
-        <Input id="tx-date" name="date" type="date" required defaultValue={transaction?.date || new Date().toISOString().slice(0, 10)} />
+        <Input id="tx-date" name="date" type="date" required value={date} onChange={(event) => setDate(event.target.value)} />
       </div>
 
       <div className="space-y-1.5">

@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { transactionSchema } from "@/lib/validations";
+import { transactionReceiptFieldsSchema, transactionSchema } from "@/lib/validations";
 import { createClient } from "@/lib/supabase/server";
 import { getUserWorkspaceId, isLoanLedgerTransaction, isTransferLedgerTransaction } from "@/lib/ledger";
 import { toActionError } from "@/lib/errors";
@@ -60,11 +60,20 @@ function normalizeFormData(formData: FormData) {
   const type = transactionTypeSchema.parse(rawData.type ?? "expense");
   const rawAmount = Number(rawData.amount);
   const items = parseItemRows(rawData);
+  const receiptFields = transactionReceiptFieldsSchema.safeParse(rawData);
+  if (!receiptFields.success) return { type, items, receipt: null, parsed: transactionSchema.safeParse({}) };
+
+  // Tax/discount only adjust an itemised total. Without items the user types
+  // the amount paid directly, so a breakdown would be unverifiable — drop it.
+  const receipt = items.length
+    ? receiptFields.data
+    : { ...receiptFields.data, tax_amount: null, discount_amount: null };
+  // A discount larger than the items leaves this negative, so validation rejects it rather than flipping the sign.
   const computedAmount = items.length
-    ? items.reduce((total, item) => total + item.total_price, 0)
-    : rawAmount;
-  const normalized = { ...rawData, amount: Number.isFinite(computedAmount) ? Math.abs(computedAmount) : rawData.amount };
-  return { type, items, parsed: transactionSchema.safeParse(normalized) };
+    ? Math.round((items.reduce((total, item) => total + item.total_price, 0) + (receipt.tax_amount ?? 0) - (receipt.discount_amount ?? 0)) * 100) / 100
+    : Math.abs(rawAmount);
+  const normalized = { ...rawData, amount: Number.isFinite(computedAmount) ? computedAmount : rawData.amount };
+  return { type, items, receipt, parsed: transactionSchema.safeParse(normalized) };
 }
 
 function revalidateTransactionPaths() {
@@ -73,8 +82,8 @@ function revalidateTransactionPaths() {
 }
 
 export async function createTransaction(formData: FormData) {
-  const { type, items, parsed } = normalizeFormData(formData);
-  if (!parsed.success) return { error: "Check the transaction details and try again." };
+  const { type, items, receipt, parsed } = normalizeFormData(formData);
+  if (!parsed.success || !receipt) return { error: "Check the transaction details and try again." };
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -95,6 +104,9 @@ export async function createTransaction(formData: FormData) {
     p_date: date,
     p_notes: description ?? "",
     p_items: items,
+    p_tax_amount: receipt.tax_amount,
+    p_discount_amount: receipt.discount_amount,
+    p_receipt_path: receipt.receipt_path,
   });
   if (error) return { error: toActionError(error, "Failed to save transaction.") };
 
@@ -103,8 +115,8 @@ export async function createTransaction(formData: FormData) {
 }
 
 export async function updateTransaction(transactionId: string, formData: FormData) {
-  const { type, items, parsed } = normalizeFormData(formData);
-  if (!parsed.success) return { error: "Check the transaction details and try again." };
+  const { type, items, receipt, parsed } = normalizeFormData(formData);
+  if (!parsed.success || !receipt) return { error: "Check the transaction details and try again." };
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -129,6 +141,9 @@ export async function updateTransaction(transactionId: string, formData: FormDat
     p_date: date,
     p_notes: description ?? "",
     p_items: items,
+    p_tax_amount: receipt.tax_amount,
+    p_discount_amount: receipt.discount_amount,
+    p_receipt_path: receipt.receipt_path,
   });
   if (error) return { error: toActionError(error, "Failed to update transaction.") };
 
@@ -136,24 +151,55 @@ export async function updateTransaction(transactionId: string, formData: FormDat
   return { success: true };
 }
 
-/** Line items for a transaction being edited — RLS scopes this to the caller's workspace. */
-export async function getTransactionItemsForEdit(transactionId: string): Promise<TransactionItem[]> {
+export type TransactionEditDetails = {
+  items: TransactionItem[];
+  tax_amount: number | null;
+  discount_amount: number | null;
+  receipt_path: string | null;
+};
+
+const receiptColumnsSchema = z.object({
+  tax_amount: z.coerce.number().nullable(),
+  discount_amount: z.coerce.number().nullable(),
+  receipt_path: z.string().nullable(),
+});
+
+/**
+ * Line items and receipt fields for a transaction being edited — RLS scopes
+ * this to the caller's workspace. Throws on failure: saving after a silent
+ * empty load would wipe the real items and receipt.
+ */
+export async function getTransactionForEdit(transactionId: string): Promise<TransactionEditDetails> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("transaction_items")
-    .select("id, name, quantity, unit_price, total_price")
-    .eq("transaction_id", transactionId);
-  if (error) {
-    console.error(error);
-    return [];
+  const [{ data, error }, { data: receiptRow, error: receiptError }] = await Promise.all([
+    supabase
+      .from("transaction_items")
+      .select("id, name, quantity, unit_price, total_price")
+      .eq("transaction_id", transactionId),
+    supabase
+      .from("transactions")
+      .select("tax_amount, discount_amount, receipt_path")
+      .eq("id", transactionId)
+      .maybeSingle(),
+  ]);
+  if (error || receiptError) {
+    console.error(error ?? receiptError);
+    throw new Error("Couldn't load the transaction for editing.");
   }
-  return (data ?? []).map((item) => ({
-    id: item.id,
-    name: item.name,
-    quantity: Number(item.quantity) || 1,
-    unit_price: Number(item.unit_price) || 0,
-    total_price: Number(item.total_price) || 0,
-  }));
+
+  const receipt = receiptColumnsSchema.safeParse(receiptRow);
+  return {
+    tax_amount: receipt.success ? receipt.data.tax_amount : null,
+    discount_amount: receipt.success ? receipt.data.discount_amount : null,
+    receipt_path: receipt.success ? receipt.data.receipt_path : null,
+    items: (data ?? []).map((item) => ({
+      id: item.id,
+      name: item.name,
+      quantity: Number(item.quantity) || 1,
+      unit_price: Number(item.unit_price) || 0,
+      total_price: Number(item.total_price) || 0,
+    })),
+  };
 }
 
 /** Category/merchant names already used in the caller's workspace, for the transaction form's suggestions. */

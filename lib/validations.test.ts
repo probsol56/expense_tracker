@@ -11,6 +11,7 @@ import {
   loanUpdateSchema,
   recurringTransactionSchema,
   transactionSchema,
+  transactionReceiptFieldsSchema,
   transferSchema,
 } from "@/lib/validations";
 
@@ -154,5 +155,41 @@ describe("auth schemas", () => {
   it("only accepts the exact delete confirmation word", () => {
     expect(deleteAccountSchema.safeParse({ confirmation: "DELETE" }).success).toBe(true);
     expect(deleteAccountSchema.safeParse({ confirmation: "delete" }).success).toBe(false);
+  });
+});
+
+describe("transactionReceiptFieldsSchema", () => {
+  const WORKSPACE_ID = "6f1c1a38-5a7e-4a52-9d3c-1f0e6f3b2a10";
+  const FILE_ID = "0b6e2f0c-3d4a-4f7e-8a51-2c9d7e1f4b33";
+
+  it("treats blank or missing fields as null", () => {
+    expect(transactionReceiptFieldsSchema.parse({ tax_amount: "", discount_amount: "" })).toEqual({
+      tax_amount: null,
+      discount_amount: null,
+      receipt_path: null,
+    });
+  });
+
+  it("coerces amounts and accepts a workspace receipt path", () => {
+    expect(
+      transactionReceiptFieldsSchema.parse({
+        tax_amount: "15.5",
+        discount_amount: "0",
+        receipt_path: `${WORKSPACE_ID}/${FILE_ID}.jpg`,
+      }),
+    ).toEqual({ tax_amount: 15.5, discount_amount: 0, receipt_path: `${WORKSPACE_ID}/${FILE_ID}.jpg` });
+  });
+
+  it("rejects negative amounts", () => {
+    expect(transactionReceiptFieldsSchema.safeParse({ tax_amount: "-1" }).success).toBe(false);
+  });
+
+  it.each([
+    [`../${FILE_ID}.jpg`],
+    [`${WORKSPACE_ID}/${FILE_ID}.exe`],
+    [`${WORKSPACE_ID}/${FILE_ID}xjpg`],
+    [`${WORKSPACE_ID}/nested/${FILE_ID}.jpg`],
+  ])("rejects receipt path %s", (receipt_path) => {
+    expect(transactionReceiptFieldsSchema.safeParse({ receipt_path }).success).toBe(false);
   });
 });

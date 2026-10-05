@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { RECEIPT_PATH_PATTERN } from "@/lib/receipts/constants";
 
 const ACCOUNT_TYPES = ["checking", "savings", "credit_card", "cash", "investment"] as const;
 
@@ -57,6 +58,15 @@ export const transactionSchema = z.object({
   date: z.string().min(1),
   account_id: z.string().uuid("Select an account."),
   loan_id: z.string().uuid().optional().or(z.literal("")),
+});
+
+const emptyToNull = (value: unknown) => (value === "" || value === undefined ? null : value);
+
+/** Receipt breakdown sent alongside a transaction; blank inputs mean "none". */
+export const transactionReceiptFieldsSchema = z.object({
+  tax_amount: z.preprocess(emptyToNull, z.coerce.number().finite().nonnegative("Tax can't be negative.").nullable()),
+  discount_amount: z.preprocess(emptyToNull, z.coerce.number().finite().nonnegative("Discount can't be negative.").nullable()),
+  receipt_path: z.preprocess(emptyToNull, z.string().regex(RECEIPT_PATH_PATTERN, "Invalid receipt.").nullable()),
 });
 
 export const recurringTransactionSchema = z

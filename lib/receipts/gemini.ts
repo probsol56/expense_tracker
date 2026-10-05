@@ -10,7 +10,7 @@ import {
 } from "@/lib/receipts/extractor";
 
 // Free-tier model. Check https://ai.google.dev/gemini-api/docs/models when bumping.
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-3.8-flash";
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const REQUEST_TIMEOUT_MS = 45_000;
 const HTTP_TOO_MANY_REQUESTS = 429;
@@ -93,7 +93,6 @@ async function postToGemini(file: ReceiptFile, context: ReceiptExtractionContext
           },
         ],
         generationConfig: {
-          temperature: 0,
           responseMimeType: "application/json",
           responseSchema: RESPONSE_SCHEMA,
         },

@@ -7,6 +7,7 @@ import { toActionError } from "@/lib/errors";
 import {
   isReceiptMimeType,
   MAX_RECEIPT_BYTES,
+  RECEIPT_CONTENT_HASH_PATTERN,
   RECEIPT_FILE_EXTENSIONS,
   RECEIPT_MIME_TYPES,
   RECEIPT_PATH_PATTERN,
@@ -116,15 +117,37 @@ export async function extractReceipt(receiptPath: string): Promise<ExtractReceip
 // Signed URLs only need to outlive one upload or one "view receipt" click.
 const RECEIPT_VIEW_URL_TTL_SECONDS = 5 * 60;
 
-export type PrepareReceiptUploadResult = { error: string } | { success: true; path: string; token: string };
+export type PrepareReceiptUploadResult =
+  | { error: string }
+  | { success: true; path: string; alreadyUploaded: true }
+  | { success: true; path: string; alreadyUploaded: false; token: string };
+
+const prepareUploadSchema = z.object({
+  mimeType: z.enum(RECEIPT_MIME_TYPES),
+  contentHash: z.string().regex(RECEIPT_CONTENT_HASH_PATTERN),
+});
+
+async function receiptObjectExists(supabase: SupabaseClient, path: string): Promise<boolean> {
+  try {
+    const { data } = await supabase.storage.from(RECEIPTS_BUCKET).exists(path);
+    return data;
+  } catch (error: unknown) {
+    // Not knowing only costs a duplicate upload attempt, which the client
+    // already treats as "already uploaded".
+    console.error("receipt exists check failed");
+    Sentry.captureException(error);
+    return false;
+  }
+}
 
 /**
  * The server picks the object path so the browser can only upload to
- * `{workspace_id}/{random}.{ext}`; storage RLS re-checks the workspace.
+ * `{workspace_id}/{sha256}.{ext}`; storage RLS re-checks the workspace. The
+ * same file in the same workspace maps to the same object, so it is stored once.
  */
-export async function prepareReceiptUpload(mimeType: string): Promise<PrepareReceiptUploadResult> {
-  const parsedMimeType = z.enum(RECEIPT_MIME_TYPES).safeParse(mimeType);
-  if (!parsedMimeType.success) return { error: "Use a JPG, PNG, WebP or PDF receipt." };
+export async function prepareReceiptUpload(mimeType: string, contentHash: string): Promise<PrepareReceiptUploadResult> {
+  const parsed = prepareUploadSchema.safeParse({ mimeType, contentHash });
+  if (!parsed.success) return { error: "Use a JPG, PNG, WebP or PDF receipt." };
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -133,14 +156,16 @@ export async function prepareReceiptUpload(mimeType: string): Promise<PrepareRec
   const workspace = await getUserWorkspaceId(supabase, user.id);
   if (!workspace) return { error: "Create a workspace before scanning receipts." };
 
-  const path = `${workspace.id}/${crypto.randomUUID()}.${RECEIPT_FILE_EXTENSIONS[parsedMimeType.data]}`;
+  const path = `${workspace.id}/${parsed.data.contentHash}.${RECEIPT_FILE_EXTENSIONS[parsed.data.mimeType]}`;
+  if (await receiptObjectExists(supabase, path)) return { success: true, path, alreadyUploaded: true };
+
   const { data, error } = await supabase.storage.from(RECEIPTS_BUCKET).createSignedUploadUrl(path);
   if (error) {
     console.error("createSignedUploadUrl failed", error.name);
     Sentry.captureException(error);
     return { error: "Couldn't prepare the upload. Try again." };
   }
-  return { success: true, path: data.path, token: data.token };
+  return { success: true, path: data.path, alreadyUploaded: false, token: data.token };
 }
 
 export async function getReceiptViewUrl(receiptPath: string): Promise<{ error: string } | { success: true; url: string }> {

@@ -14,7 +14,8 @@ insert into public.accounts (id, workspace_id, name, starting_balance) values
 insert into storage.objects (bucket_id, name, created_at) values
   ('receipts', 'aaaaaaaa-1111-0000-0000-000000000001/attached.jpg', now() - interval '2 days'),
   ('receipts', 'aaaaaaaa-1111-0000-0000-000000000001/orphan.jpg', now() - interval '2 days'),
-  ('receipts', 'aaaaaaaa-1111-0000-0000-000000000001/fresh.jpg', now() - interval '1 hour');
+  ('receipts', 'aaaaaaaa-1111-0000-0000-000000000001/fresh.jpg', now() - interval '1 hour'),
+  ('receipts', 'aaaaaaaa-1111-0000-0000-000000000001/reused.jpg', now() - interval '2 days');
 
 insert into public.transactions (workspace_id, user_id, account_id, amount, receipt_path) values
   ('aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
@@ -24,12 +25,14 @@ insert into public.receipt_scans (workspace_id, user_id, receipt_path, created_a
   ('aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
    'aaaaaaaa-1111-0000-0000-000000000001/old.jpg', now() - interval '31 days'),
   ('aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
-   'aaaaaaaa-1111-0000-0000-000000000001/recent.jpg', now() - interval '1 day');
+   'aaaaaaaa-1111-0000-0000-000000000001/recent.jpg', now() - interval '1 day'),
+  ('aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
+   'aaaaaaaa-1111-0000-0000-000000000001/reused.jpg', now() - interval '1 hour');
 
 select is(
   array(select public.list_orphaned_receipts(100)),
   array['aaaaaaaa-1111-0000-0000-000000000001/orphan.jpg'],
-  'lists only unreferenced receipts past the grace period');
+  'lists only unreferenced, recently unscanned receipts past the grace period');
 
 select is(
   (select count(*)::int from public.list_orphaned_receipts(0)), 1,
@@ -38,8 +41,8 @@ select is(
 select public.prune_receipt_scans();
 
 select is(
-  array(select receipt_path from public.receipt_scans),
-  array['aaaaaaaa-1111-0000-0000-000000000001/recent.jpg'],
+  array(select receipt_path from public.receipt_scans order by receipt_path),
+  array['aaaaaaaa-1111-0000-0000-000000000001/recent.jpg', 'aaaaaaaa-1111-0000-0000-000000000001/reused.jpg'],
   'prune_receipt_scans drops scans older than 30 days');
 
 select is(

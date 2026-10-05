@@ -45,6 +45,12 @@ async function reencodeImage(file: File): Promise<Blob> {
   }
 }
 
+/** Hex SHA-256 of the bytes that get uploaded; it names the stored object. */
+export async function hashReceiptBlob(blob: Blob): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", await blob.arrayBuffer());
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 export async function prepareReceiptFile(file: File): Promise<{ blob: Blob; mimeType: ReceiptMimeType }> {
   if (!isReceiptMimeType(file.type)) throw new ReceiptFileError(UNSUPPORTED);
 

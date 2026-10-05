@@ -161,6 +161,7 @@ describe("auth schemas", () => {
 describe("transactionReceiptFieldsSchema", () => {
   const WORKSPACE_ID = "6f1c1a38-5a7e-4a52-9d3c-1f0e6f3b2a10";
   const FILE_ID = "0b6e2f0c-3d4a-4f7e-8a51-2c9d7e1f4b33";
+  const CONTENT_HASH = "a".repeat(64);
 
   it("treats blank or missing fields as null", () => {
     expect(transactionReceiptFieldsSchema.parse({ tax_amount: "", discount_amount: "" })).toEqual({
@@ -180,6 +181,11 @@ describe("transactionReceiptFieldsSchema", () => {
     ).toEqual({ tax_amount: 15.5, discount_amount: 0, receipt_path: `${WORKSPACE_ID}/${FILE_ID}.jpg` });
   });
 
+  it("accepts a content-hashed receipt path", () => {
+    const receipt_path = `${WORKSPACE_ID}/${CONTENT_HASH}.pdf`;
+    expect(transactionReceiptFieldsSchema.parse({ receipt_path }).receipt_path).toBe(receipt_path);
+  });
+
   it("rejects negative amounts", () => {
     expect(transactionReceiptFieldsSchema.safeParse({ tax_amount: "-1" }).success).toBe(false);
   });
@@ -189,6 +195,8 @@ describe("transactionReceiptFieldsSchema", () => {
     [`${WORKSPACE_ID}/${FILE_ID}.exe`],
     [`${WORKSPACE_ID}/${FILE_ID}xjpg`],
     [`${WORKSPACE_ID}/nested/${FILE_ID}.jpg`],
+    [`${WORKSPACE_ID}/${CONTENT_HASH.slice(1)}.jpg`],
+    [`${WORKSPACE_ID}/${CONTENT_HASH.toUpperCase()}.jpg`],
   ])("rejects receipt path %s", (receipt_path) => {
     expect(transactionReceiptFieldsSchema.safeParse({ receipt_path }).success).toBe(false);
   });

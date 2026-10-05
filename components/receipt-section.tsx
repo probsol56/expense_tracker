@@ -1,14 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ExternalLink, Receipt, ScanLine, X } from "lucide-react";
+import { Camera, ExternalLink, Receipt, Upload, X } from "lucide-react";
 import { extractReceipt, getReceiptViewUrl, prepareReceiptUpload } from "@/app/receipt-actions";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Alert, Button } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { RECEIPT_MIME_TYPES, RECEIPTS_BUCKET } from "@/lib/receipts/constants";
 import type { ReceiptDraft } from "@/lib/receipts/draft";
-import { prepareReceiptFile, ReceiptFileError } from "@/lib/receipts/prepare-file";
+import { hashReceiptBlob, prepareReceiptFile, ReceiptFileError } from "@/lib/receipts/prepare-file";
 
 export type ScannedReceipt = {
   path: string;
@@ -17,6 +17,17 @@ export type ScannedReceipt = {
 };
 
 type ScanStatus = "idle" | "uploading" | "reading";
+type ScanSource = "camera" | "file";
+
+// Camera capture only makes sense where `capture` opens one; desktops would
+// just show a second file picker.
+const TOUCH_ONLY = "hidden [@media(pointer:coarse)]:inline-flex";
+const CAMERA_MIME_TYPES = RECEIPT_MIME_TYPES.filter((type) => type.startsWith("image/"));
+
+// Another tab finished uploading the same file between our check and upload.
+function isAlreadyUploaded(error: Error): boolean {
+  return "code" in error && error.code === "ResourceAlreadyExists";
+}
 
 const STATUS_TEXT: Record<Exclude<ScanStatus, "idle">, string> = {
   uploading: "Uploading receipt…",
@@ -34,19 +45,23 @@ interface ReceiptSectionProps {
 }
 
 export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCount, onScanned, onRemove }: ReceiptSectionProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<ScanStatus>("idle");
+  const [source, setSource] = useState<ScanSource>("file");
   const [error, setError] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
   const [fileAwaitingConfirm, setFileAwaitingConfirm] = useState<File | null>(null);
 
   function resetFileInput() {
     // Allow picking the same file again after a failure or a cancel.
-    if (inputRef.current) inputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
   }
 
   // Confirm before uploading so a cancelled scan doesn't use up the daily quota.
-  function pickFile(file: File) {
+  function pickFile(file: File, pickedFrom: ScanSource) {
+    setSource(pickedFrom);
     if (existingItemCount > 0) setFileAwaitingConfirm(file);
     else void scan(file);
   }
@@ -56,18 +71,20 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
     setStatus("uploading");
     try {
       const prepared = await prepareReceiptFile(file);
-      const upload = await prepareReceiptUpload(prepared.mimeType);
+      const upload = await prepareReceiptUpload(prepared.mimeType, await hashReceiptBlob(prepared.blob));
       if ("error" in upload) {
         setError(upload.error);
         return;
       }
 
-      const { error: uploadError } = await createClient()
-        .storage.from(RECEIPTS_BUCKET)
-        .uploadToSignedUrl(upload.path, upload.token, prepared.blob, { contentType: prepared.mimeType });
-      if (uploadError) {
-        setError("The upload failed. Check your connection and try again.");
-        return;
+      if (!upload.alreadyUploaded) {
+        const { error: uploadError } = await createClient()
+          .storage.from(RECEIPTS_BUCKET)
+          .uploadToSignedUrl(upload.path, upload.token, prepared.blob, { contentType: prepared.mimeType });
+        if (uploadError && !isAlreadyUploaded(uploadError)) {
+          setError("The upload failed. Check your connection and try again.");
+          return;
+        }
       }
 
       setStatus("reading");
@@ -118,7 +135,7 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
       ) : canScan ? (
         <>
           <input
-            ref={inputRef}
+            ref={fileInputRef}
             type="file"
             accept={RECEIPT_MIME_TYPES.join(",")}
             className="sr-only"
@@ -126,19 +143,46 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
             aria-hidden="true"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) pickFile(file);
+              if (file) pickFile(file, "file");
             }}
           />
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={() => inputRef.current?.click()}
-            loading={busy}
-            loadingText={busy ? STATUS_TEXT[status] : undefined}
-          >
-            <ScanLine aria-hidden="true" /> Scan a receipt
-          </Button>
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept={CAMERA_MIME_TYPES.join(",")}
+            capture="environment"
+            className="sr-only"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) pickFile(file, "camera");
+            }}
+          />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className={`flex-1 ${TOUCH_ONLY}`}
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={busy && source !== "camera"}
+              loading={busy && source === "camera"}
+              loadingText={busy ? STATUS_TEXT[status] : undefined}
+            >
+              <Camera aria-hidden="true" /> Take photo
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy && source !== "file"}
+              loading={busy && source === "file"}
+              loadingText={busy ? STATUS_TEXT[status] : undefined}
+            >
+              <Upload aria-hidden="true" /> Upload receipt
+            </Button>
+          </div>
           <p className="text-xs text-fg-muted">
             Photo or PDF. Scans are processed by Google Gemini, which may use them to improve its services.
           </p>

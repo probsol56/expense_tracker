@@ -263,8 +263,8 @@ export function TransactionFormFields({
                   />
                   <Input
                     type="number"
-                    min="1"
-                    step="1"
+                    min="0.001"
+                    step="0.001"
                     value={item.quantity || 1}
                     onChange={(event) => updateItem(item.id || `${index}`, { quantity: Number(event.target.value || 1) })}
                     placeholder="Qty"

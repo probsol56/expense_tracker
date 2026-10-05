@@ -3,3 +3,7 @@ project_id = "wallo"
 [db]
 port = 54322
 major_version = 17
+
+# Called by pg_cron with a shared secret, not a user JWT.
+[functions.cleanup-receipts]
+verify_jwt = false

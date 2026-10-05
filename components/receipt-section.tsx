@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { ExternalLink, Receipt, ScanLine, X } from "lucide-react";
 import { extractReceipt, getReceiptViewUrl, prepareReceiptUpload } from "@/app/receipt-actions";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Alert, Button } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { RECEIPT_MIME_TYPES, RECEIPTS_BUCKET } from "@/lib/receipts/constants";
@@ -26,15 +27,29 @@ interface ReceiptSectionProps {
   receiptPath: string | null;
   warnings: string[];
   canScan: boolean;
+  /** Line items already in the form; a scan replaces them, so confirm first. */
+  existingItemCount: number;
   onScanned: (receipt: ScannedReceipt) => void;
   onRemove: () => void;
 }
 
-export function ReceiptSection({ receiptPath, warnings, canScan, onScanned, onRemove }: ReceiptSectionProps) {
+export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCount, onScanned, onRemove }: ReceiptSectionProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<ScanStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
+  const [fileAwaitingConfirm, setFileAwaitingConfirm] = useState<File | null>(null);
+
+  function resetFileInput() {
+    // Allow picking the same file again after a failure or a cancel.
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  // Confirm before uploading so a cancelled scan doesn't use up the daily quota.
+  function pickFile(file: File) {
+    if (existingItemCount > 0) setFileAwaitingConfirm(file);
+    else void scan(file);
+  }
 
   async function scan(file: File) {
     setError(null);
@@ -67,8 +82,7 @@ export function ReceiptSection({ receiptPath, warnings, canScan, onScanned, onRe
       setError(caught instanceof ReceiptFileError ? caught.userMessage : "Couldn't scan the receipt. Try again.");
     } finally {
       setStatus("idle");
-      // Allow picking the same file again after a failure.
-      if (inputRef.current) inputRef.current.value = "";
+      resetFileInput();
     }
   }
 
@@ -112,7 +126,7 @@ export function ReceiptSection({ receiptPath, warnings, canScan, onScanned, onRe
             aria-hidden="true"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) void scan(file);
+              if (file) pickFile(file);
             }}
           />
           <Button
@@ -132,6 +146,22 @@ export function ReceiptSection({ receiptPath, warnings, canScan, onScanned, onRe
       ) : null}
 
       <p aria-live="polite" className="sr-only">{busy ? STATUS_TEXT[status] : ""}</p>
+
+      <ConfirmDialog
+        open={fileAwaitingConfirm !== null}
+        title="Replace the line items?"
+        description={`The scanned receipt replaces the ${existingItemCount} line item${existingItemCount === 1 ? "" : "s"}, tax and discount in this form. Merchant, category and date are updated if the receipt shows them.`}
+        confirmLabel="Scan and replace"
+        onConfirm={() => {
+          const file = fileAwaitingConfirm;
+          setFileAwaitingConfirm(null);
+          if (file) void scan(file);
+        }}
+        onCancel={() => {
+          setFileAwaitingConfirm(null);
+          resetFileInput();
+        }}
+      />
 
       {error && <Alert>{error}</Alert>}
       {warnings.length > 0 && (

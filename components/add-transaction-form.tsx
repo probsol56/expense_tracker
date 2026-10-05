@@ -146,11 +146,12 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
       <input type="hidden" name="type" value={type} />
       <input type="hidden" name="items_json" value={JSON.stringify(items)} />
       <input type="hidden" name="receipt_path" value={receiptPath ?? ""} />
-      {(!isEditing || receiptPath) && (
+      {(type === "expense" || receiptPath) && (
         <ReceiptSection
           receiptPath={receiptPath}
           warnings={receiptWarnings}
-          canScan={!isEditing}
+          canScan={type === "expense"}
+          existingItemCount={items.length}
           onScanned={applyScannedReceipt}
           onRemove={removeReceipt}
         />

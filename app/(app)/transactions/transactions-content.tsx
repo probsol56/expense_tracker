@@ -1,5 +1,6 @@
 "use client";
 
+import type { TransactionTotals } from "@/lib/transactions";
 import { useCallback, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
@@ -16,6 +17,7 @@ import { isLoanCategory, isTransferCategory } from "@/lib/utils";
 
 interface TransactionsPageContentProps {
   transactions: Transaction[];
+  rangeTotals?: TransactionTotals;
   currency: string;
   workspaceName: string;
   pagination: {
@@ -44,6 +46,7 @@ const ALL_CATEGORIES = [
 
 export function TransactionsPageContent({
   transactions,
+  rangeTotals,
   currency,
   workspaceName,
   pagination,
@@ -105,127 +108,128 @@ export function TransactionsPageContent({
 
   return (
     <div className="mx-auto max-w-5xl">
-        <PageHeader eyebrow={`${workspaceName} · ${recordCount}`} title="Transactions">
-          <Button variant="outline" asChild>
-            <Link href="/import">
-              <Upload size={16} aria-hidden="true" />
-              Import statement
-            </Link>
-          </Button>
-          <Button variant="primary" onClick={() => setShowAddTransaction(true)}>
-            <Plus size={16} aria-hidden="true" />
-            Add transaction
-          </Button>
-        </PageHeader>
+      <PageHeader eyebrow={`${workspaceName} · ${recordCount}`} title="Transactions">
+        <Button variant="outline" asChild>
+          <Link href="/import">
+            <Upload size={16} aria-hidden="true" />
+            Import statement
+          </Link>
+        </Button>
+        <Button variant="primary" onClick={() => setShowAddTransaction(true)}>
+          <Plus size={16} aria-hidden="true" />
+          Add transaction
+        </Button>
+      </PageHeader>
 
-        <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="filter-category" className="text-xs uppercase tracking-widest text-fg-muted">Category</Label>
-            <Select value={filterCategory} onValueChange={(v) => setParam({ category: v === "all" ? undefined : v, page: "1" })}>
-              <SelectTrigger id="filter-category">
-                <SelectValue placeholder="All categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                {ALL_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="filter-from" className="text-xs uppercase tracking-widest text-fg-muted">From</Label>
-            <Input
-              id="filter-from"
-              type="date"
-              value={filterDateFrom}
-              onChange={(e) => setParam({ dateFrom: e.target.value, page: "1" })}
-              max={filterDateTo || undefined}
-            />
-          </div>
-
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <Label htmlFor="filter-to" className="text-xs uppercase tracking-widest text-fg-muted">To</Label>
-            <Input
-              id="filter-to"
-              type="date"
-              value={filterDateTo}
-              onChange={(e) => setParam({ dateTo: e.target.value, page: "1" })}
-              min={filterDateFrom || undefined}
-            />
-          </div>
-
-          <div className="flex items-end">
-            {activeFilterCount > 0 && (
-              <Button type="button" variant="ghost" onClick={clearFilters}>
-                <X size={15} aria-hidden="true" />
-                Clear {activeFilterCount === 1 ? "filter" : `${activeFilterCount} filters`}
-              </Button>
-            )}
-          </div>
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor="filter-category" className="text-xs uppercase tracking-widest text-fg-muted">Category</Label>
+          <Select value={filterCategory} onValueChange={(v) => setParam({ category: v === "all" ? undefined : v, page: "1" })}>
+            <SelectTrigger id="filter-category">
+              <SelectValue placeholder="All categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All categories</SelectItem>
+              {ALL_CATEGORIES.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-2xl font-medium text-fg">Entries</h2>
-          <div role="group" aria-label="Group entries by" className="flex items-center gap-1">
-            <span className="mr-1 text-sm text-fg-muted">Group by</span>
-            {(["none", "category", "date"] as const).map((g) => (
-              <button
-                key={g}
-                type="button"
-                aria-pressed={groupBy === g}
-                onClick={() => setParam({ groupBy: g })}
-                className={`min-h-11 border-b-2 px-2 text-sm capitalize transition-colors duration-150 ${
-                  groupBy === g ? "border-brass font-semibold text-fg" : "border-transparent text-fg-muted hover:text-fg"
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor="filter-from" className="text-xs uppercase tracking-widest text-fg-muted">From</Label>
+          <Input
+            id="filter-from"
+            type="date"
+            value={filterDateFrom}
+            onChange={(e) => setParam({ dateFrom: e.target.value, page: "1" })}
+            max={filterDateTo || undefined}
+          />
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Label htmlFor="filter-to" className="text-xs uppercase tracking-widest text-fg-muted">To</Label>
+          <Input
+            id="filter-to"
+            type="date"
+            value={filterDateTo}
+            onChange={(e) => setParam({ dateTo: e.target.value, page: "1" })}
+            min={filterDateFrom || undefined}
+          />
+        </div>
+
+        <div className="flex items-end">
+          {activeFilterCount > 0 && (
+            <Button type="button" variant="ghost" onClick={clearFilters}>
+              <X size={15} aria-hidden="true" />
+              Clear {activeFilterCount === 1 ? "filter" : `${activeFilterCount} filters`}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-display text-2xl font-medium text-fg">Entries</h2>
+        <div role="group" aria-label="Group entries by" className="flex items-center gap-1">
+          <span className="mr-1 text-sm text-fg-muted">Group by</span>
+          {(["none", "category", "date"] as const).map((g) => (
+            <button
+              key={g}
+              type="button"
+              aria-pressed={groupBy === g}
+              onClick={() => setParam({ groupBy: g })}
+              className={`min-h-11 border-b-2 px-2 text-sm capitalize transition-colors duration-150 ${groupBy === g ? "border-brass font-semibold text-fg" : "border-transparent text-fg-muted hover:text-fg"
                 }`}
-              >
-                {g}
-              </button>
-            ))}
-          </div>
+            >
+              {g}
+            </button>
+          ))}
         </div>
+      </div>
 
-        <div className="relative overflow-hidden rounded-lg border border-rule bg-paper">
-          <TransactionsGrid
-            transactions={transactions}
-            currency={currency}
-            groupBy={groupBy}
-            isFiltered={activeFilterCount > 0}
-            onEdit={handleEdit}
-            onAdd={() => setShowAddTransaction(true)}
-            onClearFilters={clearFilters}
-          />
-          <LoadingOverlay show={isPending} />
-        </div>
-
-        {/* ── Pagination bar (server-driven via URL params) ── */}
-        <PaginationBar
-          page={page}
-          pageSize={pageSize}
-          totalPages={totalPages}
-          totalCount={totalCount}
-          totalRows={totalRows}
-          onPageChange={(p) => setParam({ page: String(p) })}
-          onPageSizeChange={(size) => setParam({ pageSize: String(size), page: "1" })}
-          disabled={isPending}
+      <div className="relative overflow-hidden rounded-lg border border-rule bg-paper">
+        <TransactionsGrid
+          transactions={transactions}
+          currency={currency}
+          groupBy={groupBy}
+          rangeTotals={rangeTotals}
+          rangeTotalsLabel={activeFilterCount > 0 ? "Filtered total" : "Grand total"}
+          isFiltered={activeFilterCount > 0}
+          onEdit={handleEdit}
+          onAdd={() => setShowAddTransaction(true)}
+          onClearFilters={clearFilters}
         />
+        <LoadingOverlay show={isPending} />
+      </div>
 
-        {editingTransaction && (
-          <AddTransactionModal
-            transaction={editingTransaction}
-            onClose={() => setEditingTransaction(null)}
-            currency={currency}
-            accounts={accounts}
-            loans={loans}
-          />
-        )}
+      {/* ── Pagination bar (server-driven via URL params) ── */}
+      <PaginationBar
+        page={page}
+        pageSize={pageSize}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        totalRows={totalRows}
+        onPageChange={(p) => setParam({ page: String(p) })}
+        onPageSizeChange={(size) => setParam({ pageSize: String(size), page: "1" })}
+        disabled={isPending}
+      />
 
-        {showAddTransaction && (
-          <AddTransactionModal onClose={() => setShowAddTransaction(false)} currency={currency} accounts={accounts} loans={loans} />
-        )}
+      {editingTransaction && (
+        <AddTransactionModal
+          transaction={editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          currency={currency}
+          accounts={accounts}
+          loans={loans}
+        />
+      )}
+
+      {showAddTransaction && (
+        <AddTransactionModal onClose={() => setShowAddTransaction(false)} currency={currency} accounts={accounts} loans={loans} />
+      )}
     </div>
   );
 }

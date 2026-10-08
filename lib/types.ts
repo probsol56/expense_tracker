@@ -77,8 +77,10 @@ export type Transfer = {
   id: string;
   workspace_id: string;
   user_id: string;
-  from_account_id: string;
-  to_account_id: string;
+  from_account_id: string | null;
+  from_account_name: string | null;
+  to_account_id: string | null;
+  to_account_name: string | null;
   amount: number;
   date: string;
   notes?: string | null;

@@ -105,6 +105,34 @@ describe("transferSchema", () => {
   it("rejects the same account on both sides", () => {
     expect(transferSchema.safeParse({ ...valid, to_account_id: ACCOUNT_ID_A }).success).toBe(false);
   });
+
+  it("accepts an external recipient without a destination account", () => {
+    expect(transferSchema.safeParse({ ...valid, to_account_id: "", to_account_name: "Alex" }).success).toBe(true);
+  });
+
+  it("requires an external recipient when no destination account is selected", () => {
+    expect(transferSchema.safeParse({ ...valid, to_account_id: "", to_account_name: "" }).success).toBe(false);
+  });
+
+  it("accepts an external source depositing into an account", () => {
+    expect(transferSchema.safeParse({
+      ...valid,
+      from_account_id: "",
+      from_account_name: "Other Bank",
+      to_account_id: ACCOUNT_ID_A,
+      to_account_name: "",
+    }).success).toBe(true);
+  });
+
+  it("rejects a transfer with no tracked account", () => {
+    expect(transferSchema.safeParse({
+      ...valid,
+      from_account_id: "",
+      from_account_name: "Other Bank",
+      to_account_id: "",
+      to_account_name: "Alex",
+    }).success).toBe(false);
+  });
 });
 
 describe("loanSchema / loanUpdateSchema", () => {

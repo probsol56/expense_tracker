@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { Menu } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { ToastProvider } from "@/components/toast-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { Workspace, Profile } from "@/lib/types";
 
@@ -49,9 +50,11 @@ export function AppShell({
           </div>
         </header>
 
-        <main id="main" className="mx-auto w-full max-w-[1440px] px-4 py-6 md:px-6 md:py-8 lg:px-8">
-          {children}
-        </main>
+        <ToastProvider>
+          <main id="main" className="mx-auto w-full max-w-[1440px] px-4 py-6 md:px-6 md:py-8 lg:px-8">
+            {children}
+          </main>
+        </ToastProvider>
       </div>
     </div>
   );

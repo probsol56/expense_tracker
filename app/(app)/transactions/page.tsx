@@ -1,7 +1,7 @@
+import { fetchTransactionTotals, fetchTransactionsPage } from "@/lib/transactions";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { TransactionsPageContent } from "@/app/(app)/transactions/transactions-content";
 import { getSearchParam } from "@/lib/utils";
-import { fetchTransactionsPage } from "@/lib/transactions";
 import type { GroupByMode } from "@/app/(app)/transactions/transactions-grid";
 import { DEFAULT_PAGE_SIZE, PICKER_LIMITS, clampPageSize, parsePage } from "@/lib/pagination";
 import type { Account, Loan } from "@/lib/types";
@@ -46,7 +46,12 @@ export default async function TransactionsPage({
 
   // Filtering, counting, and paging all happen in the query itself
   // (see lib/transactions.ts) instead of fetching the whole ledger per request.
-  const [result, { data: accounts }, { data: loans }] = await Promise.all([
+  const [rangeTotals, result, { data: accounts }, { data: loans }] = await Promise.all([
+    fetchTransactionTotals(supabase, workspace.id, {
+      category: params.category,
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo,
+    }),
     fetchTransactionsPage(supabase, {
       page: params.page,
       pageSize: params.pageSize,
@@ -71,6 +76,7 @@ export default async function TransactionsPage({
   return (
     <TransactionsPageContent
       transactions={result.transactions}
+      rangeTotals={rangeTotals}
       currency={currency}
       workspaceName={workspaceName}
       pagination={{

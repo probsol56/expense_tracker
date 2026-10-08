@@ -10,17 +10,33 @@ export const accountSchema = z.object({
   starting_balance: z.coerce.number().finite("Starting balance must be a number."),
 });
 
+export const deleteLedgerAccountSchema = z.object({
+  account_id: z.string().uuid("Select a valid account."),
+});
+
 export const transferSchema = z
   .object({
-    from_account_id: z.string().uuid("Select both accounts for the transfer."),
-    to_account_id: z.string().uuid("Select both accounts for the transfer."),
+    from_account_id: z.string().uuid("Select a valid source account.").optional().or(z.literal("")),
+    from_account_name: z.string().trim().max(100, "Source name must be 100 characters or fewer.").optional().or(z.literal("")),
+    to_account_id: z.string().uuid("Select a valid destination account.").optional().or(z.literal("")),
+    to_account_name: z.string().trim().max(100, "Recipient name must be 100 characters or fewer.").optional().or(z.literal("")),
     amount: z.coerce.number().positive("Transfer amount must be greater than zero."),
     date: z.string().date("Enter a valid date."),
     notes: z.string().trim().max(250).optional().or(z.literal("")),
   })
-  .refine((data) => data.from_account_id !== data.to_account_id, {
-    message: "Choose two different accounts.",
-    path: ["to_account_id"],
+  .superRefine((data, context) => {
+    if (data.from_account_id && data.from_account_id === data.to_account_id) {
+      context.addIssue({ code: "custom", message: "Choose two different accounts.", path: ["to_account_id"] });
+    }
+    if (!data.from_account_id && !data.from_account_name) {
+      context.addIssue({ code: "custom", message: "Choose a source account or enter an external source.", path: ["from_account_name"] });
+    }
+    if (!data.to_account_id && !data.to_account_name) {
+      context.addIssue({ code: "custom", message: "Choose a destination account or enter an external recipient.", path: ["to_account_name"] });
+    }
+    if (!data.from_account_id && !data.to_account_id) {
+      context.addIssue({ code: "custom", message: "A transfer must include one of your accounts.", path: ["to_account_id"] });
+    }
   });
 
 export const loanSchema = z.object({

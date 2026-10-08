@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Pencil, Plus, Repeat } from "lucide-react";
 import Link from "next/link";
 import { Alert, Card, Field, Input, NativeSelect, SubmitButton, Textarea } from "@/components/ui";
+import { AccountBalanceRow } from "@/components/account-balance-row";
 import { DeleteTransferButton } from "@/components/delete-transfer-button";
 import { EditDialog } from "@/components/edit-dialog";
 import { PageHeader } from "@/components/page-header";
@@ -14,7 +15,7 @@ import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { createAccount, createTransfer, deleteTransfer, updateTransfer } from "@/app/(app)/accounts/actions";
 import type { Account, Transfer } from "@/lib/types";
 
-const TRANSFER_SELECT = "id, workspace_id, user_id, from_account_id, to_account_id, amount, date, notes, created_at";
+const TRANSFER_SELECT = "id, workspace_id, user_id, from_account_id, from_account_name, to_account_id, to_account_name, amount, date, notes, created_at";
 
 export default async function AccountsPage({
   searchParams,
@@ -125,7 +126,7 @@ function AccountsContent({
   editingTransfer?: Transfer;
 }) {
   const accountsById = new Map(accounts.map((account) => [account.id, account]));
-  const canTransfer = accounts.length >= 2;
+  const canTransfer = accounts.length >= 1;
   const totalBalance = accounts.reduce((sum, account) => sum + Number(account.balance), 0);
 
   return (
@@ -148,36 +149,11 @@ function AccountsContent({
                   <th scope="col" className={tableHeadClass}>Account</th>
                   <th scope="col" className={`${tableHeadClass} hidden sm:table-cell`}>Type</th>
                   <th scope="col" className={`${tableHeadClass} border-l border-brass/40 text-right`}>Balance</th>
+                  <th scope="col" className="w-14"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
-                {accounts.map((account) => {
-                  const accountType = account.account_type?.replace("_", " ") || "deposit";
-                  return (
-                    <tr key={account.id} className="border-b border-rule last:border-b-0">
-                      <td className="break-words px-4 py-3 align-top">
-                        <p className="font-medium text-fg">{account.name}</p>
-                        <p className="text-sm text-fg-muted">
-                          <span className="capitalize sm:hidden">{accountType}</span>
-                          {account.institution && (
-                            <>
-                              <span className="sm:hidden"> · </span>
-                              {account.institution}
-                            </>
-                          )}
-                        </p>
-                      </td>
-                      <td className="hidden px-4 py-3 align-top text-sm capitalize text-fg-muted sm:table-cell">{accountType}</td>
-                      <td
-                        className={`border-l border-brass/40 px-4 py-3 text-right align-top font-medium tabular-nums ${
-                          Number(account.balance) < 0 ? "text-brick" : "text-fg"
-                        }`}
-                      >
-                        {money(Number(account.balance), currency)}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {accounts.map((account) => <AccountBalanceRow key={account.id} account={account} currency={currency} />)}
               </tbody>
               <tfoot className="border-t-2 border-fg/70">
                 <tr className="border-b-[3px] border-double border-fg/50">
@@ -186,12 +162,12 @@ function AccountsContent({
                   </th>
                   <td className="hidden sm:table-cell" />
                   <td
-                    className={`border-l border-brass/40 px-4 py-3 text-right font-display text-xl font-medium tabular-nums lining-nums ${
-                      totalBalance < 0 ? "text-brick" : "text-fg"
-                    }`}
+                    className={`border-l border-brass/40 px-4 py-3 text-right font-display text-xl font-medium tabular-nums lining-nums ${totalBalance < 0 ? "text-brick" : "text-fg"
+                      }`}
                   >
                     {money(totalBalance, currency)}
                   </td>
+                  <td />
                 </tr>
               </tfoot>
             </table>
@@ -221,8 +197,8 @@ function AccountsContent({
               </thead>
               <tbody>
                 {transfers.rows.map((transfer) => {
-                  const fromAccount = accountsById.get(transfer.from_account_id);
-                  const toAccount = accountsById.get(transfer.to_account_id);
+                  const fromAccount = transfer.from_account_id ? accountsById.get(transfer.from_account_id) : undefined;
+                  const toAccount = transfer.to_account_id ? accountsById.get(transfer.to_account_id) : undefined;
                   const entryDate = formatEntryDate(transfer.date);
                   return (
                     <tr key={transfer.id} className="border-b border-rule last:border-b-0">
@@ -231,7 +207,7 @@ function AccountsContent({
                       </td>
                       <td className="break-words px-4 py-3 align-top">
                         <p className="font-medium text-fg">
-                          {fromAccount?.name ?? "Deleted account"} → {toAccount?.name ?? "Deleted account"}
+                          {fromAccount?.name ?? `External: ${transfer.from_account_name ?? "source"}`} → {toAccount?.name ?? `External: ${transfer.to_account_name ?? "recipient"}`}
                         </p>
                         <p className="text-sm text-fg-muted">
                           <span className="sm:hidden">{entryDate}</span>
@@ -314,7 +290,7 @@ function AccountsContent({
               <TransferForm accounts={accounts} currency={currency} />
             ) : (
               <p className="text-sm text-fg-muted">
-                Add a second account, such as a cash wallet, before you can move money between accounts.
+                Add an account before recording a transfer.
               </p>
             )}
           </Card>
@@ -352,16 +328,32 @@ function TransferForm({
       {transfer && <input type="hidden" name="transfer_id" value={transfer.id} />}
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="From account" htmlFor={`${idPrefix}-from`}>
-          <NativeSelect id={`${idPrefix}-from`} name="from_account_id" required defaultValue={transfer?.from_account_id ?? ""}>
-            <option value="">Choose an account</option>
+          <NativeSelect id={`${idPrefix}-from`} name="from_account_id" defaultValue={transfer?.from_account_id ?? ""}>
+            <option value="">External source</option>
             {accountOptions}
           </NativeSelect>
         </Field>
+        <Field label="Source name (external only)" htmlFor={`${idPrefix}-source`}>
+          <Input
+            id={`${idPrefix}-source`}
+            name="from_account_name"
+            defaultValue={transfer?.from_account_name ?? ""}
+            placeholder="e.g. Other Bank"
+          />
+        </Field>
         <Field label="To account" htmlFor={`${idPrefix}-to`}>
-          <NativeSelect id={`${idPrefix}-to`} name="to_account_id" required defaultValue={transfer?.to_account_id ?? ""}>
-            <option value="">Choose an account</option>
+          <NativeSelect id={`${idPrefix}-to`} name="to_account_id" defaultValue={transfer?.to_account_id ?? ""}>
+            <option value="">External recipient</option>
             {accountOptions}
           </NativeSelect>
+        </Field>
+        <Field label="Recipient name (external only)" htmlFor={`${idPrefix}-recipient`}>
+          <Input
+            id={`${idPrefix}-recipient`}
+            name="to_account_name"
+            defaultValue={transfer?.to_account_name ?? ""}
+            placeholder="e.g. Alex or City Bank"
+          />
         </Field>
         <Field label="Amount" htmlFor={`${idPrefix}-amount`}>
           <Input

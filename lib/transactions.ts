@@ -69,12 +69,13 @@ export type TransactionTotals = { moneyOut: number; moneyIn: number };
 export async function fetchTransactionTotals(
   supabase: SupabaseClient,
   workspaceId: string,
-  { accountId, dateFrom, dateTo }: Pick<TransactionPageParams, "accountId" | "dateFrom" | "dateTo">,
+  { accountId, category, dateFrom, dateTo }: Pick<TransactionPageParams, "accountId" | "category" | "dateFrom" | "dateTo">,
 ): Promise<TransactionTotals> {
   const { data, error } = await supabase
     .rpc("transaction_totals", {
       p_workspace_id: workspaceId,
       p_account_id: accountId && accountId !== "all" ? accountId : null,
+      p_category: category && category !== "all" ? category : null,
       p_from: dateFrom || null,
       p_to: dateTo || null,
     })

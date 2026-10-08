@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getUserWorkspaceId } from "@/lib/ledger";
-import { accountSchema, transferSchema } from "@/lib/validations";
+import { accountSchema, deleteLedgerAccountSchema, transferSchema } from "@/lib/validations";
 import { toActionError } from "@/lib/errors";
 
 function revalidateTransferPaths() {
@@ -41,6 +41,26 @@ export async function createAccount(formData: FormData) {
   return { success: true };
 }
 
+export async function deleteLedgerAccount(formData: FormData): Promise<{ error: string } | { success: true }> {
+  const parsed = deleteLedgerAccountSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Select a valid account." };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Sign in to delete an account." };
+
+  const { error } = await supabase.rpc("delete_ledger_account", { p_account_id: parsed.data.account_id });
+  if (error) return { error: toActionError(error, "Failed to delete the account.") };
+
+  revalidatePath("/");
+  revalidatePath("/accounts");
+  revalidatePath("/loans");
+  revalidatePath("/recurring");
+  revalidatePath("/reports");
+  revalidatePath("/transactions");
+  return { success: true };
+}
+
 export async function createTransfer(formData: FormData) {
   const parsed = transferSchema.safeParse({
     ...Object.fromEntries(formData),
@@ -55,11 +75,13 @@ export async function createTransfer(formData: FormData) {
   const workspace = await getUserWorkspaceId(supabase, user.id);
   if (!workspace) return { error: "Create a workspace before recording transfers." };
 
-  const { from_account_id, to_account_id, amount, date, notes } = parsed.data;
+  const { from_account_id, from_account_name, to_account_id, to_account_name, amount, date, notes } = parsed.data;
   const { error } = await supabase.rpc("create_transfer", {
     p_workspace_id: workspace.id,
-    p_from_account_id: from_account_id,
-    p_to_account_id: to_account_id,
+    p_from_account_id: from_account_id || null,
+    p_from_account_name: from_account_name || "",
+    p_to_account_id: to_account_id || null,
+    p_to_account_name: to_account_name || "",
     p_amount: amount,
     p_date: date,
     p_notes: notes ?? "",
@@ -78,11 +100,13 @@ export async function updateTransfer(transferId: string, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Sign in to update a transfer." };
 
-  const { from_account_id, to_account_id, amount, date, notes } = parsed.data;
+  const { from_account_id, from_account_name, to_account_id, to_account_name, amount, date, notes } = parsed.data;
   const { error } = await supabase.rpc("update_transfer", {
     p_transfer_id: transferId,
-    p_from_account_id: from_account_id,
-    p_to_account_id: to_account_id,
+    p_from_account_id: from_account_id || null,
+    p_from_account_name: from_account_name || "",
+    p_to_account_id: to_account_id || null,
+    p_to_account_name: to_account_name || "",
     p_amount: amount,
     p_date: date,
     p_notes: notes ?? "",

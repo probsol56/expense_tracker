@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { Pencil, Plus, Repeat } from "lucide-react";
 import Link from "next/link";
 import { Alert, Card, Field, Input, NativeSelect, SubmitButton, Textarea } from "@/components/ui";
@@ -11,8 +12,10 @@ import { UrlPaginationBar } from "@/components/url-pagination-bar";
 import { LIST_PAGE_SIZE, PICKER_LIMITS, fetchPage, pageInfo, parsePage, type Page } from "@/lib/pagination";
 import { formatEntryDate, money } from "@/lib/utils";
 import { parseRecordId } from "@/lib/validations";
+import { DEFAULT_CATEGORY_OPTIONS } from "@/lib/category-options";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { createAccount, createTransfer, deleteTransfer, updateTransfer } from "@/app/(app)/accounts/actions";
+import { createTransaction } from "@/app/actions";
 import type { Account, Transfer } from "@/lib/types";
 
 const TRANSFER_SELECT = "id, workspace_id, user_id, from_account_id, from_account_name, to_account_id, to_account_name, amount, date, notes, created_at";
@@ -20,9 +23,9 @@ const TRANSFER_SELECT = "id, workspace_id, user_id, from_account_id, from_accoun
 export default async function AccountsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; editTransfer?: string; page?: string }>;
+  searchParams: Promise<{ error?: string; editTransfer?: string; incomeRecorded?: string; page?: string }>;
 }) {
-  const { error, editTransfer, page } = await searchParams;
+  const { error, editTransfer, incomeRecorded, page } = await searchParams;
   const { user, workspace, supabase } = await getCurrentWorkspaceAndProfile();
   if (!user || !supabase || !workspace) {
     return (
@@ -32,6 +35,7 @@ export default async function AccountsPage({
         currency="BDT"
         workspaceName="Personal Workspace"
         error={error}
+        incomeRecorded={incomeRecorded === "1"}
       />
     );
   }
@@ -70,6 +74,7 @@ export default async function AccountsPage({
       currency={workspace.base_currency || "BDT"}
       workspaceName={workspace.name || "Personal Workspace"}
       error={error}
+      incomeRecorded={incomeRecorded === "1"}
       editingTransfer={editing.data ?? undefined}
     />
   );
@@ -85,6 +90,14 @@ async function handleCreateAccount(formData: FormData) {
   if (result?.error) {
     redirect(`/accounts?error=${encodeURIComponent(result.error)}`);
   }
+}
+
+async function handleCreateIncome(formData: FormData) {
+  "use server";
+  const result = await createTransaction(formData);
+  if (result?.error) redirect(`/accounts?error=${encodeURIComponent(result.error)}`);
+  revalidatePath("/accounts");
+  redirect("/accounts?incomeRecorded=1");
 }
 
 async function handleCreateTransfer(formData: FormData) {
@@ -116,6 +129,7 @@ function AccountsContent({
   currency,
   workspaceName,
   error,
+  incomeRecorded,
   editingTransfer,
 }: {
   accounts: Account[];
@@ -123,6 +137,7 @@ function AccountsContent({
   currency: string;
   workspaceName: string;
   error?: string;
+  incomeRecorded?: boolean;
   editingTransfer?: Transfer;
 }) {
   const accountsById = new Map(accounts.map((account) => [account.id, account]));
@@ -138,6 +153,7 @@ function AccountsContent({
       />
 
       {error && !editingTransfer && <Alert className="mb-6">{error}</Alert>}
+      {incomeRecorded && <Alert className="mb-6" tone="info">Income recorded.</Alert>}
 
       <Section title="Balances" className="mb-10">
         {accounts.length ? (
@@ -246,56 +262,109 @@ function AccountsContent({
         </Section>
       )}
 
-      <div className="grid gap-10 lg:grid-cols-2 lg:gap-8">
-        <Section title="Add an account">
-          <Card className="p-5">
-            <form action={handleCreateAccount} className="grid gap-4 sm:grid-cols-2">
-              <Field label="Account name" htmlFor="account-name" className="sm:col-span-2">
-                <Input id="account-name" name="name" required placeholder="e.g. Main checking, Cash wallet" />
-              </Field>
-              <Field label="Type" htmlFor="account-type">
-                <NativeSelect id="account-type" name="account_type" defaultValue="checking">
-                  <option value="checking">Checking</option>
-                  <option value="savings">Savings</option>
-                  <option value="credit_card">Credit card</option>
-                  <option value="cash">Cash</option>
-                  <option value="investment">Investment</option>
-                </NativeSelect>
-              </Field>
-              <Field label="Starting balance" htmlFor="account-starting-balance">
-                <Input
-                  id="account-starting-balance"
-                  name="starting_balance"
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  defaultValue="0"
-                />
-              </Field>
-              <Field label="Institution (optional)" htmlFor="account-institution" className="sm:col-span-2">
-                <Input id="account-institution" name="institution" placeholder="e.g. City Bank" />
-              </Field>
-              <div className="sm:col-span-2">
-                <SubmitButton loadingText="Adding account..." className="w-full sm:w-auto">
-                  <Plus size={16} aria-hidden="true" /> Add account
-                </SubmitButton>
-              </div>
-            </form>
-          </Card>
-        </Section>
+      <Section title="Add money" className="mb-10">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div>
+            <h3 className="mb-3 font-display text-xl font-medium text-fg">Record income</h3>
+            <Card className="p-5">
+              {accounts.length ? (
+                <form action={handleCreateIncome} className="space-y-4">
+                  <input type="hidden" name="type" value="income" />
+                  <input type="hidden" name="items_json" value="[]" />
+                  <input type="hidden" name="loan_id" value="" />
+                  <input type="hidden" name="tax_amount" value="" />
+                  <input type="hidden" name="discount_amount" value="" />
+                  <input type="hidden" name="receipt_path" value="" />
+                  <p className="max-w-prose text-sm text-fg-muted">
+                    Use for money earned or received. To move your own money from another account, use the transfer form beside this one.
+                  </p>
+                  <Field label="Income source" htmlFor="income-source">
+                    <Input id="income-source" name="merchant" required placeholder="e.g. Employer or client" />
+                  </Field>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="Category" htmlFor="income-category">
+                      <Input id="income-category" name="category" list="income-category-options" required placeholder="Choose or enter a category" />
+                      <datalist id="income-category-options">
+                        {DEFAULT_CATEGORY_OPTIONS.income.map((category) => (
+                          <option key={category} value={category} />
+                        ))}
+                      </datalist>
+                    </Field>
+                    <Field label="Amount" htmlFor="income-amount">
+                      <Input id="income-amount" name="amount" type="number" min="0.01" step="0.01" inputMode="decimal" required placeholder="0.00" />
+                    </Field>
+                    <Field label="Deposit to" htmlFor="income-account">
+                      <NativeSelect id="income-account" name="account_id" defaultValue={accounts[0]?.id}>
+                        {accounts.map((account) => (
+                          <option key={account.id} value={account.id}>{account.name}</option>
+                        ))}
+                      </NativeSelect>
+                    </Field>
+                    <Field label="Date" htmlFor="income-date">
+                      <Input id="income-date" name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
+                    </Field>
+                  </div>
+                  <Field label="Note (optional)" htmlFor="income-note">
+                    <Textarea id="income-note" name="description" rows={2} placeholder="Add a reference or detail" />
+                  </Field>
+                  <SubmitButton loadingText="Recording income..." className="w-full sm:w-auto">
+                    <Plus size={16} aria-hidden="true" /> Record income
+                  </SubmitButton>
+                </form>
+              ) : (
+                <p className="text-sm text-fg-muted">Add an account before recording income.</p>
+              )}
+            </Card>
+          </div>
+          <div>
+            <h3 className="mb-3 font-display text-xl font-medium text-fg">Transfer from another account</h3>
+            <Card className="p-5">
+              {canTransfer ? (
+                <TransferForm accounts={accounts} currency={currency} />
+              ) : (
+                <p className="text-sm text-fg-muted">Add an account before recording a transfer.</p>
+              )}
+            </Card>
+          </div>
+        </div>
+      </Section>
 
-        <Section title="Transfer funds">
-          <Card className="p-5">
-            {canTransfer ? (
-              <TransferForm accounts={accounts} currency={currency} />
-            ) : (
-              <p className="text-sm text-fg-muted">
-                Add an account before recording a transfer.
-              </p>
-            )}
-          </Card>
-        </Section>
-      </div>
+      <Section title="Add an account">
+        <Card className="p-5">
+          <form action={handleCreateAccount} className="grid gap-4 sm:grid-cols-2">
+            <Field label="Account name" htmlFor="account-name" className="sm:col-span-2">
+              <Input id="account-name" name="name" required placeholder="e.g. Main checking, Cash wallet" />
+            </Field>
+            <Field label="Type" htmlFor="account-type">
+              <NativeSelect id="account-type" name="account_type" defaultValue="checking">
+                <option value="checking">Checking</option>
+                <option value="savings">Savings</option>
+                <option value="credit_card">Credit card</option>
+                <option value="cash">Cash</option>
+                <option value="investment">Investment</option>
+              </NativeSelect>
+            </Field>
+            <Field label="Starting balance" htmlFor="account-starting-balance">
+              <Input
+                id="account-starting-balance"
+                name="starting_balance"
+                type="number"
+                step="0.01"
+                inputMode="decimal"
+                defaultValue="0"
+              />
+            </Field>
+            <Field label="Institution (optional)" htmlFor="account-institution" className="sm:col-span-2">
+              <Input id="account-institution" name="institution" placeholder="e.g. City Bank" />
+            </Field>
+            <div className="sm:col-span-2">
+              <SubmitButton loadingText="Adding account..." className="w-full sm:w-auto">
+                <Plus size={16} aria-hidden="true" /> Add account
+              </SubmitButton>
+            </div>
+          </form>
+        </Card>
+      </Section>
 
       {editingTransfer && canTransfer && (
         <EditDialog title="Edit transfer" closeHref="/accounts" error={error}>

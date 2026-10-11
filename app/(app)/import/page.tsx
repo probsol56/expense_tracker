@@ -32,7 +32,6 @@ export default async function ImportPage() {
         title="Import a statement"
         description="Upload a CSV from your bank. Each row is checked before it's added, and rows already imported are skipped."
       />
-
       <Card className="p-5 sm:p-6">
         {bankAccounts.length ? (
           <ImportForm bankAccounts={bankAccounts} />

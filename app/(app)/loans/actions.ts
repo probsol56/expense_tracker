@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUserWorkspaceId } from "@/lib/ledger";
 import { loanPaymentSchema, loanSchema, loanUpdateSchema } from "@/lib/validations";
@@ -64,6 +65,15 @@ export async function updateLoan(loanId: string, formData: FormData) {
 
   revalidateLoanPaths();
   return { success: true };
+}
+
+export async function submitLoanUpdate(formData: FormData) {
+  const loanId = String(formData.get("loan_id") ?? "");
+  const result = await updateLoan(loanId, formData);
+  if ("error" in result && result.error) {
+    redirect(`/loans/edit/${encodeURIComponent(loanId)}?error=${encodeURIComponent(result.error)}`);
+  }
+  redirect("/loans");
 }
 
 export async function createLoanPayment(formData: FormData) {

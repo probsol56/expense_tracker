@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Alert } from "@/components/ui";
@@ -11,21 +11,29 @@ const FOCUSABLE_SELECTOR =
 export function EditDialog({
   title,
   closeHref,
+  closeWithBack = false,
   error,
   wide = false,
   children,
 }: {
   title: string;
   closeHref: string;
+  closeWithBack?: boolean;
   error?: string;
   wide?: boolean;
   children: ReactNode;
 }) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDivElement>(null);
-  const close = useCallback(() => router.push(closeHref, { scroll: false }), [router, closeHref]);
+  const [isOpen, setIsOpen] = useState(true);
+  const close = useCallback(() => {
+    setIsOpen(false);
+    if (closeWithBack) router.back();
+    else router.push(closeHref, { scroll: false });
+  }, [router, closeHref, closeWithBack]);
 
   useEffect(() => {
+    if (!isOpen) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     dialogRef.current?.focus();
 
@@ -55,7 +63,9 @@ export function EditDialog({
       document.removeEventListener("keydown", handleKeyDown);
       previouslyFocused?.focus();
     };
-  }, [close]);
+  }, [close, isOpen]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-modal flex items-end justify-center p-0 sm:items-center sm:p-4">

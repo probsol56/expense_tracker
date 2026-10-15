@@ -14,7 +14,13 @@ export const metadata: Metadata = {
  * navigating between pages never drops it, instead of each page redirecting
  * back to "/" to see it again.
  */
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({
+  children,
+  modal,
+}: {
+  children: React.ReactNode;
+  modal: React.ReactNode;
+}) {
   const { user, workspace, profile } = await getCurrentWorkspaceAndProfile();
   if (!user) redirect("/login");
 
@@ -22,6 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <AppShell workspace={workspace} profile={profile}>
       <RefreshOnFocus />
       {children}
+      {modal}
     </AppShell>
   );
 }

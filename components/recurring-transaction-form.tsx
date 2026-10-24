@@ -45,7 +45,7 @@ export function RecurringTransactionForm({
   const [frequency, setFrequency] = useState<RecurringTransaction["frequency"]>(recurring?.frequency ?? "weekly");
   const [weekdays, setWeekdays] = useState<number[]>(recurring?.weekdays ?? WORKDAYS);
 
-  const categoryOptions = useMemo(() => getCategoryOptions(type, customCategories[type]), [type, customCategories]);
+  const categoryOptions = useMemo(() => getCategoryOptions(customCategories[type]), [type, customCategories]);
   const [category, setCategory] = useState(recurring?.category ?? categoryOptions[0] ?? "");
   const [showCategorySuggestions, setShowCategorySuggestions] = useState(false);
   const categorySuggestions = useMemo(() => {

@@ -12,7 +12,6 @@ import { UrlPaginationBar } from "@/components/url-pagination-bar";
 import { LIST_PAGE_SIZE, PICKER_LIMITS, fetchPage, pageInfo, parsePage, type Page } from "@/lib/pagination";
 import { formatEntryDate, money } from "@/lib/utils";
 import { parseRecordId } from "@/lib/validations";
-import { DEFAULT_CATEGORY_OPTIONS } from "@/lib/category-options";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { createAccount, createTransfer, deleteTransfer, updateTransfer } from "@/app/(app)/accounts/actions";
 import { createTransaction } from "@/app/actions";
@@ -36,12 +35,13 @@ export default async function AccountsPage({
         workspaceName="Personal Workspace"
         error={error}
         incomeRecorded={incomeRecorded === "1"}
+        incomeCategories={[]}
       />
     );
   }
 
   const editingTransferId = parseRecordId(editTransfer);
-  const [{ data: accountRows, error: accountsError }, transfers, editing] = await Promise.all([
+  const [{ data: accountRows, error: accountsError }, transfers, editing, { data: categoryRows, error: categoriesError }] = await Promise.all([
     supabase
       .from("accounts")
       .select("id, name, account_type, balance, starting_balance, institution, last_synced_at")
@@ -63,8 +63,16 @@ export default async function AccountsPage({
     editingTransferId
       ? supabase.from("transfers").select(TRANSFER_SELECT).eq("workspace_id", workspace.id).eq("id", editingTransferId).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
+    supabase
+      .from("categories")
+      .select("name")
+      .eq("workspace_id", workspace.id)
+      .eq("type", "income")
+      .order("name", { ascending: true })
+      .limit(PICKER_LIMITS.categories),
   ]);
   if (accountsError) throw accountsError;
+  if (categoriesError) throw categoriesError;
   if (editing.error) throw editing.error;
 
   return (
@@ -76,6 +84,7 @@ export default async function AccountsPage({
       error={error}
       incomeRecorded={incomeRecorded === "1"}
       editingTransfer={editing.data ?? undefined}
+      incomeCategories={(categoryRows ?? []).map((category) => category.name)}
     />
   );
 }
@@ -131,6 +140,7 @@ function AccountsContent({
   error,
   incomeRecorded,
   editingTransfer,
+  incomeCategories,
 }: {
   accounts: Account[];
   transfers: Page<Transfer>;
@@ -139,6 +149,7 @@ function AccountsContent({
   error?: string;
   incomeRecorded?: boolean;
   editingTransfer?: Transfer;
+  incomeCategories: string[];
 }) {
   const accountsById = new Map(accounts.map((account) => [account.id, account]));
   const canTransfer = accounts.length >= 1;
@@ -285,7 +296,7 @@ function AccountsContent({
                     <Field label="Category" htmlFor="income-category">
                       <Input id="income-category" name="category" list="income-category-options" required placeholder="Choose or enter a category" />
                       <datalist id="income-category-options">
-                        {DEFAULT_CATEGORY_OPTIONS.income.map((category) => (
+                        {incomeCategories.map((category) => (
                           <option key={category} value={category} />
                         ))}
                       </datalist>

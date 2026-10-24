@@ -4,6 +4,7 @@ import { TransactionsPageContent } from "@/app/(app)/transactions/transactions-c
 import { getSearchParam } from "@/lib/utils";
 import type { GroupByMode } from "@/app/(app)/transactions/transactions-grid";
 import { DEFAULT_PAGE_SIZE, PICKER_LIMITS, clampPageSize, parsePage } from "@/lib/pagination";
+import { getCategoryOptions } from "@/lib/category-options";
 import type { Account, Loan } from "@/lib/types";
 
 /** Parse + validate the server-side pagination/filter params from the URL. */
@@ -38,6 +39,8 @@ export default async function TransactionsPage({
         filters={{ category: "all", dateFrom: "", dateTo: "", groupBy: "none" }}
         accounts={[]}
         loans={[]}
+        categories={[]}
+        categoryColors={{}}
       />
     );
   }
@@ -46,7 +49,7 @@ export default async function TransactionsPage({
 
   // Filtering, counting, and paging all happen in the query itself
   // (see lib/transactions.ts) instead of fetching the whole ledger per request.
-  const [rangeTotals, result, { data: accounts }, { data: loans }] = await Promise.all([
+  const [rangeTotals, result, { data: accounts }, { data: loans }, { data: categoryRows, error: categoriesError }] = await Promise.all([
     fetchTransactionTotals(supabase, workspace.id, {
       category: params.category,
       dateFrom: params.dateFrom,
@@ -71,7 +74,14 @@ export default async function TransactionsPage({
       .eq("workspace_id", workspace.id)
       .order("date_started", { ascending: false })
       .limit(PICKER_LIMITS.loans),
+    supabase
+      .from("categories")
+      .select("name, color")
+      .eq("workspace_id", workspace.id)
+      .order("name", { ascending: true })
+      .limit(PICKER_LIMITS.categories),
   ]);
+  if (categoriesError) throw categoriesError;
 
   return (
     <TransactionsPageContent
@@ -94,8 +104,10 @@ export default async function TransactionsPage({
       }}
       accounts={(accounts ?? []) as Account[]}
       loans={(loans ?? []) as Loan[]}
+      categories={getCategoryOptions((categoryRows ?? []).map((category) => category.name))}
+      categoryColors={Object.fromEntries(
+        (categoryRows ?? []).map((category) => [category.name, category.color]),
+      )}
     />
   );
 }
-
-

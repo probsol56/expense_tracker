@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
 import { SignedOutNotice } from "@/components/signed-out-notice";
 import { createCategory } from "@/app/(app)/categories/actions";
-import { DEFAULT_CATEGORY_OPTIONS } from "@/lib/category-options";
+import { CategoryBadge } from "@/components/category-badge";
 import { PICKER_LIMITS } from "@/lib/pagination";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 
@@ -32,18 +32,12 @@ export default async function CategoriesPage({
     .limit(PICKER_LIMITS.categories);
   if (categoriesError) throw categoriesError;
 
-  const storedExpenseCategories = (categories ?? []).filter((category) => category.type === "expense").map((category) => category.name);
-  const storedIncomeCategories = (categories ?? []).filter((category) => category.type === "income").map((category) => category.name);
-  const storedLoanCategories = (categories ?? []).filter((category) => category.type === "loan").map((category) => category.name);
-  const expenseCategories = [...DEFAULT_CATEGORY_OPTIONS.expense, ...storedExpenseCategories];
-  const incomeCategories = [...DEFAULT_CATEGORY_OPTIONS.income, ...storedIncomeCategories];
-  const loanCategories = [...DEFAULT_CATEGORY_OPTIONS.loan, ...storedLoanCategories];
   const error = (await searchParams)?.error;
   const groups = [
-    { title: "Expense", categories: expenseCategories },
-    { title: "Income", categories: incomeCategories },
-    { title: "Loan", categories: loanCategories },
-  ].map((group) => ({ ...group, categories: [...new Set(group.categories)] }));
+    { title: "Expense", categories: (categories ?? []).filter((category) => category.type === "expense") },
+    { title: "Income", categories: (categories ?? []).filter((category) => category.type === "income") },
+    { title: "Loan", categories: (categories ?? []).filter((category) => category.type === "loan") },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -65,8 +59,8 @@ export default async function CategoriesPage({
                 {group.categories.length ? (
                   <ul>
                     {group.categories.map((category) => (
-                      <li key={category} className="break-words border-b border-rule py-2 text-sm text-fg last:border-b-0">
-                        {category}
+                      <li key={category.id} className="border-b border-rule py-2 last:border-b-0">
+                        <CategoryBadge name={category.name} color={category.color} />
                       </li>
                     ))}
                   </ul>

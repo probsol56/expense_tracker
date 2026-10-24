@@ -216,10 +216,12 @@ export async function getWorkspaceSuggestions(): Promise<{
   const workspace = await getUserWorkspaceId(supabase, user.id);
   if (!workspace) return empty;
 
-  const [{ data: categoryRows }, { data: merchantRows }] = await Promise.all([
+  const [{ data: categoryRows, error: categoriesError }, { data: merchantRows, error: merchantsError }] = await Promise.all([
     supabase.from("categories").select("name, type").eq("workspace_id", workspace.id).order("name", { ascending: true }).limit(PICKER_LIMITS.categories),
     supabase.from("merchants").select("name").eq("workspace_id", workspace.id).order("name", { ascending: true }).limit(PICKER_LIMITS.merchants),
   ]);
+  if (categoriesError) throw categoriesError;
+  if (merchantsError) throw merchantsError;
 
   const categories: Record<CategoryType, string[]> = { expense: [], income: [], loan: [] };
   for (const row of categoryRows ?? []) {

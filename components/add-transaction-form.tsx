@@ -30,7 +30,7 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
   });
   const [customCategories, setCustomCategories] = useState<Record<CategoryType, string[]>>({ expense: [], income: [], loan: [] });
   const [customMerchants, setCustomMerchants] = useState<string[]>([]);
-  const [category, setCategory] = useState<string>(() => isEditing ? (transaction.category || getCategoryOptions("expense")[0] || "") : getCategoryOptions("expense")[0] ?? "");
+  const [category, setCategory] = useState<string>(() => isEditing ? (transaction.category || "") : "");
   const [merchant, setMerchant] = useState<string>(() => isEditing ? (transaction.merchant || "") : "");
   const [description, setDescription] = useState<string>(() => isEditing ? (transaction.notes || "") : "");
   const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);
@@ -45,7 +45,7 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
   const [receiptPath, setReceiptPath] = useState<string | null>(null);
   const [receiptWarnings, setReceiptWarnings] = useState<string[]>([]);
 
-  const categoryOptions = useMemo(() => getCategoryOptions(type, customCategories[type]), [type, customCategories]);
+  const categoryOptions = useMemo(() => getCategoryOptions(customCategories[type]), [type, customCategories]);
   const merchantOptions = useMemo(() => [...new Set([...customMerchants, ...(isEditing && transaction?.merchant ? [transaction.merchant] : [])])].sort((a, b) => a.localeCompare(b)), [customMerchants, isEditing, transaction?.merchant]);
   const itemsSubtotal = useMemo(() => items.reduce((total, item) => total + (Number(item.total_price) || Number(item.quantity || 1) * Number(item.unit_price || 0)), 0), [items]);
   // Mirrors normalizeFormData in app/actions.ts, which recomputes this server-side.
@@ -109,13 +109,17 @@ export function AddTransactionForm({ onClose, transaction, currency, accounts, l
         if (!active) return;
         setCustomCategories(categories);
         setCustomMerchants(merchants);
+        if (!isEditing) {
+          setCategory((current) => current || categories.expense[0] || "");
+        }
       } catch {
-        // Suggestions are a convenience; the form works with the built-in categories.
+        // Suggestions are a convenience; the form remains usable with manual entry.
+        if (active) setError("Couldn't load saved suggestions. You can still enter a category manually.");
       }
     }
     void loadSuggestions();
     return () => { active = false; };
-  }, []);
+  }, [isEditing]);
 
   useEffect(() => {
     if (description.trim().length < 2) {

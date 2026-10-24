@@ -14,6 +14,7 @@ export type GroupByMode = "none" | "category" | "date";
 
 interface TransactionsGridProps {
   transactions: Transaction[];
+  categoryColors?: Record<string, string>;
   currency: string;
   groupBy?: GroupByMode;
   isFiltered: boolean;
@@ -54,11 +55,13 @@ function GroupSection({
   groupKey,
   items,
   currency,
+  categoryColors = {},
   onEdit,
 }: {
   groupKey: string;
   items: Transaction[];
   currency: string;
+  categoryColors: Record<string, string>;
   onEdit: (t: Transaction) => void;
 }) {
   const [open, setOpen] = useState(true);
@@ -91,7 +94,15 @@ function GroupSection({
         </th>
       </tr>
       {open &&
-        items.map((t) => <TransactionListItem key={t.id} transaction={t} currency={currency} onEdit={onEdit} />)}
+        items.map((t) => (
+          <TransactionListItem
+            key={t.id}
+            transaction={t}
+            currency={currency}
+            categoryColor={categoryColors[t.category]}
+            onEdit={onEdit}
+          />
+        ))}
     </tbody>
   );
 }
@@ -99,6 +110,7 @@ function GroupSection({
 export function TransactionsGrid({
   transactions,
   currency,
+  categoryColors = {},
   groupBy = "none",
   isFiltered,
   onEdit,
@@ -152,7 +164,13 @@ export function TransactionsGrid({
       <LedgerTable caption="Transactions">
         <tbody>
           {transactions.map((t) => (
-            <TransactionListItem key={t.id} transaction={t} currency={currency} onEdit={onEdit} />
+            <TransactionListItem
+              key={t.id}
+              transaction={t}
+              currency={currency}
+              categoryColor={categoryColors[t.category]}
+              onEdit={onEdit}
+            />
           ))}
         </tbody>
         {totals}
@@ -163,7 +181,14 @@ export function TransactionsGrid({
   return (
     <LedgerTable caption={`Transactions grouped by ${groupBy}`}>
       {buildGroups(transactions, groupBy).map((g) => (
-        <GroupSection key={g.key} groupKey={g.key} items={g.items} currency={currency} onEdit={onEdit} />
+        <GroupSection
+          key={g.key}
+          groupKey={g.key}
+          items={g.items}
+          currency={currency}
+          categoryColors={categoryColors}
+          onEdit={onEdit}
+        />
       ))}
       {totals}
     </LedgerTable>

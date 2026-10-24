@@ -7,12 +7,12 @@ import Link from "next/link";
 import { Plus, Upload, X } from "lucide-react";
 import { Button, Input, Label, LoadingOverlay, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
 import { AddTransactionModal } from "@/components/add-transaction-modal";
+import { CategoryBadge } from "@/components/category-badge";
 import { PageHeader } from "@/components/page-header";
 import { TransactionsGrid } from "@/app/(app)/transactions/transactions-grid";
 import { PaginationBar } from "@/components/pagination-bar";
 import type { GroupByMode } from "@/app/(app)/transactions/transactions-grid";
 import type { Account, Loan, Transaction } from "@/lib/types";
-import { DEFAULT_CATEGORY_OPTIONS } from "@/lib/category-options";
 import { isLoanCategory, isTransferCategory } from "@/lib/utils";
 
 interface TransactionsPageContentProps {
@@ -35,14 +35,9 @@ interface TransactionsPageContentProps {
   };
   accounts: Account[];
   loans: Loan[];
+  categories: string[];
+  categoryColors: Record<string, string>;
 }
-
-// Flatten all categories from all types for the filter dropdown
-const ALL_CATEGORIES = [
-  ...DEFAULT_CATEGORY_OPTIONS.expense,
-  ...DEFAULT_CATEGORY_OPTIONS.income,
-  ...DEFAULT_CATEGORY_OPTIONS.loan,
-];
 
 export function TransactionsPageContent({
   transactions,
@@ -53,6 +48,8 @@ export function TransactionsPageContent({
   filters,
   accounts,
   loans,
+  categories,
+  categoryColors,
 }: TransactionsPageContentProps) {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
@@ -130,9 +127,9 @@ export function TransactionsPageContent({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All categories</SelectItem>
-              {ALL_CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat} textValue={cat}>
+                  <CategoryBadge name={cat} color={categoryColors[cat]} />
                 </SelectItem>
               ))}
             </SelectContent>
@@ -193,6 +190,7 @@ export function TransactionsPageContent({
       <div className="relative overflow-hidden rounded-lg border border-rule bg-paper">
         <TransactionsGrid
           transactions={transactions}
+          categoryColors={categoryColors}
           currency={currency}
           groupBy={groupBy}
           rangeTotals={rangeTotals}

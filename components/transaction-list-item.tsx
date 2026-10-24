@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { Pencil } from "lucide-react";
+import { CategoryBadge } from "@/components/category-badge";
 import { formatEntryDate, isLoanCategory, isTransferCategory, money } from "@/lib/utils";
 import type { Transaction } from "@/lib/types";
 
 interface TransactionListItemProps {
   transaction: Transaction;
   currency: string;
+  categoryColor?: string;
   onEdit: (transaction: Transaction) => void;
 }
 
@@ -16,6 +18,7 @@ const moneyCellClass = "hidden w-36 border-l border-brass/40 px-4 py-3 text-righ
 export function TransactionListItem({
   transaction,
   currency,
+  categoryColor,
   onEdit,
 }: TransactionListItemProps) {
   const amount = Number(transaction.amount);
@@ -45,7 +48,7 @@ export function TransactionListItem({
         )}
         <p className="mt-0.5 text-sm text-fg-muted">
           <span className="sm:hidden">{entryDate} · </span>
-          {transaction.category}
+          <CategoryBadge name={transaction.category} color={categoryColor} />
           {transaction.notes && <span> · {transaction.notes}</span>}
           {transaction.status === "pending" && (
             <span className="ml-2 inline-block rounded-sm border border-brass/60 px-1.5 text-xs font-semibold uppercase tracking-wider text-brass-strong">

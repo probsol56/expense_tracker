@@ -14,6 +14,7 @@ import { isLoanCategory, isTransferCategory } from "@/lib/utils";
 interface TransactionListProps {
   /** Current page of filtered transactions (already paginated on the server). */
   transactions: Transaction[];
+  categoryColors: Record<string, string>;
   pagination: {
     page: number;
     pageSize: number;
@@ -37,6 +38,7 @@ interface TransactionListProps {
 
 export function TransactionList({
   transactions,
+  categoryColors,
   pagination,
   filterType,
   setFilterType,
@@ -77,6 +79,7 @@ export function TransactionList({
         </label>
         <TransactionListContent
           transactions={transactions}
+          categoryColors={categoryColors}
           currency={currency}
           query={query}
           filterType={filterType}

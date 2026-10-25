@@ -9,7 +9,7 @@ import {
   fetchDashboardSummary,
   parseActivityType,
 } from "@/lib/dashboard";
-import { DEFAULT_PAGE_SIZE, clampPageSize, parsePage } from "@/lib/pagination";
+import { DEFAULT_PAGE_SIZE, PICKER_LIMITS, clampPageSize, parsePage } from "@/lib/pagination";
 import type { Account, Loan } from "@/lib/types";
 
 export async function Dashboard({
@@ -29,6 +29,7 @@ export async function Dashboard({
       <DashboardShell
         summary={EMPTY_DASHBOARD_SUMMARY}
         listTransactions={[]}
+        categoryColors={{}}
         accounts={[]}
         workspace={null}
         profile={null}
@@ -40,7 +41,7 @@ export async function Dashboard({
   }
 
   const now = new Date();
-  const [summary, activity, { data: accounts }, { data: loans }] = await Promise.all([
+  const [summary, activity, { data: accounts }, { data: loans }, { data: categoryRows, error: categoriesError }] = await Promise.all([
     fetchDashboardSummary(supabase, workspace.id, now),
     fetchActivityPage(supabase, workspace.id, { page, pageSize, type: activityType, query, now }),
     supabase
@@ -55,12 +56,19 @@ export async function Dashboard({
       .eq("workspace_id", workspace.id)
       .order("date_started", { ascending: false })
       .limit(MAX_DASHBOARD_LOANS),
+    supabase
+      .from("categories")
+      .select("name, color")
+      .eq("workspace_id", workspace.id)
+      .limit(PICKER_LIMITS.categories),
   ]);
+  if (categoriesError) throw categoriesError;
 
   return (
     <DashboardShell
       summary={summary}
       listTransactions={activity.transactions}
+      categoryColors={Object.fromEntries((categoryRows ?? []).map((category) => [category.name, category.color]))}
       accounts={(accounts ?? []) as Account[]}
       loans={(loans ?? []) as Loan[]}
       workspace={workspace}

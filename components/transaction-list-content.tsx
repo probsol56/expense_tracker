@@ -7,6 +7,7 @@ import type { Transaction } from "@/lib/types";
 
 interface TransactionListContentProps {
   transactions: Transaction[];
+  categoryColors: Record<string, string>;
   currency: string;
   query: string;
   filterType: "all" | "expenses" | "income" | "loan" | "transfer";
@@ -17,6 +18,7 @@ interface TransactionListContentProps {
 
 export function TransactionListContent({
   transactions,
+  categoryColors,
   currency,
   query,
   filterType,
@@ -33,6 +35,7 @@ export function TransactionListContent({
               key={transaction.id}
               transaction={transaction}
               currency={currency}
+              categoryColor={categoryColors[transaction.category]}
               onEdit={onEdit}
             />
           ))}

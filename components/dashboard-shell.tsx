@@ -13,6 +13,7 @@ import type { ActivityType, DashboardSummary } from "@/lib/dashboard";
 export function DashboardShell({
   summary,
   listTransactions,
+  categoryColors,
   accounts,
   loans,
   workspace,
@@ -24,6 +25,7 @@ export function DashboardShell({
   summary: DashboardSummary;
   /** Current page of the filtered "Recent activity" list (computed on the server). */
   listTransactions: Transaction[];
+  categoryColors: Record<string, string>;
   accounts: Account[];
   loans?: Loan[];
   workspace?: Workspace | null;
@@ -75,6 +77,7 @@ export function DashboardShell({
       <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-8">
         <TransactionList
           transactions={listTransactions}
+          categoryColors={categoryColors}
           pagination={pagination}
           filterType={activityType}
           setFilterType={(type) => setParam({ type, page: "1" })}

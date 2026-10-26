@@ -65,7 +65,53 @@ const transactionTotalsSchema = z.object({
   money_in: z.coerce.number(),
 });
 
+const openingBalanceSchema = z.object({
+  opening_balance: z.coerce.number(),
+});
+
+const runningBalancesSchema = z.array(
+  z.object({
+    transaction_id: z.string().uuid(),
+    running_balance: z.coerce.number(),
+  }),
+);
+
 export type TransactionTotals = { moneyOut: number; moneyIn: number };
+
+export async function fetchTransactionOpeningBalance(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  { accountId, before }: { accountId?: string; before?: string },
+): Promise<number> {
+  const { data, error } = await supabase
+    .rpc("transaction_opening_balance", {
+      p_workspace_id: workspaceId,
+      p_account_id: accountId && accountId !== "all" ? accountId : null,
+      p_before: before || null,
+    })
+    .single();
+  if (error) throw error;
+  return openingBalanceSchema.parse(data).opening_balance;
+}
+
+export async function fetchTransactionRunningBalances(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  accountId: string | undefined,
+  transactionIds: string[],
+): Promise<Record<string, number>> {
+  const { data, error } = await supabase.rpc("transaction_running_balances", {
+    p_workspace_id: workspaceId,
+    p_account_id: accountId && accountId !== "all" ? accountId : null,
+    p_transaction_ids: transactionIds,
+  });
+  if (error) throw error;
+  const parsed = runningBalancesSchema.parse(data);
+  if (parsed.length !== new Set(transactionIds).size) {
+    throw new Error("Could not calculate the running balance for every report entry.");
+  }
+  return Object.fromEntries(parsed.map(({ transaction_id, running_balance }) => [transaction_id, running_balance]));
+}
 
 /** Sums the whole filtered range in Postgres, not just the visible page. */
 export async function fetchTransactionTotals(
@@ -105,7 +151,8 @@ export async function fetchTransactionsPage(
       .from("transactions")
       .select(hasCategoryFilter ? CATEGORY_FILTERED_SELECT : BASE_SELECT, { count: "exact" })
       .order("date", { ascending: sortOrder === "asc" })
-      .order("created_at", { ascending: sortOrder === "asc" });
+      .order("created_at", { ascending: sortOrder === "asc" })
+      .order("id", { ascending: sortOrder === "asc" });
     if (hasCategoryFilter) q = q.eq("category.name", category as string);
     if (hasAccountFilter) q = q.eq("account_id", accountId as string);
     if (dateFrom) q = q.gte("date", dateFrom);

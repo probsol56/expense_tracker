@@ -10,6 +10,8 @@ interface TransactionListItemProps {
   transaction: Transaction;
   currency: string;
   categoryColor?: string;
+  runningBalance?: number;
+  showRunningBalance?: boolean;
   onEdit: (transaction: Transaction) => void;
 }
 
@@ -19,6 +21,8 @@ export function TransactionListItem({
   transaction,
   currency,
   categoryColor,
+  runningBalance,
+  showRunningBalance = false,
   onEdit,
 }: TransactionListItemProps) {
   const amount = Number(transaction.amount);
@@ -56,10 +60,24 @@ export function TransactionListItem({
             </span>
           )}
         </p>
+        {showRunningBalance && (
+          <p className={`mt-1 text-xs tabular-nums sm:hidden ${runningBalance !== undefined && runningBalance < 0 ? "text-brick" : "text-fg-muted"}`}>
+            Balance {runningBalance === undefined ? "unavailable" : money(runningBalance, currency)}
+          </p>
+        )}
       </td>
 
       <td className={`${moneyCellClass} text-fg`}>{isMoneyIn ? null : formattedAmount}</td>
       <td className={`${moneyCellClass} text-moss`}>{isMoneyIn ? formattedAmount : null}</td>
+      {showRunningBalance && (
+        <td
+          className={`hidden w-36 border-l border-brass/40 px-4 py-3 text-right align-top tabular-nums sm:table-cell ${
+            runningBalance !== undefined && runningBalance < 0 ? "text-brick" : "text-fg"
+          }`}
+        >
+          {runningBalance === undefined ? "Unavailable" : money(runningBalance, currency)}
+        </td>
+      )}
 
       {/* Below `sm` the two money columns collapse into one signed amount */}
       <td className={`py-3 pl-2 pr-1 text-right align-top font-medium tabular-nums sm:hidden ${isMoneyIn ? "text-moss" : "text-fg"}`}>

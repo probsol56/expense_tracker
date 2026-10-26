@@ -9,7 +9,15 @@ const headerCellClass = "px-4 pb-2 pt-3 text-xs font-semibold uppercase tracking
 const moneyCellClass = "hidden border-l border-brass/40 px-4 py-3 text-right tabular-nums sm:table-cell";
 
 /** Two-column ledger: money out and money in sit in separate brass-ruled columns, collapsing to one signed amount on phones. */
-export function LedgerTable({ caption, children }: { caption: string; children: ReactNode }) {
+export function LedgerTable({
+  caption,
+  children,
+  showRunningBalance = false,
+}: {
+  caption: string;
+  children: ReactNode;
+  showRunningBalance?: boolean;
+}) {
   return (
     <table className="w-full table-fixed border-collapse text-left sm:table-auto">
       <caption className="sr-only">{caption}</caption>
@@ -19,6 +27,11 @@ export function LedgerTable({ caption, children }: { caption: string; children: 
           <th scope="col" className={headerCellClass}>Details</th>
           <th scope="col" className={`${headerCellClass} hidden border-l border-brass/40 text-right sm:table-cell`}>Money out</th>
           <th scope="col" className={`${headerCellClass} hidden border-l border-brass/40 text-right sm:table-cell`}>Money in</th>
+          {showRunningBalance && (
+            <th scope="col" className={`${headerCellClass} hidden border-l border-brass/40 text-right sm:table-cell`}>
+              Running balance
+            </th>
+          )}
           <th scope="col" className={`${headerCellClass} w-28 text-right sm:hidden`}>Amount</th>
           <th scope="col" className="w-12"><span className="sr-only">Actions</span></th>
         </tr>
@@ -42,7 +55,15 @@ export function sumLedger(transactions: Transaction[]) {
 export type LedgerTotal = { label: string; moneyOut: number; moneyIn: number };
 
 /** Column totals closed with the accountant's double rule. */
-export function LedgerTotalsRows({ totals, currency }: { totals: LedgerTotal[]; currency: string }) {
+export function LedgerTotalsRows({
+  totals,
+  currency,
+  showRunningBalance = false,
+}: {
+  totals: LedgerTotal[];
+  currency: string;
+  showRunningBalance?: boolean;
+}) {
   return (
     <tfoot className="border-t-2 border-fg/70">
       {totals.map(({ label, moneyOut, moneyIn }, index) => {
@@ -61,6 +82,7 @@ export function LedgerTotalsRows({ totals, currency }: { totals: LedgerTotal[]; 
             </th>
             <td className={`${moneyCellClass} text-fg`}>{money(moneyOut, currency)}</td>
             <td className={`${moneyCellClass} text-moss`}>{money(moneyIn, currency)}</td>
+            {showRunningBalance && <td className={moneyCellClass} />}
             <td className={`py-3 pl-2 pr-1 text-right tabular-nums sm:hidden ${net < 0 ? "text-fg" : "text-moss"}`}>
               {net < 0 ? "−" : "+"}
               {money(Math.abs(net), currency)}

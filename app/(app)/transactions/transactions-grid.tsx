@@ -23,6 +23,7 @@ interface TransactionsGridProps {
   onClearFilters: () => void;
   rangeTotals?: TransactionTotals;
   rangeTotalsLabel?: string;
+  runningBalances?: Record<string, number>;
 }
 
 function getGroupKey(t: Transaction, mode: GroupByMode): string {
@@ -57,12 +58,16 @@ function GroupSection({
   currency,
   categoryColors = {},
   onEdit,
+  runningBalances,
+  showRunningBalance = false,
 }: {
   groupKey: string;
   items: Transaction[];
   currency: string;
   categoryColors: Record<string, string>;
   onEdit: (t: Transaction) => void;
+  runningBalances?: Record<string, number>;
+  showRunningBalance?: boolean;
 }) {
   const [open, setOpen] = useState(true);
   const { net } = sumLedger(items);
@@ -70,7 +75,11 @@ function GroupSection({
   return (
     <tbody>
       <tr className="border-b border-rule bg-canvas/60">
-        <th scope="rowgroup" colSpan={LEDGER_COLUMN_COUNT} className="p-0 text-left font-normal">
+        <th
+          scope="rowgroup"
+          colSpan={LEDGER_COLUMN_COUNT + (showRunningBalance ? 1 : 0)}
+          className="p-0 text-left font-normal"
+        >
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -100,6 +109,8 @@ function GroupSection({
             transaction={t}
             currency={currency}
             categoryColor={categoryColors[t.category]}
+            runningBalance={runningBalances?.[t.id]}
+            showRunningBalance={showRunningBalance}
             onEdit={onEdit}
           />
         ))}
@@ -118,7 +129,10 @@ export function TransactionsGrid({
   onClearFilters,
   rangeTotals,
   rangeTotalsLabel = "All pages total",
+  runningBalances,
 }: TransactionsGridProps) {
+  const showRunningBalance = runningBalances !== undefined;
+
   if (!transactions.length) {
     return (
       <div className="px-6 py-14 text-center">
@@ -152,6 +166,7 @@ export function TransactionsGrid({
   const totals = (
     <LedgerTotalsRows
       currency={currency}
+      showRunningBalance={showRunningBalance}
       totals={[
         { label: "Page total", moneyOut: pageSum.moneyOut, moneyIn: pageSum.moneyIn },
         ...(rangeTotals ? [{ label: rangeTotalsLabel, ...rangeTotals }] : []),
@@ -161,7 +176,7 @@ export function TransactionsGrid({
 
   if (groupBy === "none") {
     return (
-      <LedgerTable caption="Transactions">
+      <LedgerTable caption="Transactions" showRunningBalance={showRunningBalance}>
         <tbody>
           {transactions.map((t) => (
             <TransactionListItem
@@ -169,6 +184,8 @@ export function TransactionsGrid({
               transaction={t}
               currency={currency}
               categoryColor={categoryColors[t.category]}
+              runningBalance={runningBalances?.[t.id]}
+              showRunningBalance={showRunningBalance}
               onEdit={onEdit}
             />
           ))}
@@ -179,7 +196,7 @@ export function TransactionsGrid({
   }
 
   return (
-    <LedgerTable caption={`Transactions grouped by ${groupBy}`}>
+    <LedgerTable caption={`Transactions grouped by ${groupBy}`} showRunningBalance={showRunningBalance}>
       {buildGroups(transactions, groupBy).map((g) => (
         <GroupSection
           key={g.key}
@@ -188,6 +205,8 @@ export function TransactionsGrid({
           currency={currency}
           categoryColors={categoryColors}
           onEdit={onEdit}
+          runningBalances={runningBalances}
+          showRunningBalance={showRunningBalance}
         />
       ))}
       {totals}

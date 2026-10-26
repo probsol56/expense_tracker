@@ -16,6 +16,8 @@ import type { Account, Loan, Transaction } from "@/lib/types";
 
 interface ReportsPageContentProps {
   transactions: Transaction[];
+  openingBalance: number;
+  runningBalances: Record<string, number>;
   rangeTotals?: TransactionTotals;
   currency: string;
   workspaceName: string;
@@ -38,6 +40,8 @@ interface ReportsPageContentProps {
 
 export function ReportsPageContent({
   transactions,
+  openingBalance,
+  runningBalances,
   rangeTotals,
   currency,
   workspaceName,
@@ -99,6 +103,7 @@ export function ReportsPageContent({
   };
 
   const recordCount = `${totalCount}${totalRows !== totalCount ? ` of ${totalRows}` : ""} ${totalRows === 1 ? "entry" : "entries"}`;
+  const closingBalance = openingBalance + (rangeTotals?.moneyIn ?? 0) - (rangeTotals?.moneyOut ?? 0);
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -194,10 +199,35 @@ export function ReportsPageContent({
       </div>
 
       <div className="relative overflow-hidden rounded-lg border border-rule bg-paper">
+        <div className="grid grid-cols-2 gap-4 border-b border-rule px-4 py-4 sm:px-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Opening balance</p>
+            <p className={`mt-1 font-display text-xl font-medium tabular-nums lining-nums sm:text-2xl ${openingBalance < 0 ? "text-brick" : "text-fg"}`}>
+              {money(openingBalance, currency)}
+            </p>
+            <p className="mt-1 text-xs text-fg-muted">
+              Before {filterDateFrom || "recorded activity"}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Closing balance</p>
+            <p
+              className={`mt-1 font-display text-xl font-medium tabular-nums lining-nums sm:text-2xl ${
+                closingBalance < 0 ? "text-brick" : "text-fg"
+              }`}
+            >
+              {money(closingBalance, currency)}
+            </p>
+            <p className="mt-1 text-xs text-fg-muted">
+              Through {filterDateTo || "latest entry"}
+            </p>
+          </div>
+        </div>
         <TransactionsGrid
           transactions={transactions}
           currency={currency}
           groupBy="none"
+          runningBalances={runningBalances}
           rangeTotals={rangeTotals}
           rangeTotalsLabel={activeFilterCount > 0 ? "Filtered total" : "Grand total"}
           isFiltered={activeFilterCount > 0}

@@ -1,7 +1,12 @@
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 import { ReportsPageContent } from "@/app/(app)/reports/reports-content";
 import { getSearchParam } from "@/lib/utils";
-import { fetchTransactionTotals, fetchTransactionsPage } from "@/lib/transactions";
+import {
+  fetchTransactionOpeningBalance,
+  fetchTransactionRunningBalances,
+  fetchTransactionTotals,
+  fetchTransactionsPage,
+} from "@/lib/transactions";
 import { DEFAULT_PAGE_SIZE, PICKER_LIMITS, clampPageSize, parsePage } from "@/lib/pagination";
 import { parseTransactionSortOrder } from "@/lib/transaction-sort";
 import type { Account, Loan } from "@/lib/types";
@@ -31,6 +36,8 @@ export default async function ReportsPage({
     return (
       <ReportsPageContent
         transactions={[]}
+        openingBalance={0}
+        runningBalances={{}}
         currency={currency}
         workspaceName={workspaceName}
         pagination={{ page: 1, pageSize: DEFAULT_PAGE_SIZE, totalPages: 1, totalCount: 0, totalRows: 0 }}
@@ -70,10 +77,26 @@ export default async function ReportsPage({
       .order("date_started", { ascending: false })
       .limit(PICKER_LIMITS.loans),
   ]);
+  const [openingBalance, runningBalances] = await Promise.all([
+    fetchTransactionOpeningBalance(supabase, workspace.id, {
+      accountId: params.accountId,
+      before: params.dateFrom,
+    }),
+    result.transactions.length
+      ? fetchTransactionRunningBalances(
+          supabase,
+          workspace.id,
+          params.accountId,
+          result.transactions.map(({ id }) => id),
+        )
+      : Promise.resolve({}),
+  ]);
 
   return (
     <ReportsPageContent
       transactions={result.transactions}
+      openingBalance={openingBalance}
+      runningBalances={runningBalances}
       rangeTotals={rangeTotals}
       currency={currency}
       workspaceName={workspaceName}

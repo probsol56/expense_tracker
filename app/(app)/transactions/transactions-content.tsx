@@ -11,8 +11,10 @@ import { CategoryBadge } from "@/components/category-badge";
 import { PageHeader } from "@/components/page-header";
 import { TransactionsGrid } from "@/app/(app)/transactions/transactions-grid";
 import { PaginationBar } from "@/components/pagination-bar";
+import { TransactionSortSelect } from "@/components/transaction-sort-select";
 import type { GroupByMode } from "@/app/(app)/transactions/transactions-grid";
 import type { Account, Loan, Transaction } from "@/lib/types";
+import type { TransactionSortOrder } from "@/lib/transaction-sort";
 import { isLoanCategory, isTransferCategory } from "@/lib/utils";
 
 interface TransactionsPageContentProps {
@@ -31,6 +33,7 @@ interface TransactionsPageContentProps {
     category: string;
     dateFrom: string;
     dateTo: string;
+    sortOrder: TransactionSortOrder;
     groupBy: GroupByMode;
   };
   accounts: Account[];
@@ -65,7 +68,7 @@ export function TransactionsPageContent({
   // All filtering & pagination live on the server (see `app/transactions/page.tsx`).
   // The client only mirrors the URL to keep inputs controlled and navigates on change.
   const { page, pageSize, totalPages, totalCount, totalRows } = pagination;
-  const { category: filterCategory, dateFrom: filterDateFrom, dateTo: filterDateTo, groupBy } = filters;
+  const { category: filterCategory, dateFrom: filterDateFrom, dateTo: filterDateTo, sortOrder, groupBy } = filters;
 
   const setParam = useCallback(
     (updates: Record<string, string | undefined>) => {
@@ -168,22 +171,29 @@ export function TransactionsPageContent({
         </div>
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <h2 className="font-display text-2xl font-medium text-fg">Entries</h2>
-        <div role="group" aria-label="Group entries by" className="flex items-center gap-1">
-          <span className="mr-1 text-sm text-fg-muted">Group by</span>
-          {(["none", "category", "date"] as const).map((g) => (
-            <button
-              key={g}
-              type="button"
-              aria-pressed={groupBy === g}
-              onClick={() => setParam({ groupBy: g })}
-              className={`min-h-11 border-b-2 px-2 text-sm capitalize transition-colors duration-150 ${groupBy === g ? "border-brass font-semibold text-fg" : "border-transparent text-fg-muted hover:text-fg"
-                }`}
-            >
-              {g}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-end gap-4">
+          <TransactionSortSelect
+            id="transaction-sort"
+            sortOrder={sortOrder}
+            onSortOrderChange={(order) => setParam({ sortOrder: order, page: "1" })}
+          />
+          <div role="group" aria-label="Group entries by" className="flex min-h-11 items-center gap-1">
+            <span className="mr-1 text-sm text-fg-muted">Group by</span>
+            {(["none", "category", "date"] as const).map((g) => (
+              <button
+                key={g}
+                type="button"
+                aria-pressed={groupBy === g}
+                onClick={() => setParam({ groupBy: g })}
+                className={`min-h-11 border-b-2 px-2 text-sm capitalize transition-colors duration-150 ${groupBy === g ? "border-brass font-semibold text-fg" : "border-transparent text-fg-muted hover:text-fg"
+                  }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

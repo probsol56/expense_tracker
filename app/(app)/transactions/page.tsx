@@ -5,6 +5,7 @@ import { getSearchParam } from "@/lib/utils";
 import type { GroupByMode } from "@/app/(app)/transactions/transactions-grid";
 import { DEFAULT_PAGE_SIZE, PICKER_LIMITS, clampPageSize, parsePage } from "@/lib/pagination";
 import { getCategoryOptions } from "@/lib/category-options";
+import { parseTransactionSortOrder } from "@/lib/transaction-sort";
 import type { Account, Loan } from "@/lib/types";
 
 /** Parse + validate the server-side pagination/filter params from the URL. */
@@ -14,8 +15,9 @@ function readParams(searchParams: Record<string, string | string[] | undefined>)
   const category = getSearchParam(searchParams, "category") || "all";
   const dateFrom = getSearchParam(searchParams, "dateFrom");
   const dateTo = getSearchParam(searchParams, "dateTo");
+  const sortOrder = parseTransactionSortOrder(getSearchParam(searchParams, "sortOrder"));
   const groupBy = (getSearchParam(searchParams, "groupBy") || "none") as GroupByMode;
-  return { page, pageSize, category, dateFrom, dateTo, groupBy };
+  return { page, pageSize, category, dateFrom, dateTo, sortOrder, groupBy };
 }
 
 export default async function TransactionsPage({
@@ -36,7 +38,7 @@ export default async function TransactionsPage({
         currency={currency}
         workspaceName={workspaceName}
         pagination={{ page: 1, pageSize: DEFAULT_PAGE_SIZE, totalPages: 1, totalCount: 0, totalRows: 0 }}
-        filters={{ category: "all", dateFrom: "", dateTo: "", groupBy: "none" }}
+        filters={{ category: "all", dateFrom: "", dateTo: "", sortOrder: "desc", groupBy: "none" }}
         accounts={[]}
         loans={[]}
         categories={[]}
@@ -61,6 +63,7 @@ export default async function TransactionsPage({
       category: params.category,
       dateFrom: params.dateFrom,
       dateTo: params.dateTo,
+      sortOrder: params.sortOrder,
     }),
     supabase
       .from("accounts")
@@ -100,6 +103,7 @@ export default async function TransactionsPage({
         category: params.category,
         dateFrom: params.dateFrom,
         dateTo: params.dateTo,
+        sortOrder: params.sortOrder,
         groupBy: params.groupBy,
       }}
       accounts={(accounts ?? []) as Account[]}

@@ -8,6 +8,7 @@ import { TransactionListFilters } from "@/components/transaction-list-filters";
 import { AddTransactionModal } from "@/components/add-transaction-modal";
 import { PaginationBar } from "@/components/pagination-bar";
 import type { ActivityType } from "@/lib/dashboard";
+import type { TransactionSortOrder } from "@/lib/transaction-sort";
 import type { Account, Loan, Transaction } from "@/lib/types";
 import { isLoanCategory, isTransferCategory } from "@/lib/utils";
 
@@ -24,6 +25,8 @@ interface TransactionListProps {
   };
   filterType: ActivityType;
   setFilterType: (type: ActivityType) => void;
+  sortOrder: TransactionSortOrder;
+  setSortOrder: (sortOrder: TransactionSortOrder) => void;
   query: string;
   onQueryChange: (value: string) => void;
   onPageChange: (page: number) => void;
@@ -42,6 +45,8 @@ export function TransactionList({
   pagination,
   filterType,
   setFilterType,
+  sortOrder,
+  setSortOrder,
   query,
   onQueryChange,
   onPageChange,
@@ -63,7 +68,12 @@ export function TransactionList({
 
   return (
     <section className="min-w-0">
-      <TransactionListFilters filterType={filterType} setFilterType={setFilterType} />
+      <TransactionListFilters
+        filterType={filterType}
+        setFilterType={setFilterType}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
+      />
 
       <div className="relative overflow-hidden rounded-lg border border-rule bg-paper">
         <label className="flex items-center gap-3 border-b border-rule px-4 focus-within:outline focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-brass-strong">

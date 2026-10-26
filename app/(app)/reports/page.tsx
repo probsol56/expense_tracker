@@ -3,6 +3,7 @@ import { ReportsPageContent } from "@/app/(app)/reports/reports-content";
 import { getSearchParam } from "@/lib/utils";
 import { fetchTransactionTotals, fetchTransactionsPage } from "@/lib/transactions";
 import { DEFAULT_PAGE_SIZE, PICKER_LIMITS, clampPageSize, parsePage } from "@/lib/pagination";
+import { parseTransactionSortOrder } from "@/lib/transaction-sort";
 import type { Account, Loan } from "@/lib/types";
 
 function readParams(searchParams: Record<string, string | string[] | undefined>) {
@@ -11,7 +12,8 @@ function readParams(searchParams: Record<string, string | string[] | undefined>)
   const accountId = getSearchParam(searchParams, "accountId") || "all";
   const dateFrom = getSearchParam(searchParams, "dateFrom");
   const dateTo = getSearchParam(searchParams, "dateTo");
-  return { page, pageSize, accountId, dateFrom, dateTo };
+  const sortOrder = parseTransactionSortOrder(getSearchParam(searchParams, "sortOrder"));
+  return { page, pageSize, accountId, dateFrom, dateTo, sortOrder };
 }
 
 export default async function ReportsPage({
@@ -32,7 +34,7 @@ export default async function ReportsPage({
         currency={currency}
         workspaceName={workspaceName}
         pagination={{ page: 1, pageSize: DEFAULT_PAGE_SIZE, totalPages: 1, totalCount: 0, totalRows: 0 }}
-        filters={{ accountId: "all", dateFrom: "", dateTo: "" }}
+        filters={{ accountId: "all", dateFrom: "", dateTo: "", sortOrder: "desc" }}
         accounts={[]}
         loans={[]}
       />
@@ -53,6 +55,7 @@ export default async function ReportsPage({
       accountId: params.accountId,
       dateFrom: params.dateFrom,
       dateTo: params.dateTo,
+      sortOrder: params.sortOrder,
     }),
     supabase
       .from("accounts")
@@ -85,6 +88,7 @@ export default async function ReportsPage({
         accountId: params.accountId,
         dateFrom: params.dateFrom,
         dateTo: params.dateTo,
+        sortOrder: params.sortOrder,
       }}
       accounts={(accounts ?? []) as Account[]}
       loans={(loans ?? []) as Loan[]}

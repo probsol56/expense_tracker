@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { pageRange } from "@/lib/pagination";
+import type { TransactionSortOrder } from "@/lib/transaction-sort";
 import { toTransaction, type TransactionRow } from "@/lib/transactions";
 import type { Transaction } from "@/lib/types";
 
@@ -62,6 +63,7 @@ export type ActivityPageParams = {
   page: number;
   pageSize: number;
   type: ActivityType;
+  sortOrder: TransactionSortOrder;
   query: string;
   now: Date;
 };
@@ -125,7 +127,7 @@ export async function fetchDashboardSummary(
 export async function fetchActivityPage(
   supabase: SupabaseClient,
   workspaceId: string,
-  { page, pageSize, type, query, now }: ActivityPageParams,
+  { page, pageSize, type, sortOrder, query, now }: ActivityPageParams,
 ): Promise<ActivityPageResult> {
   const trimmedQuery = query.trim();
   // Search stays global so older entries remain findable from the overview.
@@ -136,8 +138,8 @@ export async function fetchActivityPage(
       .from("transaction_activity")
       .select(ACTIVITY_SELECT, { count: "exact" })
       .eq("workspace_id", workspaceId)
-      .order("date", { ascending: false })
-      .order("created_at", { ascending: false });
+      .order("date", { ascending: sortOrder === "asc" })
+      .order("created_at", { ascending: sortOrder === "asc" });
     if (monthRange) request = request.gte("date", monthRange.from).lt("date", monthRange.to);
     if (type !== "all") request = request.eq("kind", ACTIVITY_KIND_BY_TYPE[type]);
     if (trimmedQuery) {

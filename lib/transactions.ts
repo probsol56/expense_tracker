@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { pageRange } from "@/lib/pagination";
+import type { TransactionSortOrder } from "@/lib/transaction-sort";
 import type { Transaction } from "@/lib/types";
 
 export type TransactionRow = {
@@ -47,6 +48,7 @@ export type TransactionPageParams = {
   accountId?: string;
   dateFrom?: string;
   dateTo?: string;
+  sortOrder?: TransactionSortOrder;
 };
 
 export type TransactionPageResult = {
@@ -93,7 +95,7 @@ export async function fetchTransactionTotals(
  */
 export async function fetchTransactionsPage(
   supabase: SupabaseClient,
-  { page, pageSize, category, accountId, dateFrom, dateTo }: TransactionPageParams,
+  { page, pageSize, category, accountId, dateFrom, dateTo, sortOrder = "desc" }: TransactionPageParams,
 ): Promise<TransactionPageResult> {
   const hasCategoryFilter = !!category && category !== "all";
   const hasAccountFilter = !!accountId && accountId !== "all";
@@ -102,8 +104,8 @@ export async function fetchTransactionsPage(
     let q = supabase
       .from("transactions")
       .select(hasCategoryFilter ? CATEGORY_FILTERED_SELECT : BASE_SELECT, { count: "exact" })
-      .order("date", { ascending: false })
-      .order("created_at", { ascending: false });
+      .order("date", { ascending: sortOrder === "asc" })
+      .order("created_at", { ascending: sortOrder === "asc" });
     if (hasCategoryFilter) q = q.eq("category.name", category as string);
     if (hasAccountFilter) q = q.eq("account_id", accountId as string);
     if (dateFrom) q = q.gte("date", dateFrom);

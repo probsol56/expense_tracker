@@ -9,6 +9,7 @@ import { AccountList } from "@/components/account-list";
 import { AddTransactionModal } from "@/components/add-transaction-modal";
 import type { Account, Loan, Transaction, Workspace, Profile } from "@/lib/types";
 import type { ActivityType, DashboardSummary } from "@/lib/dashboard";
+import type { TransactionSortOrder } from "@/lib/transaction-sort";
 
 export function DashboardShell({
   summary,
@@ -20,6 +21,7 @@ export function DashboardShell({
   profile,
   pagination,
   activityType,
+  sortOrder,
   query,
 }: {
   summary: DashboardSummary;
@@ -38,6 +40,7 @@ export function DashboardShell({
     totalRows: number;
   };
   activityType: ActivityType;
+  sortOrder: TransactionSortOrder;
   query: string;
 }) {
   const [showAdd, setShowAdd] = useState(false);
@@ -81,6 +84,8 @@ export function DashboardShell({
           pagination={pagination}
           filterType={activityType}
           setFilterType={(type) => setParam({ type, page: "1" })}
+          sortOrder={sortOrder}
+          setSortOrder={(order) => setParam({ sortOrder: order, page: "1" })}
           query={query}
           onQueryChange={(value) => setParam({ q: value || undefined, page: "1" })}
           onPageChange={(p) => setParam({ page: String(p) })}

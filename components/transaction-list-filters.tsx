@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import type { ActivityType } from "@/lib/dashboard";
+import { TransactionSortSelect } from "@/components/transaction-sort-select";
+import type { TransactionSortOrder } from "@/lib/transaction-sort";
 
 interface TransactionListFiltersProps {
   filterType: ActivityType;
   setFilterType: (type: ActivityType) => void;
+  sortOrder: TransactionSortOrder;
+  setSortOrder: (sortOrder: TransactionSortOrder) => void;
 }
 
 const FILTERS: { value: ActivityType; label: string }[] = [
@@ -16,9 +20,14 @@ const FILTERS: { value: ActivityType; label: string }[] = [
   { value: "transfer", label: "Transfers" },
 ];
 
-export function TransactionListFilters({ filterType, setFilterType }: TransactionListFiltersProps) {
+export function TransactionListFilters({
+  filterType,
+  setFilterType,
+  sortOrder,
+  setSortOrder,
+}: TransactionListFiltersProps) {
   return (
-    <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-3 flex flex-col gap-2 xl:flex-row xl:items-center xl:justify-between">
       <div className="flex items-baseline justify-between gap-4">
         <h2 className="font-display text-2xl font-medium text-fg">Recent activity</h2>
         <Link
@@ -29,7 +38,7 @@ export function TransactionListFilters({ filterType, setFilterType }: Transactio
         </Link>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <div role="group" aria-label="Filter by type" className="-mx-1 flex overflow-x-auto">
           {FILTERS.map(({ value, label }) => {
             const isSelected = filterType === value;
@@ -56,6 +65,12 @@ export function TransactionListFilters({ filterType, setFilterType }: Transactio
         >
           View all
         </Link>
+        <TransactionSortSelect
+          id="dashboard-transaction-sort"
+          sortOrder={sortOrder}
+          onSortOrderChange={setSortOrder}
+          compact
+        />
       </div>
     </div>
   );

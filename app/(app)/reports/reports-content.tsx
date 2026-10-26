@@ -8,7 +8,9 @@ import { AddTransactionModal } from "@/components/add-transaction-modal";
 import { PageHeader } from "@/components/page-header";
 import { TransactionsGrid } from "@/app/(app)/transactions/transactions-grid";
 import { PaginationBar } from "@/components/pagination-bar";
+import { TransactionSortSelect } from "@/components/transaction-sort-select";
 import { isLoanCategory, isTransferCategory, money } from "@/lib/utils";
+import type { TransactionSortOrder } from "@/lib/transaction-sort";
 import type { TransactionTotals } from "@/lib/transactions";
 import type { Account, Loan, Transaction } from "@/lib/types";
 
@@ -28,6 +30,7 @@ interface ReportsPageContentProps {
     accountId: string;
     dateFrom: string;
     dateTo: string;
+    sortOrder: TransactionSortOrder;
   };
   accounts: Account[];
   loans: Loan[];
@@ -54,7 +57,7 @@ export function ReportsPageContent({
   const [isPending, startTransition] = useTransition();
 
   const { page, pageSize, totalPages, totalCount, totalRows } = pagination;
-  const { accountId: filterAccountId, dateFrom: filterDateFrom, dateTo: filterDateTo } = filters;
+  const { accountId: filterAccountId, dateFrom: filterDateFrom, dateTo: filterDateTo, sortOrder } = filters;
 
   const setParam = useCallback(
     (updates: Record<string, string | undefined>) => {
@@ -105,7 +108,7 @@ export function ReportsPageContent({
         description="Pick an account, such as cash in hand or a bank account, to see only its entries."
       />
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
         <div className="flex min-w-0 flex-col gap-1.5">
           <Label htmlFor="report-account" className="text-xs uppercase tracking-widest text-fg-muted">Account</Label>
           <Select
@@ -147,6 +150,12 @@ export function ReportsPageContent({
             min={filterDateFrom || undefined}
           />
         </div>
+
+        <TransactionSortSelect
+          id="report-sort"
+          sortOrder={sortOrder}
+          onSortOrderChange={(order) => setParam({ sortOrder: order, page: "1" })}
+        />
 
         <div className="flex items-end">
           {activeFilterCount > 0 && (

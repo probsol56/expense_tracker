@@ -1,9 +1,10 @@
-import { Alert, Button, Card, Field, Input, NativeSelect } from "@/components/ui";
+import { Alert, Card, Field, Input, NativeSelect } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
 import { SignedOutNotice } from "@/components/signed-out-notice";
 import { createCategory } from "@/app/(app)/categories/actions";
-import { CategoryBadge } from "@/components/category-badge";
+import { CategoryRow } from "@/components/category-row";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { PICKER_LIMITS } from "@/lib/pagination";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 
@@ -59,9 +60,7 @@ export default async function CategoriesPage({
                 {group.categories.length ? (
                   <ul>
                     {group.categories.map((category) => (
-                      <li key={category.id} className="border-b border-rule py-2 last:border-b-0">
-                        <CategoryBadge name={category.name} color={category.color} />
-                      </li>
+                      <CategoryRow key={category.id} category={category} />
                     ))}
                   </ul>
                 ) : (
@@ -99,9 +98,9 @@ export default async function CategoriesPage({
                   <Alert>{error}</Alert>
                 </div>
               )}
-              <Button type="submit" className="w-full">
+              <SubmitButton className="w-full" loadingText="Saving category...">
                 Save category
-              </Button>
+              </SubmitButton>
             </form>
           </Card>
         </Section>

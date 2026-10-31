@@ -1,10 +1,9 @@
-import { Alert, Card, Field, Input, NativeSelect } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
 import { SignedOutNotice } from "@/components/signed-out-notice";
-import { createCategory } from "@/app/(app)/categories/actions";
 import { CategoryRow } from "@/components/category-row";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { CategoryCreateForm } from "@/components/category-create-form";
 import { PICKER_LIMITS } from "@/lib/pagination";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
 
@@ -41,70 +40,37 @@ export default async function CategoriesPage({
   ];
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="w-full">
       <PageHeader
         eyebrow={workspace.name}
         title="Categories"
         description="Grouped by type, so the transaction form only offers the ones that fit."
       />
-
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
-        <Section title="Saved categories">
-          <Card className="grid divide-y divide-rule sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-            {groups.map((group) => (
-              <div key={group.title} className="min-w-0 p-5">
-                <h3 className="flex items-baseline justify-between gap-2 border-b-2 border-fg/70 pb-2">
-                  <span className="font-display text-lg font-medium text-fg">{group.title}</span>
-                  <span className="text-sm tabular-nums text-fg-muted">{group.categories.length}</span>
-                </h3>
-                {group.categories.length ? (
-                  <ul>
-                    {group.categories.map((category) => (
-                      <CategoryRow key={category.id} category={category} />
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="py-3 text-sm text-fg-muted">None yet.</p>
-                )}
-              </div>
-            ))}
-          </Card>
-        </Section>
-
-        <Section title="Add a category">
-          <Card className="p-5">
-            <form action={createCategory} className="space-y-4">
-              <Field label="Name" htmlFor="category-name">
-                <Input
-                  id="category-name"
-                  name="name"
-                  required
-                  minLength={2}
-                  maxLength={80}
-                  placeholder="e.g. Salary or Groceries"
-                  aria-invalid={error ? true : undefined}
-                  aria-describedby={error ? "category-error" : undefined}
-                />
-              </Field>
-              <Field label="Type" htmlFor="category-type">
-                <NativeSelect id="category-type" name="type" defaultValue="expense">
-                  <option value="expense">Expense</option>
-                  <option value="income">Income</option>
-                  <option value="loan">Loan</option>
-                </NativeSelect>
-              </Field>
-              {error && (
-                <div id="category-error">
-                  <Alert>{error}</Alert>
-                </div>
-              )}
-              <SubmitButton className="w-full" loadingText="Saving category...">
-                Save category
-              </SubmitButton>
-            </form>
-          </Card>
-        </Section>
+      <div className="mb-6 flex justify-end">
+        <CategoryCreateForm error={error} />
       </div>
+
+      <Section title="Saved categories">
+        <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {groups.map((group) => (
+            <Card key={group.title} className="min-w-0 p-4 sm:p-5">
+              <h3 className="flex items-baseline justify-between gap-2 border-b-2 border-fg/70 pb-2">
+                <span className="font-display text-lg font-medium text-fg">{group.title}</span>
+                <span className="text-sm tabular-nums text-fg-muted">{group.categories.length}</span>
+              </h3>
+              {group.categories.length ? (
+                <ul>
+                  {group.categories.map((category) => (
+                    <CategoryRow key={category.id} category={category} />
+                  ))}
+                </ul>
+              ) : (
+                <p className="py-3 text-sm text-fg-muted">None yet.</p>
+              )}
+            </Card>
+          ))}
+        </div>
+      </Section>
     </div>
   );
 }

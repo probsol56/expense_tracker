@@ -14,6 +14,7 @@ const categorySchema = z.object({
 const updateCategorySchema = z.object({
   category_id: z.string().uuid(),
   name: z.string().trim().min(2).max(80),
+  color: z.string().regex(/^#[\da-fA-F]{6}$/, "Choose a valid category color."),
 });
 const deleteCategorySchema = z.object({
   category_id: z.string().uuid(),
@@ -100,7 +101,7 @@ export async function updateCategory(formData: FormData): Promise<{ error: strin
 
   const { data, error } = await context.supabase
     .from("categories")
-    .update({ name: parsed.data.name })
+    .update({ name: parsed.data.name, color: parsed.data.color })
     .eq("id", parsed.data.category_id)
     .eq("workspace_id", context.workspace.id)
     .select("id")

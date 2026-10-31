@@ -10,6 +10,7 @@ import { toActionError } from "@/lib/errors";
 const categorySchema = z.object({
   name: z.string().trim().min(2).max(80),
   type: z.enum(["expense", "income", "loan"]),
+  color: z.string().regex(/^#[\da-fA-F]{6}$/, "Choose a valid category color."),
 });
 const updateCategorySchema = z.object({
   category_id: z.string().uuid(),
@@ -43,6 +44,7 @@ export async function createCategory(formData: FormData) {
   const parsed = categorySchema.safeParse({
     name: formData.get("name"),
     type: formData.get("type"),
+    color: formData.get("color"),
   });
 
   if (!parsed.success) {
@@ -74,12 +76,7 @@ export async function createCategory(formData: FormData) {
     workspace_id: workspaceId,
     name: parsed.data.name,
     type: parsed.data.type,
-    color:
-      parsed.data.type === "income"
-        ? "#10b981"
-        : parsed.data.type === "loan"
-          ? "#f59e0b"
-          : "#ef6f6c",
+    color: parsed.data.color,
   });
 
   if (error) {

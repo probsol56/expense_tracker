@@ -13,6 +13,7 @@ const FOCUSABLE_SELECTOR =
 export function CategoryCreateForm({ error }: { error?: string }) {
   const [isOpen, setIsOpen] = useState(Boolean(error));
   const [mounted, setMounted] = useState(false);
+  const [color, setColor] = useState("#ef6f6c");
   const [pending, startTransition] = useTransition();
   const pendingRef = useRef(pending);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -145,6 +146,26 @@ export function CategoryCreateForm({ error }: { error?: string }) {
                     <option value="income">Income</option>
                     <option value="loan">Loan</option>
                   </NativeSelect>
+                </Field>
+                <Field label="Color" htmlFor="category-color">
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="category-color"
+                      type="color"
+                      name="color"
+                      value={color}
+                      aria-label="Choose category color"
+                      className="h-11 w-14 cursor-pointer p-1"
+                      onChange={(event) => setColor(event.currentTarget.value)}
+                    />
+                    <output
+                      htmlFor="category-color"
+                      className="font-mono text-sm uppercase text-fg"
+                      aria-live="polite"
+                    >
+                      {color}
+                    </output>
+                  </div>
                 </Field>
                 {error && (
                   <div id="category-error">

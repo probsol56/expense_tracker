@@ -4,17 +4,22 @@ import { useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { SummaryCards } from "@/components/summary-cards";
+import { CategorySpendingChart } from "@/components/category-spending-chart";
 import { TransactionList } from "@/components/transaction-list";
 import { AccountList } from "@/components/account-list";
 import { AddTransactionModal } from "@/components/add-transaction-modal";
 import type { Account, Loan, Transaction, Workspace, Profile } from "@/lib/types";
-import type { ActivityType, DashboardSummary } from "@/lib/dashboard";
+import type { ActivityType, CategorySpending, DashboardSummary } from "@/lib/dashboard";
 import type { TransactionSortOrder } from "@/lib/transaction-sort";
 
 export function DashboardShell({
   summary,
+  categorySpending,
+  spendingMonth,
+  currentMonth,
   listTransactions,
   categoryColors,
+  expenseCategoryColors,
   accounts,
   loans,
   workspace,
@@ -25,9 +30,13 @@ export function DashboardShell({
   query,
 }: {
   summary: DashboardSummary;
+  categorySpending: CategorySpending[];
+  spendingMonth: string;
+  currentMonth: string;
   /** Current page of the filtered "Recent activity" list (computed on the server). */
   listTransactions: Transaction[];
   categoryColors: Record<string, string>;
+  expenseCategoryColors: Record<string, string>;
   accounts: Account[];
   loans?: Loan[];
   workspace?: Workspace | null;
@@ -52,16 +61,20 @@ export function DashboardShell({
   // Search-param-only navigations (pagination, filters) don't trigger the
   // route's loading.tsx Suspense boundary, so track pending state ourselves.
   const [isPending, startTransition] = useTransition();
+  const [isSpendingPending, startSpendingTransition] = useTransition();
 
   // Pagination & filters live in the URL; the client only navigates.
-  const setParam = (updates: Record<string, string | undefined>) => {
+  const setParam = (
+    updates: Record<string, string | undefined>,
+    transition: (callback: () => void) => void = startTransition,
+  ) => {
     const next = new URLSearchParams(searchParams.toString());
     for (const [key, value] of Object.entries(updates)) {
       if (value == null || value === "") next.delete(key);
       else next.set(key, String(value));
     }
     const qs = next.toString();
-    startTransition(() => {
+    transition(() => {
       router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     });
   };
@@ -76,6 +89,16 @@ export function DashboardShell({
       <SummaryCards
         summary={summary}
         currency={currency}
+      />
+      <CategorySpendingChart
+        categories={categorySpending}
+        categoryColors={expenseCategoryColors}
+        currency={currency}
+        month={spendingMonth}
+        currentMonth={currentMonth}
+        onMonthChange={(month) => setParam({ spendingMonth: month }, startSpendingTransition)}
+        onAddExpense={() => setShowAdd(true)}
+        isPending={isSpendingPending}
       />
       <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-8">
         <TransactionList

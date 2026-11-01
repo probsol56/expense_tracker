@@ -33,6 +33,16 @@ const dashboardSummarySchema = z.object({
 
 export type DashboardSummary = z.infer<typeof dashboardSummarySchema>;
 
+const categorySpendingRowSchema = z.object({
+  category_id: z.string().nullable(),
+  category_name: z.string(),
+  amount: z.coerce.number(),
+});
+
+export type CategorySpending = z.infer<typeof categorySpendingRowSchema>;
+
+const spendingMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
+
 export const EMPTY_DASHBOARD_SUMMARY: DashboardSummary = {
   month_spending: 0,
   month_income: 0,
@@ -88,6 +98,32 @@ export function getMonthRange(now: Date): { from: string; to: string } {
   return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
 }
 
+export function parseSpendingMonth(value: string, now: Date): string {
+  const currentYear = now.getUTCFullYear();
+  const currentMonth = now.getUTCMonth() + 1;
+  const current = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+  const parsed = spendingMonthSchema.safeParse(value);
+  if (!parsed.success) return current;
+
+  const [yearText, monthText] = parsed.data.split("-");
+  const year = Number(yearText);
+  const month = Number(monthText);
+  if (year < 1900 || year > currentYear || (year === currentYear && month > currentMonth)) return current;
+  return parsed.data;
+}
+
+export function getMonthRangeForKey(monthKey: string): { from: string; to: string } {
+  const parsed = spendingMonthSchema.parse(monthKey);
+  const [yearText, monthText] = parsed.split("-");
+  const year = Number(yearText);
+  const month = Number(monthText);
+  if (year < 1900) throw new Error("Spending month must be 1900 or later.");
+
+  const from = `${parsed}-01`;
+  const to = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
+  return { from, to };
+}
+
 // PostgREST's `or` filter is comma/paren-delimited and ilike treats % and _ as
 // wildcards, so those characters can't pass through from user input.
 export function toSearchPattern(query: string): string {
@@ -122,6 +158,21 @@ export async function fetchDashboardSummary(
     .single();
   if (error) throw error;
   return dashboardSummarySchema.parse(data);
+}
+
+export async function fetchCategorySpending(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  month: string,
+): Promise<CategorySpending[]> {
+  const { from, to } = getMonthRangeForKey(month);
+  const { data, error } = await supabase.rpc("dashboard_category_spending", {
+    p_workspace_id: workspaceId,
+    p_from: from,
+    p_to: to,
+  });
+  if (error) throw error;
+  return z.array(categorySpendingRowSchema).parse(data ?? []);
 }
 
 export async function fetchActivityPage(

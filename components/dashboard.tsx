@@ -6,8 +6,10 @@ import {
   MAX_DASHBOARD_ACCOUNTS,
   MAX_DASHBOARD_LOANS,
   fetchActivityPage,
+  fetchCategorySpending,
   fetchDashboardSummary,
   parseActivityType,
+  parseSpendingMonth,
 } from "@/lib/dashboard";
 import { DEFAULT_PAGE_SIZE, PICKER_LIMITS, clampPageSize, parsePage } from "@/lib/pagination";
 import { parseTransactionSortOrder } from "@/lib/transaction-sort";
@@ -25,13 +27,20 @@ export async function Dashboard({
   const activityType = parseActivityType(getSearchParam(searchParams, "type") || "all");
   const sortOrder = parseTransactionSortOrder(getSearchParam(searchParams, "sortOrder"));
   const query = getSearchParam(searchParams, "q");
+  const now = new Date();
+  const spendingMonth = parseSpendingMonth(getSearchParam(searchParams, "spendingMonth"), now);
+  const currentMonth = parseSpendingMonth("", now);
 
   if (!user || !supabase || !workspace) {
     return (
       <DashboardShell
         summary={EMPTY_DASHBOARD_SUMMARY}
+        categorySpending={[]}
+        spendingMonth={spendingMonth}
+        currentMonth={currentMonth}
         listTransactions={[]}
         categoryColors={{}}
+        expenseCategoryColors={{}}
         accounts={[]}
         workspace={null}
         profile={null}
@@ -43,9 +52,9 @@ export async function Dashboard({
     );
   }
 
-  const now = new Date();
-  const [summary, activity, { data: accounts }, { data: loans }, { data: categoryRows, error: categoriesError }] = await Promise.all([
+  const [summary, categorySpending, activity, { data: accounts }, { data: loans }, { data: categoryRows, error: categoriesError }] = await Promise.all([
     fetchDashboardSummary(supabase, workspace.id, now),
+    fetchCategorySpending(supabase, workspace.id, spendingMonth),
     fetchActivityPage(supabase, workspace.id, { page, pageSize, type: activityType, sortOrder, query, now }),
     supabase
       .from("accounts")
@@ -61,7 +70,7 @@ export async function Dashboard({
       .limit(MAX_DASHBOARD_LOANS),
     supabase
       .from("categories")
-      .select("name, color")
+      .select("name, color, type")
       .eq("workspace_id", workspace.id)
       .limit(PICKER_LIMITS.categories),
   ]);
@@ -70,8 +79,16 @@ export async function Dashboard({
   return (
     <DashboardShell
       summary={summary}
+      categorySpending={categorySpending}
+      spendingMonth={spendingMonth}
+      currentMonth={currentMonth}
       listTransactions={activity.transactions}
       categoryColors={Object.fromEntries((categoryRows ?? []).map((category) => [category.name, category.color]))}
+      expenseCategoryColors={Object.fromEntries(
+        (categoryRows ?? [])
+          .filter((category) => category.type === "expense")
+          .map((category) => [category.name, category.color]),
+      )}
       accounts={(accounts ?? []) as Account[]}
       loans={(loans ?? []) as Loan[]}
       workspace={workspace}

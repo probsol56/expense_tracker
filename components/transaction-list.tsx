@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { LoadingOverlay } from "@/components/ui";
 import { TransactionListContent } from "@/components/transaction-list-content";
 import { TransactionListFilters } from "@/components/transaction-list-filters";
 import { AddTransactionModal } from "@/components/add-transaction-modal";
 import { PaginationBar } from "@/components/pagination-bar";
+import { useDebounce } from "@/lib/hooks";
 import type { ActivityType } from "@/lib/dashboard";
 import type { TransactionSortOrder } from "@/lib/transaction-sort";
 import type { Account, Loan, Transaction } from "@/lib/types";
@@ -58,6 +59,25 @@ export function TransactionList({
   loans = [],
 }: TransactionListProps) {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [searchValue, setSearchValue] = useState(query);
+  const debouncedSearchValue = useDebounce(searchValue);
+  const previousQuery = useRef(query);
+  const lastSubmittedQuery = useRef(query);
+
+  useEffect(() => {
+    if (query !== previousQuery.current) {
+      if (searchValue === previousQuery.current) setSearchValue(query);
+      previousQuery.current = query;
+      lastSubmittedQuery.current = query;
+    }
+  }, [query, searchValue]);
+
+  useEffect(() => {
+    if (debouncedSearchValue !== query && debouncedSearchValue !== lastSubmittedQuery.current) {
+      lastSubmittedQuery.current = debouncedSearchValue;
+      onQueryChange(debouncedSearchValue);
+    }
+  }, [debouncedSearchValue, onQueryChange, query]);
 
   // Filtering, sorting and pagination all happen on the server (see
   // `components/dashboard.tsx`); the client only renders the page it receives.
@@ -81,8 +101,8 @@ export function TransactionList({
           <span className="sr-only">Search transactions</span>
           <input
             type="search"
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Merchant, note or category"
             className="h-12 w-full bg-transparent text-base text-fg placeholder:text-fg-muted/80 focus-visible:outline-none"
           />
@@ -95,6 +115,8 @@ export function TransactionList({
           filterType={filterType}
           onEdit={handleEdit}
           onClearFilters={() => {
+            setSearchValue("");
+            lastSubmittedQuery.current = "";
             onQueryChange("");
             setFilterType("all");
           }}

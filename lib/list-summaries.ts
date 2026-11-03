@@ -9,6 +9,16 @@ const loanSummarySchema = z.object({
 
 export type LoanSummary = z.infer<typeof loanSummarySchema>;
 
+const loanLenderSummarySchema = z.object({
+  lender: z.string(),
+  loan_count: z.coerce.number(),
+  total_borrowed: z.coerce.number(),
+  total_repaid: z.coerce.number(),
+  total_outstanding: z.coerce.number(),
+});
+
+export type LoanLenderSummary = z.infer<typeof loanLenderSummarySchema>;
+
 const recurringSummarySchema = z.object({
   active_count: z.coerce.number(),
   monthly_expense: z.coerce.number(),
@@ -21,6 +31,15 @@ export async function fetchLoanSummary(supabase: SupabaseClient, workspaceId: st
   const { data, error } = await supabase.rpc("loan_summary", { p_workspace_id: workspaceId }).single();
   if (error) throw error;
   return loanSummarySchema.parse(data);
+}
+
+export async function fetchLoanLenderSummaries(
+  supabase: SupabaseClient,
+  workspaceId: string,
+): Promise<LoanLenderSummary[]> {
+  const { data, error } = await supabase.rpc("loan_lender_summary", { p_workspace_id: workspaceId });
+  if (error) throw error;
+  return z.array(loanLenderSummarySchema).parse(data);
 }
 
 export async function fetchRecurringSummary(supabase: SupabaseClient, workspaceId: string): Promise<RecurringSummary> {

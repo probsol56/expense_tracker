@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Pencil, Plus, TrendingDown } from "lucide-react";
-import { Alert, Badge, Card, Field, Input, NativeSelect, SubmitButton, Textarea } from "@/components/ui";
+import { Alert, Badge, Button, Card, Field, Input, NativeSelect, SubmitButton, Textarea } from "@/components/ui";
 import { EditDialog } from "@/components/edit-dialog";
 import { LoanEditForm } from "@/components/loan-edit-form";
 import { FigureStrip } from "@/components/figure-strip";
@@ -10,7 +10,7 @@ import { Section } from "@/components/section";
 import { SignedOutNotice } from "@/components/signed-out-notice";
 import { createLoan, createLoanPayment } from "@/app/(app)/loans/actions";
 import { UrlPaginationBar } from "@/components/url-pagination-bar";
-import { fetchLoanSummary } from "@/lib/list-summaries";
+import { fetchLoanLenderSummaries, fetchLoanSummary } from "@/lib/list-summaries";
 import { LIST_PAGE_SIZE, PICKER_LIMITS, RECENT_REPAYMENTS_PER_LOAN, fetchPage, pageInfo, parsePage } from "@/lib/pagination";
 import { parseRecordId } from "@/lib/validations";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
@@ -50,25 +50,23 @@ const LOAN_STATUS_BADGE: Record<Loan["status"], { variant: "warning" | "positive
 async function handleCreateLoan(formData: FormData) {
   "use server";
   const result = await createLoan(formData);
-  // Only redirect when the URL needs to change (to surface the error). On
-  // success we're already on /loans — revalidatePath (inside the action)
-  // refreshes it in place. Redirecting to the same path here blanks the page
-  // during the transition on Next 15 (vercel/next.js#73317).
-  if (result?.error) redirect(`/loans?error=${encodeURIComponent(result.error)}`);
+  if (result?.error) redirect(`/loans?action=addLoan&error=${encodeURIComponent(result.error)}`);
+  redirect("/loans");
 }
 
 async function handleCreateLoanPayment(formData: FormData) {
   "use server";
   const result = await createLoanPayment(formData);
-  if (result?.error) redirect(`/loans?error=${encodeURIComponent(result.error)}`);
+  if (result?.error) redirect(`/loans?action=repayment&error=${encodeURIComponent(result.error)}`);
+  redirect("/loans");
 }
 
 export default async function LoansPage({
   searchParams,
 }: {
-  searchParams: Promise<{ edit?: string; error?: string; page?: string }>;
+  searchParams: Promise<{ action?: string; edit?: string; error?: string; page?: string }>;
 }) {
-  const { edit, error, page } = await searchParams;
+  const { action, edit, error, page } = await searchParams;
   const { user, workspace, supabase } = await getCurrentWorkspaceAndProfile();
 
   if (!user || !supabase || !workspace) {
@@ -81,9 +79,10 @@ export default async function LoansPage({
   }
 
   const editingLoanId = parseRecordId(edit);
-  const [summary, loans, { data: repayableLoans, error: repayableError }, { data: accounts, error: accountsError }, editing] =
+  const [summary, lenderSummaries, loans, { data: repayableLoans, error: repayableError }, { data: accounts, error: accountsError }, editing] =
     await Promise.all([
       fetchLoanSummary(supabase, workspace.id),
+      fetchLoanLenderSummaries(supabase, workspace.id),
       fetchPage<LoanOverview>(
         () =>
           supabase
@@ -144,7 +143,18 @@ export default async function LoansPage({
         eyebrow={`${workspace.name} · ${loans.totalCount} ${loans.totalCount === 1 ? "loan" : "loans"}`}
         title="Loans"
         description="Track each loan on its own and record repayments against the right balance."
-      />
+      >
+        <Button asChild variant="outline">
+          <Link href="/loans?action=repayment">
+            <TrendingDown size={16} aria-hidden="true" /> Record repayment
+          </Link>
+        </Button>
+        <Button asChild variant="primary">
+          <Link href="/loans?action=addLoan">
+            <Plus size={16} aria-hidden="true" /> Add loan
+          </Link>
+        </Button>
+      </PageHeader>
 
       <FigureStrip
         label="Loan totals"
@@ -154,6 +164,53 @@ export default async function LoansPage({
           { label: "Still owed", value: money(summary.total_outstanding, currency) },
         ]}
       />
+
+      {lenderSummaries.length > 0 && (
+        <Section
+          title="Totals by lender"
+          description="Separate loans with the same lender name are combined here (ignoring capitalization and surrounding spaces); each loan remains listed individually below."
+          className="mb-10"
+        >
+          <Card className="overflow-hidden">
+            <ul>
+              {lenderSummaries.map((lender) => (
+                <li key={lender.lender} className="border-b border-rule p-5 last:border-b-0">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <h3 className="break-words font-display text-xl font-medium text-fg">
+                        {lender.lender || "Unspecified lender"}
+                      </h3>
+                      <p className="mt-1 text-sm text-fg-muted">
+                        {lender.loan_count} {lender.loan_count === 1 ? "loan" : "loans"}
+                      </p>
+                    </div>
+                    <dl className="grid grid-cols-3 text-right tabular-nums sm:w-96">
+                      <div className="pr-3">
+                        <dt className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Borrowed</dt>
+                        <dd className="mt-0.5 break-words font-medium text-fg">
+                          {money(lender.total_borrowed, currency)}
+                        </dd>
+                      </div>
+                      <div className="border-l border-brass/40 px-3">
+                        <dt className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Repaid</dt>
+                        <dd className="mt-0.5 break-words font-medium text-moss">
+                          {money(lender.total_repaid, currency)}
+                        </dd>
+                      </div>
+                      <div className="border-l border-brass/40 pl-3">
+                        <dt className="text-xs font-semibold uppercase tracking-widest text-fg-muted">Still owed</dt>
+                        <dd className="mt-0.5 break-words font-medium text-fg">
+                          {money(lender.total_outstanding, currency)}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </Section>
+      )}
 
       {!accountList.length && (
         <Alert tone="warning" className="mb-6">
@@ -166,11 +223,101 @@ export default async function LoansPage({
         </Alert>
       )}
 
-      {error && !editingLoan && <Alert className="mb-6">{error}</Alert>}
+      {error && !editingLoan && action !== "addLoan" && action !== "repayment" && <Alert className="mb-6">{error}</Alert>}
 
       {editingLoan && (
         <EditDialog title="Edit loan" closeHref="/loans" error={error}>
           <LoanEditForm loan={editingLoan} accountId={editingLoanAccountId} accounts={accountList} currency={currency} />
+        </EditDialog>
+      )}
+
+      {action === "addLoan" && (
+        <EditDialog title="Add a loan" eyebrow="New loan" closeHref="/loans" error={error} wide>
+          {accountList.length ? (
+            <form action={handleCreateLoan} className="space-y-4">
+              <Field label="Loan name" htmlFor="loan-name">
+                <Input id="loan-name" name="name" required placeholder="e.g. Family support, Business loan" />
+              </Field>
+              <Field label="Lender" htmlFor="loan-lender">
+                <Input id="loan-lender" name="lender" required placeholder="e.g. a person, bank or friend" />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Amount" htmlFor="loan-amount">
+                  <Input id="loan-amount" name="principal_amount" type="number" min="0.01" step="0.01" inputMode="decimal" required placeholder="0.00" />
+                </Field>
+                <Field label="Date received" htmlFor="loan-date">
+                  <Input id="loan-date" name="date_started" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+                </Field>
+              </div>
+              <Field label="Deposit into" htmlFor="loan-account">
+                <NativeSelect id="loan-account" name="account_id" required>
+                  <option value="">Choose an account</option>
+                  {accountOptions}
+                </NativeSelect>
+              </Field>
+              <Field label="Notes (optional)" htmlFor="loan-notes">
+                <Textarea id="loan-notes" name="notes" rows={3} placeholder="Details about this loan" />
+              </Field>
+              <SubmitButton loadingText="Adding loan..." className="w-full">
+                <Plus size={16} aria-hidden="true" /> Add loan
+              </SubmitButton>
+            </form>
+          ) : (
+            <Alert tone="info">
+              Add an account before recording a loan.{" "}
+              <Link href="/accounts" className="font-semibold underline underline-offset-2">Add an account</Link>
+            </Alert>
+          )}
+        </EditDialog>
+      )}
+
+      {action === "repayment" && (
+        <EditDialog title="Record a repayment" eyebrow="Loan repayment" closeHref="/loans" error={error} wide>
+          {accountList.length && repayableLoans?.length ? (
+            <form action={handleCreateLoanPayment} className="space-y-4">
+              <Field label="Loan" htmlFor="repayment-loan">
+                <NativeSelect id="repayment-loan" name="loan_id" required>
+                  <option value="">Choose a loan</option>
+                  {repayableLoans.map((loan) => (
+                    <option key={loan.id} value={loan.id}>
+                      {loan.name} — {money(Number(loan.outstanding_balance), currency)} owed
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Amount paid" htmlFor="repayment-amount">
+                  <Input id="repayment-amount" name="amount" type="number" min="0.01" step="0.01" inputMode="decimal" required placeholder="0.00" />
+                </Field>
+                <Field label="Date" htmlFor="repayment-date">
+                  <Input id="repayment-date" name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+                </Field>
+              </div>
+              <Field label="Pay from" htmlFor="repayment-account">
+                <NativeSelect id="repayment-account" name="account_id" required>
+                  <option value="">Choose an account</option>
+                  {accountOptions}
+                </NativeSelect>
+              </Field>
+              <Field label="Note (optional)" htmlFor="repayment-notes">
+                <Textarea id="repayment-notes" name="notes" rows={3} placeholder="Description for this repayment" />
+              </Field>
+              <SubmitButton loadingText="Saving repayment..." className="w-full">
+                <TrendingDown size={16} aria-hidden="true" /> Save repayment
+              </SubmitButton>
+            </form>
+          ) : (
+            <Alert tone="info">
+              {!accountList.length ? (
+                <>
+                  Add an account before recording a repayment.{" "}
+                  <Link href="/accounts" className="font-semibold underline underline-offset-2">Add an account</Link>
+                </>
+              ) : (
+                "There are no loans with an outstanding balance to repay."
+              )}
+            </Alert>
+          )}
         </EditDialog>
       )}
 
@@ -258,7 +405,7 @@ export default async function LoansPage({
             <div className="px-6 py-12 text-center">
               <p className="font-display text-xl font-medium text-fg">No loans recorded</p>
               <p className="mx-auto mt-2 max-w-prose text-sm text-fg-muted">
-                Add a loan below to track what you owe and each repayment against it.
+                Use Add loan to track what you owe and each repayment against it.
               </p>
             </div>
           )}
@@ -270,77 +417,6 @@ export default async function LoansPage({
         </Card>
       </Section>
 
-      <div className="grid gap-10 lg:grid-cols-2 lg:gap-8">
-        <Section title="Add a loan">
-          <Card className="p-5">
-            <form action={handleCreateLoan} className="space-y-4">
-              <Field label="Loan name" htmlFor="loan-name">
-                <Input id="loan-name" name="name" required placeholder="e.g. Family support, Business loan" />
-              </Field>
-              <Field label="Lender" htmlFor="loan-lender">
-                <Input id="loan-lender" name="lender" required placeholder="e.g. a person, bank or friend" />
-              </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Amount" htmlFor="loan-amount">
-                  <Input id="loan-amount" name="principal_amount" type="number" min="0.01" step="0.01" inputMode="decimal" required placeholder="0.00" />
-                </Field>
-                <Field label="Date received" htmlFor="loan-date">
-                  <Input id="loan-date" name="date_started" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
-                </Field>
-              </div>
-              <Field label="Deposit into" htmlFor="loan-account">
-                <NativeSelect id="loan-account" name="account_id" required disabled={!accountList.length}>
-                  <option value="">Choose an account</option>
-                  {accountOptions}
-                </NativeSelect>
-              </Field>
-              <Field label="Notes (optional)" htmlFor="loan-notes">
-                <Textarea id="loan-notes" name="notes" rows={3} placeholder="Details about this loan" />
-              </Field>
-              <SubmitButton loadingText="Adding loan..." disabled={!accountList.length} className="w-full">
-                <Plus size={16} aria-hidden="true" /> Add loan
-              </SubmitButton>
-            </form>
-          </Card>
-        </Section>
-
-        <Section title="Record a repayment">
-          <Card className="p-5">
-            <form action={handleCreateLoanPayment} className="space-y-4">
-              <Field label="Loan" htmlFor="repayment-loan">
-                <NativeSelect id="repayment-loan" name="loan_id" required>
-                  <option value="">Choose a loan</option>
-                  {(repayableLoans ?? []).map((loan) => (
-                    <option key={loan.id} value={loan.id}>
-                      {loan.name} — {money(Number(loan.outstanding_balance), currency)} owed
-                    </option>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Amount paid" htmlFor="repayment-amount">
-                  <Input id="repayment-amount" name="amount" type="number" min="0.01" step="0.01" inputMode="decimal" required placeholder="0.00" />
-                </Field>
-                <Field label="Date" htmlFor="repayment-date">
-                  <Input id="repayment-date" name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
-                </Field>
-              </div>
-              <Field label="Pay from" htmlFor="repayment-account">
-                <NativeSelect id="repayment-account" name="account_id" required disabled={!accountList.length}>
-                  <option value="">Choose an account</option>
-                  {accountOptions}
-                </NativeSelect>
-              </Field>
-              <Field label="Note (optional)" htmlFor="repayment-notes">
-                <Textarea id="repayment-notes" name="notes" rows={3} placeholder="Description for this repayment" />
-              </Field>
-              <SubmitButton loadingText="Saving repayment..." disabled={!accountList.length} className="w-full">
-                <TrendingDown size={16} aria-hidden="true" /> Save repayment
-              </SubmitButton>
-            </form>
-          </Card>
-        </Section>
-      </div>
     </div>
   );
 }

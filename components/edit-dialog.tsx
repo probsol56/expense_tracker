@@ -10,6 +10,7 @@ const FOCUSABLE_SELECTOR =
 
 export function EditDialog({
   title,
+  eyebrow = "Edit entry",
   closeHref,
   closeWithBack = false,
   error,
@@ -17,6 +18,7 @@ export function EditDialog({
   children,
 }: {
   title: string;
+  eyebrow?: string;
   closeHref: string;
   closeWithBack?: boolean;
   error?: string;
@@ -83,7 +85,7 @@ export function EditDialog({
       >
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-widest text-brass-strong">Edit entry</span>
+            <span className="text-xs font-semibold uppercase tracking-widest text-brass-strong">{eyebrow}</span>
             <h2 id="edit-dialog-title" className="font-display text-2xl font-medium text-fg">
               {title}
             </h2>

@@ -6,9 +6,11 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export function DeleteTransferButton({
   transferId,
+  month,
   action,
 }: {
   transferId: string;
+  month: string;
   action: (formData: FormData) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
@@ -18,6 +20,7 @@ export function DeleteTransferButton({
     startTransition(async () => {
       const formData = new FormData();
       formData.set("transfer_id", transferId);
+      formData.set("month", month);
       await action(formData);
       setOpen(false);
     });

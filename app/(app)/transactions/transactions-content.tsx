@@ -1,11 +1,11 @@
 "use client";
 
 import type { TransactionTotals } from "@/lib/transactions";
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Plus, Upload, X } from "lucide-react";
-import { Button, Input, Label, LoadingOverlay, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui";
+import { Button, Input, Label, LoadingOverlay } from "@/components/ui";
 import { AddTransactionModal } from "@/components/add-transaction-modal";
 import { CategoryBadge } from "@/components/category-badge";
 import { PageHeader } from "@/components/page-header";
@@ -16,6 +16,7 @@ import type { GroupByMode } from "@/app/(app)/transactions/transactions-grid";
 import type { Account, Loan, Transaction } from "@/lib/types";
 import type { TransactionSortOrder } from "@/lib/transaction-sort";
 import { isLoanCategory, isTransferCategory } from "@/lib/utils";
+import { useDebounce } from "@/lib/hooks";
 
 interface TransactionsPageContentProps {
   transactions: Transaction[];
@@ -56,6 +57,12 @@ export function TransactionsPageContent({
 }: TransactionsPageContentProps) {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [categoryInput, setCategoryInput] = useState(filters.category === "all" ? "" : filters.category);
+  const [showCategoryOptions, setShowCategoryOptions] = useState(false);
+  const [dateFrom, setDateFrom] = useState(filters.dateFrom);
+  const [dateTo, setDateTo] = useState(filters.dateTo);
+  const categoryFilterRef = useRef<HTMLDivElement>(null);
+  const categoryInputRef = useRef<HTMLInputElement>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -69,6 +76,14 @@ export function TransactionsPageContent({
   // The client only mirrors the URL to keep inputs controlled and navigates on change.
   const { page, pageSize, totalPages, totalCount, totalRows } = pagination;
   const { category: filterCategory, dateFrom: filterDateFrom, dateTo: filterDateTo, sortOrder, groupBy } = filters;
+  const debouncedDateFrom = useDebounce(dateFrom);
+  const debouncedDateTo = useDebounce(dateTo);
+  const previousDateFilters = useRef({ dateFrom: filterDateFrom, dateTo: filterDateTo });
+  const lastSubmittedDateFilters = useRef({ dateFrom: filterDateFrom, dateTo: filterDateTo });
+
+  useEffect(() => {
+    setCategoryInput(filterCategory === "all" ? "" : filterCategory);
+  }, [filterCategory]);
 
   const setParam = useCallback(
     (updates: Record<string, string | undefined>) => {
@@ -85,6 +100,38 @@ export function TransactionsPageContent({
     [router, searchParams, pathname],
   );
 
+  useEffect(() => {
+    const previous = previousDateFilters.current;
+    if (filterDateFrom !== previous.dateFrom || filterDateTo !== previous.dateTo) {
+      if (dateFrom === previous.dateFrom) setDateFrom(filterDateFrom);
+      if (dateTo === previous.dateTo) setDateTo(filterDateTo);
+      previousDateFilters.current = { dateFrom: filterDateFrom, dateTo: filterDateTo };
+      lastSubmittedDateFilters.current = { dateFrom: filterDateFrom, dateTo: filterDateTo };
+      return;
+    }
+
+    if (debouncedDateFrom !== dateFrom || debouncedDateTo !== dateTo) return;
+    if (debouncedDateFrom === filterDateFrom && debouncedDateTo === filterDateTo) return;
+
+    const lastSubmitted = lastSubmittedDateFilters.current;
+    if (debouncedDateFrom === lastSubmitted.dateFrom && debouncedDateTo === lastSubmitted.dateTo) return;
+
+    lastSubmittedDateFilters.current = { dateFrom: debouncedDateFrom, dateTo: debouncedDateTo };
+    setParam({
+      dateFrom: debouncedDateFrom,
+      dateTo: debouncedDateTo,
+      page: "1",
+    });
+  }, [
+    dateFrom,
+    dateTo,
+    debouncedDateFrom,
+    debouncedDateTo,
+    filterDateFrom,
+    filterDateTo,
+    setParam,
+  ]);
+
   const activeFilterCount = [
     filterCategory !== "all",
     !!filterDateFrom,
@@ -92,6 +139,11 @@ export function TransactionsPageContent({
   ].filter(Boolean).length;
 
   const clearFilters = () => {
+    setCategoryInput("");
+    setShowCategoryOptions(false);
+    setDateFrom("");
+    setDateTo("");
+    lastSubmittedDateFilters.current = { dateFrom: "", dateTo: "" };
     setParam({ category: undefined, dateFrom: undefined, dateTo: undefined, page: "1" });
   };
 
@@ -124,19 +176,100 @@ export function TransactionsPageContent({
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
         <div className="flex min-w-0 flex-col gap-1.5">
           <Label htmlFor="filter-category" className="text-xs uppercase tracking-widest text-fg-muted">Category</Label>
-          <Select value={filterCategory} onValueChange={(v) => setParam({ category: v === "all" ? undefined : v, page: "1" })}>
-            <SelectTrigger id="filter-category">
-              <SelectValue placeholder="All categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat} textValue={cat}>
-                  <CategoryBadge name={cat} color={categoryColors[cat]} />
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div ref={categoryFilterRef} className="relative">
+            <Input
+              ref={categoryInputRef}
+              id="filter-category"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={showCategoryOptions}
+              aria-controls="transaction-category-options"
+              className={showCategoryOptions ? "pr-11" : undefined}
+              value={categoryInput}
+              onChange={(event) => {
+                const value = event.target.value;
+                setCategoryInput(value);
+                setShowCategoryOptions(true);
+                const matchingCategory = categories.find(
+                  (category) => category.toLocaleLowerCase() === value.trim().toLocaleLowerCase(),
+                );
+                if (!value.trim() || matchingCategory) {
+                  setParam({ category: matchingCategory, page: "1" });
+                  if (matchingCategory) setCategoryInput(matchingCategory);
+                }
+              }}
+              onFocus={() => setShowCategoryOptions(true)}
+              onBlur={(event) => {
+                if (!categoryFilterRef.current?.contains(event.relatedTarget)) {
+                  setShowCategoryOptions(false);
+                }
+              }}
+              placeholder="All categories"
+              autoComplete="off"
+            />
+            {categoryInput && (
+              <button
+                type="button"
+                aria-label="Clear category filter"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  setCategoryInput("");
+                  setParam({ category: undefined, page: "1" });
+                  setShowCategoryOptions(true);
+                  categoryInputRef.current?.focus();
+                }}
+                className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-fg-muted hover:bg-canvas hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-brass-strong"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            )}
+            {showCategoryOptions && (
+              <div
+                className="absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-hidden rounded-md border border-rule bg-paper shadow-lg"
+              >
+                <div
+                  id="transaction-category-options"
+                  role="listbox"
+                  aria-label="Category options"
+                  className="max-h-56 overflow-y-auto"
+                >
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={filterCategory === "all"}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setCategoryInput("");
+                      setShowCategoryOptions(false);
+                      setParam({ category: undefined, page: "1" });
+                    }}
+                    className="block min-h-10 w-full border-b border-rule px-3 py-2 text-left text-sm text-fg hover:bg-canvas"
+                  >
+                    All categories
+                  </button>
+                  {categories
+                    .filter((category) => category.toLocaleLowerCase().includes(categoryInput.trim().toLocaleLowerCase()))
+                    .map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        role="option"
+                        aria-selected={filterCategory === category}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => {
+                          setCategoryInput(category);
+                          setShowCategoryOptions(false);
+                          setParam({ category, page: "1" });
+                        }}
+                        className="block min-h-10 w-full border-b border-rule px-3 py-2 text-left text-sm last:border-b-0 hover:bg-canvas"
+                      >
+                        <CategoryBadge name={category} color={categoryColors[category]} />
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex min-w-0 flex-col gap-1.5">
@@ -144,9 +277,9 @@ export function TransactionsPageContent({
           <Input
             id="filter-from"
             type="date"
-            value={filterDateFrom}
-            onChange={(e) => setParam({ dateFrom: e.target.value, page: "1" })}
-            max={filterDateTo || undefined}
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            max={dateTo || undefined}
           />
         </div>
 
@@ -155,9 +288,9 @@ export function TransactionsPageContent({
           <Input
             id="filter-to"
             type="date"
-            value={filterDateTo}
-            onChange={(e) => setParam({ dateTo: e.target.value, page: "1" })}
-            min={filterDateFrom || undefined}
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            min={dateFrom || undefined}
           />
         </div>
 

@@ -5,8 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserWorkspaceId } from "@/lib/ledger";
 import { accountSchema, deleteLedgerAccountSchema, transferSchema } from "@/lib/validations";
 import { toActionError } from "@/lib/errors";
+import { updateTransaction } from "@/app/actions";
 
-function revalidateTransferPaths() {
+function revalidateLedgerPaths() {
   revalidatePath("/accounts");
   revalidatePath("/");
   revalidatePath("/transactions");
@@ -38,6 +39,32 @@ export async function createAccount(formData: FormData) {
 
   revalidatePath("/accounts");
   revalidatePath("/");
+  return { success: true };
+}
+
+export async function updateAccountIncome(transactionId: string, formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Sign in to update income." };
+
+  const workspace = await getUserWorkspaceId(supabase, user.id);
+  if (!workspace) return { error: "Create a workspace before updating income." };
+
+  const { data: income, error: incomeError } = await supabase
+    .from("transaction_activity")
+    .select("id")
+    .eq("workspace_id", workspace.id)
+    .eq("id", transactionId)
+    .eq("kind", "income")
+    .not("account_id", "is", null)
+    .maybeSingle();
+  if (incomeError) return { error: toActionError(incomeError, "Failed to verify this income entry.") };
+  if (!income) return { error: "This add money entry is no longer available to update." };
+
+  const result = await updateTransaction(transactionId, formData);
+  if (result?.error) return result;
+
+  revalidateLedgerPaths();
   return { success: true };
 }
 
@@ -88,7 +115,7 @@ export async function createTransfer(formData: FormData) {
   });
   if (error) return { error: toActionError(error, "Failed to record the transfer.") };
 
-  revalidateTransferPaths();
+  revalidateLedgerPaths();
   return { success: true };
 }
 
@@ -113,7 +140,7 @@ export async function updateTransfer(transferId: string, formData: FormData) {
   });
   if (error) return { error: toActionError(error, "Failed to update the transfer.") };
 
-  revalidateTransferPaths();
+  revalidateLedgerPaths();
   return { success: true };
 }
 
@@ -125,6 +152,6 @@ export async function deleteTransfer(transferId: string) {
   const { error } = await supabase.rpc("delete_transfer", { p_transfer_id: transferId });
   if (error) return { error: toActionError(error, "Failed to delete the transfer.") };
 
-  revalidateTransferPaths();
+  revalidateLedgerPaths();
   return { success: true };
 }

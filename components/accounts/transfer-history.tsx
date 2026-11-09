@@ -3,8 +3,6 @@ import { Pencil } from "lucide-react";
 import { DeleteTransferButton } from "@/components/delete-transfer-button";
 import { UrlPaginationBar } from "@/components/url-pagination-bar";
 import { Card } from "@/components/ui";
-import { TransferMonthFilter } from "@/components/accounts/transfer-month-filter";
-import { parseSpendingMonth } from "@/lib/dashboard";
 import { pageInfo, type Page } from "@/lib/pagination";
 import { formatSpendingMonth } from "@/lib/dashboard-month";
 import { formatEntryDate, money } from "@/lib/utils";
@@ -34,7 +32,6 @@ export function TransferHistory({
       <div className="mb-3">
         <h2 className="font-display text-2xl font-medium text-fg">Transfers</h2>
       </div>
-      <TransferMonthFilter month={month} maxMonth={parseSpendingMonth("", new Date())} />
       {transfers.totalCount ? (
         <Card className="overflow-hidden">
           <table className="w-full table-fixed border-collapse text-left sm:table-auto">

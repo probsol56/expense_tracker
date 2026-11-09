@@ -5,7 +5,12 @@ import { LIST_PAGE_SIZE, PICKER_LIMITS, fetchPage, parsePage } from "@/lib/pagin
 import { getMonthRangeForKey, parseSpendingMonth } from "@/lib/dashboard";
 import { parseRecordId } from "@/lib/validations";
 import { getCurrentWorkspaceAndProfile } from "@/lib/workspace";
-import { createAccount, createTransfer, deleteTransfer, updateTransfer } from "@/app/(app)/accounts/actions";
+import {
+  fetchAccountIncomeForEdit,
+  fetchAccountIncomeHistory,
+  fetchAccountMonthlyHistory,
+} from "@/lib/account-history";
+import { createAccount, createTransfer, deleteTransfer, updateAccountIncome, updateTransfer } from "@/app/(app)/accounts/actions";
 import { createTransaction } from "@/app/actions";
 import type { Account, Transfer } from "@/lib/types";
 
@@ -18,14 +23,17 @@ export default async function AccountsPage({
   searchParams: Promise<{
     error?: string;
     editTransfer?: string;
+    editIncome?: string;
     addIncome?: string;
     transfer?: string;
     addAccount?: string;
     incomeRecorded?: string;
+    incomeUpdated?: string;
     accountAdded?: string;
     transferRecorded?: string;
     month?: string;
     page?: string;
+    incomePage?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -36,11 +44,14 @@ export default async function AccountsPage({
     return (
       <AccountsContent
         accounts={[]}
+        accountMonthlyBalances={[]}
+        incomeHistory={{ rows: [], page: 1, pageSize: LIST_PAGE_SIZE, totalPages: 1, totalCount: 0 }}
         transfers={{ rows: [], page: 1, pageSize: LIST_PAGE_SIZE, totalPages: 1, totalCount: 0 }}
         currency="BDT"
         workspaceName="Personal Workspace"
         error={params.error}
         incomeRecorded={params.incomeRecorded === "1"}
+        incomeUpdated={params.incomeUpdated === "1"}
         accountAdded={params.accountAdded === "1"}
         transferRecorded={params.transferRecorded === "1"}
         selectedMonth={selectedMonth}
@@ -48,6 +59,7 @@ export default async function AccountsPage({
         incomeCategories={[]}
         accountAction={handleCreateAccount}
         incomeAction={handleCreateIncome}
+        updateIncomeAction={handleUpdateIncome}
         transferAction={handleCreateTransfer}
         updateTransferAction={handleUpdateTransfer}
         deleteTransferAction={handleDeleteTransfer}
@@ -56,8 +68,17 @@ export default async function AccountsPage({
   }
 
   const editingTransferId = parseRecordId(params.editTransfer);
+  const editingIncomeId = parseRecordId(params.editIncome);
   const transferDateRange = getMonthRangeForKey(selectedMonth);
-  const [{ data: accountRows, error: accountsError }, transfers, editing, { data: categoryRows, error: categoriesError }] =
+  const [
+    { data: accountRows, error: accountsError },
+    accountMonthlyBalances,
+    incomeHistory,
+    editingIncome,
+    transfers,
+    editing,
+    { data: categoryRows, error: categoriesError },
+  ] =
     await Promise.all([
       supabase
         .from("accounts")
@@ -65,6 +86,17 @@ export default async function AccountsPage({
         .eq("workspace_id", workspace.id)
         .order("created_at", { ascending: false })
         .limit(PICKER_LIMITS.accounts),
+      fetchAccountMonthlyHistory(supabase, workspace.id, selectedMonth),
+      fetchAccountIncomeHistory(
+        supabase,
+        workspace.id,
+        selectedMonth,
+        parsePage(params.incomePage ?? ""),
+        LIST_PAGE_SIZE,
+      ),
+      editingIncomeId
+        ? fetchAccountIncomeForEdit(supabase, workspace.id, editingIncomeId)
+        : Promise.resolve(null),
       fetchPage<Transfer>(
         () =>
           supabase
@@ -99,23 +131,31 @@ export default async function AccountsPage({
   if (accountsError) throw accountsError;
   if (categoriesError) throw categoriesError;
   if (editing.error) throw editing.error;
+  if (editingIncomeId && !editingIncome) {
+    redirect(`/accounts?month=${selectedMonth}&error=${encodeURIComponent("This add money entry is no longer available.")}`);
+  }
 
   return (
     <AccountsContent
       accounts={(accountRows ?? []) as Account[]}
+      accountMonthlyBalances={accountMonthlyBalances}
       transfers={transfers}
       currency={workspace.base_currency || "BDT"}
       workspaceName={workspace.name || "Personal Workspace"}
       error={params.error}
       incomeRecorded={params.incomeRecorded === "1"}
+      incomeUpdated={params.incomeUpdated === "1"}
       accountAdded={params.accountAdded === "1"}
       transferRecorded={params.transferRecorded === "1"}
       selectedMonth={selectedMonth}
       actionDialog={getActionDialog(params)}
       editingTransfer={editing.data ?? undefined}
+      editingIncome={editingIncome ?? undefined}
+      incomeHistory={incomeHistory}
       incomeCategories={(categoryRows ?? []).map((category) => category.name)}
       accountAction={handleCreateAccount}
       incomeAction={handleCreateIncome}
+      updateIncomeAction={handleUpdateIncome}
       transferAction={handleCreateTransfer}
       updateTransferAction={handleUpdateTransfer}
       deleteTransferAction={handleDeleteTransfer}
@@ -145,6 +185,21 @@ async function handleCreateIncome(formData: FormData) {
   if (result?.error) redirect(`/accounts?addIncome=1&month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
   revalidatePath("/accounts");
   redirect(`/accounts?month=${selectedMonth}&incomeRecorded=1`);
+}
+
+async function handleUpdateIncome(formData: FormData) {
+  "use server";
+  const selectedMonth = parseSpendingMonth(String(formData.get("month") ?? ""), new Date());
+  const transactionId = parseRecordId(String(formData.get("transaction_id") ?? ""));
+  if (!transactionId) {
+    redirect(`/accounts?month=${selectedMonth}&error=${encodeURIComponent("Select a valid income entry.")}`);
+  }
+  const result = await updateAccountIncome(transactionId, formData);
+  if (result?.error) {
+    redirect(`/accounts?editIncome=${transactionId}&month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
+  }
+  revalidatePath("/accounts");
+  redirect(`/accounts?month=${selectedMonth}&incomeUpdated=1`);
 }
 
 async function handleCreateTransfer(formData: FormData) {

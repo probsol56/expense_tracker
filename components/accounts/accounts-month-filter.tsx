@@ -4,7 +4,7 @@ import { useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input } from "@/components/ui";
 
-export function TransferMonthFilter({
+export function AccountsMonthFilter({
   month,
   maxMonth,
 }: {
@@ -27,9 +27,9 @@ export function TransferMonthFilter({
 
   return (
     <form action="/accounts" method="get" onSubmit={handleSubmit} className="mb-4 flex items-end gap-2">
-      <Field label="Month" htmlFor="transfer-month" className="w-full max-w-56">
+      <Field label="Month" htmlFor="accounts-month" className="w-full max-w-56">
         <Input
-          id="transfer-month"
+          id="accounts-month"
           name="month"
           type="month"
           min="1900-01"

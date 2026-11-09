@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { EditDialog } from "@/components/edit-dialog";
 import { Alert, Field, Input, NativeSelect, SubmitButton, Textarea } from "@/components/ui";
+import type { AccountIncomeEntry } from "@/lib/account-history";
 import type { Account } from "@/lib/types";
 
 type FormAction = (formData: FormData) => Promise<void>;
@@ -10,19 +11,30 @@ export function AddMoneyDialog({
   categories,
   month,
   error,
+  entry,
   action,
 }: {
   accounts: Account[];
   categories: string[];
   month: string;
   error?: string;
+  entry?: AccountIncomeEntry;
   action: FormAction;
 }) {
+  const isEditing = Boolean(entry);
+
   return (
-    <EditDialog title="Add money" eyebrow="New income" closeHref={`/accounts?month=${month}`} error={error} wide>
+    <EditDialog
+      title={isEditing ? "Update add money entry" : "Add money"}
+      eyebrow={isEditing ? "Edit income" : "New income"}
+      closeHref={`/accounts?month=${month}`}
+      error={error}
+      wide
+    >
       {accounts.length ? (
         <form action={action} className="space-y-4">
           <input type="hidden" name="month" value={month} />
+          {entry && <input type="hidden" name="transaction_id" value={entry.id} />}
           <input type="hidden" name="type" value="income" />
           <input type="hidden" name="items_json" value="[]" />
           <input type="hidden" name="loan_id" value="" />
@@ -30,10 +42,12 @@ export function AddMoneyDialog({
           <input type="hidden" name="discount_amount" value="" />
           <input type="hidden" name="receipt_path" value="" />
           <p className="max-w-prose text-sm text-fg-muted">
-            Use for money earned or received. To move your own money between accounts, choose Transfer.
+            {isEditing
+              ? "Update the income details below."
+              : "Use for money earned or received. To move your own money between accounts, choose Transfer."}
           </p>
           <Field label="Income source" htmlFor="income-source">
-            <Input id="income-source" name="merchant" required placeholder="e.g. Employer or client" />
+            <Input id="income-source" name="merchant" required defaultValue={entry?.merchant_name ?? ""} placeholder="e.g. Employer or client" />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Category" htmlFor="income-category">
@@ -42,6 +56,7 @@ export function AddMoneyDialog({
                 name="category"
                 list="income-category-options"
                 required
+                defaultValue={entry?.category_name ?? ""}
                 placeholder="Choose or enter a category"
               />
               <datalist id="income-category-options">
@@ -49,22 +64,32 @@ export function AddMoneyDialog({
               </datalist>
             </Field>
             <Field label="Amount" htmlFor="income-amount">
-              <Input id="income-amount" name="amount" type="number" min="0.01" step="0.01" inputMode="decimal" required placeholder="0.00" />
+              <Input
+                id="income-amount"
+                name="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                inputMode="decimal"
+                required
+                defaultValue={entry ? String(entry.amount) : ""}
+                placeholder="0.00"
+              />
             </Field>
             <Field label="Deposit to" htmlFor="income-account">
-              <NativeSelect id="income-account" name="account_id" defaultValue={accounts[0]?.id}>
+              <NativeSelect id="income-account" name="account_id" defaultValue={entry?.account_id ?? accounts[0]?.id}>
                 {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
               </NativeSelect>
             </Field>
             <Field label="Date" htmlFor="income-date">
-              <Input id="income-date" name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} required />
+              <Input id="income-date" name="date" type="date" defaultValue={entry?.date ?? new Date().toISOString().slice(0, 10)} required />
             </Field>
           </div>
           <Field label="Note (optional)" htmlFor="income-note">
-            <Textarea id="income-note" name="description" rows={2} placeholder="Add a reference or detail" />
+            <Textarea id="income-note" name="description" rows={2} defaultValue={entry?.notes ?? ""} placeholder="Add a reference or detail" />
           </Field>
-          <SubmitButton loadingText="Recording income..." className="w-full sm:w-auto">
-            <Plus size={16} aria-hidden="true" /> Record income
+          <SubmitButton loadingText={isEditing ? "Updating income..." : "Recording income..."} className="w-full sm:w-auto">
+            <Plus size={16} aria-hidden="true" /> {isEditing ? "Update income" : "Record income"}
           </SubmitButton>
         </form>
       ) : (

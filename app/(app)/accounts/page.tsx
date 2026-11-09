@@ -174,7 +174,7 @@ async function handleCreateAccount(formData: FormData) {
   "use server";
   const selectedMonth = parseSpendingMonth(String(formData.get("month") ?? ""), new Date());
   const result = await createAccount(formData);
-  if (result?.error) redirect(`/accounts?addAccount=1&month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
+  if ("error" in result && result.error) redirect(`/accounts?addAccount=1&month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
   redirect(`/accounts?month=${selectedMonth}&accountAdded=1`);
 }
 
@@ -182,7 +182,7 @@ async function handleCreateIncome(formData: FormData) {
   "use server";
   const selectedMonth = parseSpendingMonth(String(formData.get("month") ?? ""), new Date());
   const result = await createTransaction(formData);
-  if (result?.error) redirect(`/accounts?addIncome=1&month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
+  if ("error" in result && result.error) redirect(`/accounts?addIncome=1&month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
   revalidatePath("/accounts");
   redirect(`/accounts?month=${selectedMonth}&incomeRecorded=1`);
 }
@@ -195,7 +195,7 @@ async function handleUpdateIncome(formData: FormData) {
     redirect(`/accounts?month=${selectedMonth}&error=${encodeURIComponent("Select a valid income entry.")}`);
   }
   const result = await updateAccountIncome(transactionId, formData);
-  if (result?.error) {
+  if ("error" in result && result.error) {
     redirect(`/accounts?editIncome=${transactionId}&month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
   }
   revalidatePath("/accounts");
@@ -206,7 +206,7 @@ async function handleCreateTransfer(formData: FormData) {
   "use server";
   const selectedMonth = parseSpendingMonth(String(formData.get("month") ?? ""), new Date());
   const result = await createTransfer(formData);
-  if (result?.error) redirect(`/accounts?transfer=1&month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
+  if ("error" in result && result.error) redirect(`/accounts?transfer=1&month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
   redirect(`/accounts?month=${selectedMonth}&transferRecorded=1`);
 }
 
@@ -215,7 +215,7 @@ async function handleUpdateTransfer(formData: FormData) {
   const transferId = String(formData.get("transfer_id") ?? "");
   const selectedMonth = parseSpendingMonth(String(formData.get("month") ?? ""), new Date());
   const result = await updateTransfer(transferId, formData);
-  if (result?.error) redirect(`/accounts?editTransfer=${transferId}&month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
+  if ("error" in result && result.error) redirect(`/accounts?editTransfer=${transferId}&month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
   redirect(`/accounts?month=${selectedMonth}`);
 }
 
@@ -224,5 +224,5 @@ async function handleDeleteTransfer(formData: FormData) {
   const transferId = String(formData.get("transfer_id") ?? "");
   const selectedMonth = parseSpendingMonth(String(formData.get("month") ?? ""), new Date());
   const result = await deleteTransfer(transferId);
-  if (result?.error) redirect(`/accounts?month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
+  if ("error" in result && result.error) redirect(`/accounts?month=${selectedMonth}&error=${encodeURIComponent(result.error)}`);
 }

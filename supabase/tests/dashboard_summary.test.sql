@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(10);
 
 insert into auth.users (id, email) values
   ('aaaaaaaa-0000-0000-0000-000000000001', 'a@test.local'),
@@ -28,27 +28,58 @@ insert into public.transactions (workspace_id, user_id, account_id, category_id,
   ('aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'aaaaaaaa-2222-0000-0000-000000000001', 'aaaaaaaa-3333-0000-0000-000000000004', -70, '2026-09-09'),
   ('aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'aaaaaaaa-2222-0000-0000-000000000001', 'aaaaaaaa-3333-0000-0000-000000000001', -999, '2026-08-20');
 
+insert into public.loans (
+  id, workspace_id, user_id, name, lender, principal_amount, outstanding_balance, status, transaction_id
+) values (
+  'aaaaaaaa-5555-0000-0000-000000000001',
+  'aaaaaaaa-1111-0000-0000-000000000001',
+  'aaaaaaaa-0000-0000-0000-000000000001',
+  'Personal loan', 'Lender', 1000, 1000, 'active',
+  (
+    select id from public.transactions
+    where workspace_id = 'aaaaaaaa-1111-0000-0000-000000000001'
+      and category_id = 'aaaaaaaa-3333-0000-0000-000000000003'
+      and amount = 1000 and date = '2026-09-08'
+  )
+);
+
+insert into public.transactions (workspace_id, user_id, account_id, category_id, amount, date)
+values (
+  'aaaaaaaa-1111-0000-0000-000000000001',
+  'aaaaaaaa-0000-0000-0000-000000000001',
+  'aaaaaaaa-2222-0000-0000-000000000001',
+  'aaaaaaaa-3333-0000-0000-000000000003',
+  -20,
+  '2026-09-10'
+);
+
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"aaaaaaaa-0000-0000-0000-000000000001","role":"authenticated"}';
 
 select is(
   (select month_spending from public.dashboard_summary('aaaaaaaa-1111-0000-0000-000000000001', '2026-09-01', '2026-10-01')),
-  50.00::numeric, 'spending sums expenses in the range and skips transfers and other months');
+  70.00::numeric, 'spending includes an ordinary expense categorized as loan and skips transfers and other months');
 select is(
   (select month_income from public.dashboard_summary('aaaaaaaa-1111-0000-0000-000000000001', '2026-09-01', '2026-10-01')),
   500.00::numeric, 'income skips the loan disbursement');
 select is(
   (select month_expense_count from public.dashboard_summary('aaaaaaaa-1111-0000-0000-000000000001', '2026-09-01', '2026-10-01')),
-  2::bigint, 'expense count matches spending');
+  3::bigint, 'expense count includes an ordinary transaction categorized as loan');
 select is(
   (select accounts_balance from public.dashboard_summary('aaaaaaaa-1111-0000-0000-000000000001', '2026-09-01', '2026-10-01')),
-  (100 - 40 - 10 + 500 + 1000 - 70 - 999)::numeric, 'accounts_balance sums only this workspace');
+  (100 - 40 - 10 + 500 + 1000 - 70 - 999 - 20)::numeric, 'accounts_balance sums only this workspace');
 
 select is(
   (select array_agg(kind order by date) from public.transaction_activity
     where workspace_id = 'aaaaaaaa-1111-0000-0000-000000000001' and date >= '2026-09-01'),
-  array['expense', 'expense', 'income', 'loan', 'transfer'],
-  'transaction_activity classifies each row');
+  array['expense', 'expense', 'income', 'loan', 'transfer', 'expense'],
+  'only loan-page disbursements are classified as loans');
+
+select is(
+  (select money_out from public.transaction_totals(
+    'aaaaaaaa-1111-0000-0000-000000000001', null, '2026-09-01', '2026-10-01'
+  )),
+  140.00::numeric, 'transaction totals exclude loans but include transactions categorized as loan');
 
 select is(
   (select count(*)::int from public.transaction_activity

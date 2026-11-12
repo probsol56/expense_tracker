@@ -9,6 +9,9 @@ export type TransactionRow = {
   merchant_id?: string | null;
   category_id?: string | null;
   account_id?: string | null;
+  loan_id?: string | null;
+  merchant_name?: string | null;
+  category_name?: string | null;
   merchant?: { name?: string | null } | null;
   category?: { name?: string | null } | null;
   notes?: string | null;
@@ -23,8 +26,9 @@ export function toTransaction(row: TransactionRow): Transaction {
     merchant_id: row.merchant_id ?? null,
     category_id: row.category_id ?? null,
     account_id: row.account_id ?? null,
-    merchant: row.merchant?.name ?? "",
-    category: row.category?.name ?? "",
+    loan_id: row.loan_id ?? null,
+    merchant: row.merchant_name ?? row.merchant?.name ?? "",
+    category: row.category_name ?? row.category?.name ?? "",
     notes: row.notes ?? null,
     amount: row.amount,
     date: row.date,
@@ -32,14 +36,8 @@ export function toTransaction(row: TransactionRow): Transaction {
   };
 }
 
-const BASE_SELECT =
-  "id, merchant_id, category_id, account_id, merchant:merchants(name), category:categories(name), notes, amount, date, status";
-
-// Same columns, but with an inner join on categories so `.eq("category.name", …)`
-// can filter server-side. Only used when a category filter is active — an inner
-// join would otherwise drop transactions with no category.
-const CATEGORY_FILTERED_SELECT =
-  "id, merchant_id, category_id, account_id, merchant:merchants(name), category:categories!inner(name), notes, amount, date, status";
+const TRANSACTION_ACTIVITY_SELECT =
+  "id, merchant_id, category_id, account_id, loan_id, merchant_name, category_name, notes, amount, date, status";
 
 export type TransactionPageParams = {
   page: number;
@@ -148,12 +146,13 @@ export async function fetchTransactionsPage(
 
   const buildQuery = () => {
     let q = supabase
-      .from("transactions")
-      .select(hasCategoryFilter ? CATEGORY_FILTERED_SELECT : BASE_SELECT, { count: "exact" })
+      .from("transaction_activity")
+      .select(TRANSACTION_ACTIVITY_SELECT, { count: "exact" })
+      .neq("kind", "loan")
       .order("date", { ascending: sortOrder === "asc" })
       .order("created_at", { ascending: sortOrder === "asc" })
       .order("id", { ascending: sortOrder === "asc" });
-    if (hasCategoryFilter) q = q.eq("category.name", category as string);
+    if (hasCategoryFilter) q = q.eq("category_name", category as string);
     if (hasAccountFilter) q = q.eq("account_id", accountId as string);
     if (dateFrom) q = q.gte("date", dateFrom);
     if (dateTo) q = q.lte("date", dateTo);
@@ -161,7 +160,7 @@ export async function fetchTransactionsPage(
   };
 
   const [{ count: totalRows }, first] = await Promise.all([
-    supabase.from("transactions").select("id", { count: "exact", head: true }),
+    supabase.from("transaction_activity").select("id", { count: "exact", head: true }).neq("kind", "loan"),
     buildQuery().range(...pageRange(page, pageSize)),
   ]);
 

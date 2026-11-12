@@ -8,17 +8,16 @@ import type { Transaction } from "@/lib/types";
 export const MAX_DASHBOARD_LOANS = 100;
 export const MAX_DASHBOARD_ACCOUNTS = 100;
 
-export type ActivityType = "all" | "expenses" | "income" | "loan" | "transfer";
+export type ActivityType = "all" | "expenses" | "income" | "transfer";
 
 const ACTIVITY_KIND_BY_TYPE: Record<Exclude<ActivityType, "all">, string> = {
   expenses: "expense",
   income: "income",
-  loan: "loan",
   transfer: "transfer",
 };
 
 const ACTIVITY_SELECT =
-  "id, merchant_id, category_id, account_id, merchant_name, category_name, notes, amount, date, status";
+  "id, merchant_id, category_id, account_id, merchant_name, category_name, notes, amount, date, status, loan_id";
 
 const dashboardSummarySchema = z.object({
   month_spending: z.coerce.number(),
@@ -59,6 +58,7 @@ const activityRowSchema = z.object({
   merchant_id: z.string().nullable(),
   category_id: z.string().nullable(),
   account_id: z.string().nullable(),
+  loan_id: z.string().uuid().nullable(),
   merchant_name: z.string().nullable(),
   category_name: z.string().nullable(),
   notes: z.string().nullable(),
@@ -87,7 +87,7 @@ export type ActivityPageResult = {
 };
 
 export function parseActivityType(value: string): ActivityType {
-  return value === "expenses" || value === "income" || value === "loan" || value === "transfer" ? value : "all";
+  return value === "expenses" || value === "income" || value === "transfer" ? value : "all";
 }
 
 export function getMonthRange(now: Date): { from: string; to: string } {
@@ -137,6 +137,7 @@ function toActivityTransaction(row: ActivityRow): Transaction {
     merchant_id: row.merchant_id,
     category_id: row.category_id,
     account_id: row.account_id,
+    loan_id: row.loan_id,
     merchant: { name: row.merchant_name },
     category: { name: row.category_name },
     notes: row.notes,
@@ -189,6 +190,7 @@ export async function fetchActivityPage(
       .from("transaction_activity")
       .select(ACTIVITY_SELECT, { count: "exact" })
       .eq("workspace_id", workspaceId)
+      .neq("kind", "loan")
       .order("date", { ascending: sortOrder === "asc" })
       .order("created_at", { ascending: sortOrder === "asc" });
     if (monthRange) request = request.gte("date", monthRange.from).lt("date", monthRange.to);
@@ -205,7 +207,8 @@ export async function fetchActivityPage(
   let totalRowsQuery = supabase
     .from("transaction_activity")
     .select("id", { count: "exact", head: true })
-    .eq("workspace_id", workspaceId);
+    .eq("workspace_id", workspaceId)
+    .neq("kind", "loan");
   if (monthRange) totalRowsQuery = totalRowsQuery.gte("date", monthRange.from).lt("date", monthRange.to);
 
   const [{ count: totalRows, error: totalError }, first] = await Promise.all([

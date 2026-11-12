@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { CategoryBadge } from "@/components/category-badge";
-import { formatEntryDate, isLoanCategory, isTransferCategory, money } from "@/lib/utils";
+import { formatEntryDate, getLoanEditHref, isLoanCategory, isTransferCategory, money } from "@/lib/utils";
 import type { Transaction } from "@/lib/types";
 
 interface TransactionListItemProps {
@@ -33,8 +33,8 @@ export function TransactionListItem({
   const isEditable = !isLoanEntry && !isTransferEntry;
   const entryDate = formatEntryDate(transaction.date, { day: "numeric", month: "short" });
 
-  // Loan and transfer entries are managed on their own pages, so they link there instead of opening the editor.
-  const linkedPage = isLoanEntry ? "/loans" : isTransferEntry ? "/accounts" : null;
+  // Loan and transfer entries are managed on their own pages instead of opening the transaction editor.
+  const linkedPage = isTransferEntry ? "/accounts" : null;
 
   return (
     <tr className="group border-b border-rule transition-colors duration-150 last:border-b-0 hover:bg-rule/25">
@@ -49,6 +49,14 @@ export function TransactionListItem({
           </Link>
         ) : (
           <p className="font-medium text-fg">{transaction.merchant}</p>
+        )}
+        {isLoanEntry && transaction.loan_id && (
+          <Link
+            href={getLoanEditHref(transaction.loan_id)}
+            className="mt-1 inline-block text-sm font-medium text-brass-strong underline underline-offset-2 hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass-strong"
+          >
+            Edit loan
+          </Link>
         )}
         <p className="mt-0.5 text-sm text-fg-muted">
           <span className="sm:hidden">{entryDate} · </span>

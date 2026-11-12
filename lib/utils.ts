@@ -29,8 +29,12 @@ export function getInitials(name?: string | null): string {
 }
 
 export function isLoanCategory(category?: string | null): boolean {
-  const normalized = (category ?? "").toLowerCase();
-  return normalized.includes("loan") || normalized.includes("mortgage");
+  const normalized = (category ?? "").trim().toLowerCase();
+  return normalized === "loan" || normalized === "mortgage";
+}
+
+export function getLoanEditHref(loanId?: string | null): string {
+  return loanId ? `/loans?edit=${encodeURIComponent(loanId)}` : "/loans";
 }
 
 export function isLoanTransaction(transaction: { amount?: number | string | null; category?: string | null }): boolean {

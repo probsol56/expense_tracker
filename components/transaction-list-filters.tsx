@@ -16,7 +16,6 @@ const FILTERS: { value: ActivityType; label: string }[] = [
   { value: "all", label: "All" },
   { value: "expenses", label: "Expenses" },
   { value: "income", label: "Income" },
-  { value: "loan", label: "Loans" },
   { value: "transfer", label: "Transfers" },
 ];
 

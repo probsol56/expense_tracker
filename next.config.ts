@@ -3,7 +3,7 @@ import { config } from "./lib/config";
 import { buildSecurityHeaders } from "./lib/security-headers";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  output: process.platform === "win32" ? undefined : "standalone",
   poweredByHeader: false,
   async headers() {
     return [

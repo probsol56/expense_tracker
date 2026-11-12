@@ -24,6 +24,8 @@ pnpm test       # Vitest unit tests
 pnpm build      # production build
 ```
 
+On Windows, `pnpm build` omits standalone output because Next.js cannot create the required traced-file symlinks without Windows symlink privileges. Docker builds still use standalone output.
+
 Database tests (RLS isolation, ledger RPCs, summaries, account deletion) are pgTAP files in `supabase/tests/`, run with `supabase test db` against a local stack (`supabase db start`). CI runs both suites on every PR.
 
 ## Environment variables

@@ -1,6 +1,8 @@
 "use client";
 
+import { useId, useState } from "react";
 import {
+  ChevronDown,
   CreditCard,
   FileUp,
   FolderKanban,
@@ -33,14 +35,36 @@ interface NavItem {
   href: string;
 }
 
+interface NavSubItem {
+  label: string;
+  href: string;
+}
+
+/** A collapsible section whose links all live under `basePath`. */
+interface NavGroup {
+  label: string;
+  icon: LucideIcon;
+  basePath: string;
+  items: NavSubItem[];
+}
+
 const PRIMARY_NAV: NavItem[] = [
   { label: "Overview", icon: LayoutGrid, href:"/" },
   { label: "Transactions", icon: CreditCard, href:"/transactions" },
   { label: "Accounts", icon: Wallet, href:"/accounts" },
   { label: "Loans", icon: Landmark, href:"/loans" },
   { label: "Recurring", icon: Repeat, href:"/recurring" },
-  { label: "Reports", icon: PieChart, href:"/reports" },
 ];
+
+const REPORTS_NAV: NavGroup = {
+  label: "Reports",
+  icon: PieChart,
+  basePath: "/reports",
+  items: [
+    { label: "Account statements", href: "/reports" },
+    { label: "Expense details", href: "/reports/expense-details" },
+  ],
+};
 
 const MANAGE_NAV: NavItem[] = [
   { label: "Categories", icon: FolderKanban, href:"/categories" },
@@ -60,6 +84,9 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const reportsGroupId = useId();
+  // Only matters off the reports pages — on them the group is always open.
+  const [reportsOpen, setReportsOpen] = useState(false);
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -92,6 +119,57 @@ export function DashboardSidebar({
     );
   };
 
+  const renderNavGroup = ({ label, icon: Icon, basePath, items }: NavGroup) => {
+    const inGroup = isActiveRoute(pathname, basePath);
+    const expanded = reportsOpen || inGroup;
+    return (
+      <div key={basePath}>
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={reportsGroupId}
+          onClick={() => setReportsOpen(!expanded)}
+          className={`relative flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-medium transition-colors duration-150 focus-visible:outline-brass ${
+            inGroup ? "text-cover-fg" : "text-cover-muted hover:bg-cover-fg/5 hover:text-cover-fg"
+          }`}
+        >
+          <Icon size={17} className={inGroup ? "text-brass" : undefined} />
+          <span className="flex-1">{label}</span>
+          <ChevronDown
+            size={15}
+            aria-hidden="true"
+            className={`transition-transform duration-150 motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`}
+          />
+        </button>
+        {expanded && (
+          <ul id={reportsGroupId} className="mt-1 space-y-1">
+            {items.map(({ label: itemLabel, href }) => {
+              // Exact match: the group's base path is itself one of the reports.
+              const isActive = pathname === href;
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    onClick={onClose}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`relative flex min-h-11 items-center rounded-md pl-11 pr-3 text-sm transition-colors duration-150 focus-visible:outline-brass ${
+                      isActive
+                        ? "bg-cover-fg/10 font-medium text-cover-fg"
+                        : "text-cover-muted hover:bg-cover-fg/5 hover:text-cover-fg"
+                    }`}
+                  >
+                    {isActive && <span aria-hidden="true" className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-brass" />}
+                    {itemLabel}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    );
+  };
+
   const sidebarContent = (
     <div className="flex h-full min-h-0 flex-col px-4 py-6">
       <div className="flex items-start justify-between px-3">
@@ -120,7 +198,10 @@ export function DashboardSidebar({
 
       {/* Nav scrolls on its own so the account footer (sign-out) stays reachable on short viewports */}
       <nav aria-label="Main" className="-mx-1 mt-6 min-h-0 flex-1 overflow-y-auto px-1">
-        <div className="space-y-1">{PRIMARY_NAV.map(renderNavItem)}</div>
+        <div className="space-y-1">
+          {PRIMARY_NAV.map(renderNavItem)}
+          {renderNavGroup(REPORTS_NAV)}
+        </div>
         <p className="mb-2 mt-8 px-3 text-xs font-semibold uppercase tracking-widest text-cover-muted">Manage</p>
         <div className="space-y-1">{MANAGE_NAV.map(renderNavItem)}</div>
       </nav>

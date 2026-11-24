@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
         headers: buildSecurityHeaders({
           supabaseUrl: config.supabaseUrl,
           sentryDsn: config.sentryDsn,
+          folioReportsUrl: config.folioReportsUrl,
           isProduction: config.isProduction,
         }),
       },

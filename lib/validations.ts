@@ -151,3 +151,17 @@ export function parseRecordId(value: string | undefined): string | null {
   const parsed = z.string().uuid().safeParse(value);
   return parsed.success ? parsed.data : null;
 }
+
+/** Filters for the Folio "expense details" report; the workspace is never client-supplied. */
+export const expenseReportFiltersSchema = z
+  .object({
+    categoryIds: z.array(z.string().uuid("Select valid categories.")).max(500, "Too many categories selected."),
+    fromDate: z.string().date("Enter a valid start date."),
+    toDate: z.string().date("Enter a valid end date."),
+  })
+  .refine((filters) => filters.fromDate <= filters.toDate, {
+    message: "The start date must be on or before the end date.",
+    path: ["toDate"],
+  });
+
+export type ExpenseReportFilters = z.infer<typeof expenseReportFiltersSchema>;

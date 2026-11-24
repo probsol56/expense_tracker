@@ -23,6 +23,22 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).not.toContain("examplekey");
   });
 
+  it("allows the Folio report server origin for the embedded viewer", () => {
+    const csp = buildContentSecurityPolicy({
+      supabaseUrl: SUPABASE_URL,
+      folioReportsUrl: "https://reports.example.com/",
+      isProduction: true,
+    });
+    expect(csp).toMatch(/script-src [^;]*https:\/\/reports\.example\.com/);
+    expect(csp).toMatch(/connect-src [^;]*https:\/\/reports\.example\.com/);
+    expect(csp).toMatch(/font-src [^;]*https:\/\/reports\.example\.com/);
+  });
+
+  it("leaves the Folio origin out when it isn't configured", () => {
+    const csp = buildContentSecurityPolicy({ supabaseUrl: SUPABASE_URL, isProduction: true });
+    expect(csp).not.toContain("reports.example.com");
+  });
+
   it("uses ws: for a local http Supabase", () => {
     const csp = buildContentSecurityPolicy({ supabaseUrl: "http://127.0.0.1:54321", isProduction: false });
     expect(csp).toContain("ws://127.0.0.1:54321");

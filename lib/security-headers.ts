@@ -1,6 +1,8 @@
 export interface SecurityHeaderOptions {
   supabaseUrl: string;
   sentryDsn?: string;
+  /** Aqlyn Folio report server whose embedded viewer runs on the reports page. */
+  folioReportsUrl?: string;
   isProduction: boolean;
 }
 
@@ -16,21 +18,24 @@ const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 // 'unsafe-inline' unless we move to per-request nonces (which forces every
 // page to render dynamically). The remaining directives still block third-party
 // scripts, framing, plugin content, <base> hijacking and off-origin form posts.
-export function buildContentSecurityPolicy({ supabaseUrl, sentryDsn, isProduction }: SecurityHeaderOptions): string {
+export function buildContentSecurityPolicy({ supabaseUrl, sentryDsn, folioReportsUrl, isProduction }: SecurityHeaderOptions): string {
   const supabase = new URL(supabaseUrl);
   // The DSN's origin is the region-specific ingest host (e.g. o123.ingest.de.sentry.io);
   // the public key in its userinfo isn't part of `origin`.
   const sentryOrigin = sentryDsn ? [new URL(sentryDsn).origin] : [];
+  // The Folio viewer script, its API calls (CORS), fonts.css and font files
+  // all come from the report server's origin.
+  const folio = folioReportsUrl ? [new URL(folioReportsUrl).origin] : [];
   const supabaseRealtime = `${supabase.protocol === "https:" ? "wss:" : "ws:"}//${supabase.host}`;
 
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
     // React's dev build relies on eval for stack reconstruction.
-    "script-src": ["'self'", "'unsafe-inline'", ...(isProduction ? [] : ["'unsafe-eval'"])],
-    "style-src": ["'self'", "'unsafe-inline'"],
+    "script-src": ["'self'", "'unsafe-inline'", ...(isProduction ? [] : ["'unsafe-eval'"]), ...folio],
+    "style-src": ["'self'", "'unsafe-inline'", ...folio],
     "img-src": ["'self'", "data:", "blob:"],
-    "font-src": ["'self'"],
-    "connect-src": ["'self'", supabase.origin, supabaseRealtime, ...sentryOrigin],
+    "font-src": ["'self'", ...folio],
+    "connect-src": ["'self'", supabase.origin, supabaseRealtime, ...sentryOrigin, ...folio],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],
     "form-action": ["'self'"],

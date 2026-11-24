@@ -138,11 +138,19 @@ export function DashboardSidebar({
           <ChevronDown
             size={15}
             aria-hidden="true"
-            className={`transition-transform duration-150 motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`}
+            className={`transition-transform duration-200 ease-out motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`}
           />
         </button>
-        {expanded && (
-          <ul id={reportsGroupId} className="mt-1 space-y-1">
+        {/* Always mounted so height can animate (grid 0fr → 1fr); `inert` keeps collapsed links out of tab order and the a11y tree. */}
+        <div
+          id={reportsGroupId}
+          inert={!expanded}
+          className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none ${
+            expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="min-h-0 overflow-hidden">
+          <ul className="mt-1 space-y-1">
             {items.map(({ label: itemLabel, href }) => {
               // Exact match: the group's base path is itself one of the reports.
               const isActive = pathname === href;
@@ -165,7 +173,8 @@ export function DashboardSidebar({
               );
             })}
           </ul>
-        )}
+          </div>
+        </div>
       </div>
     );
   };

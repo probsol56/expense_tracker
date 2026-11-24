@@ -57,3 +57,13 @@ export function parseExpenseReportFilters(
 export function expenseReportFiltersKey({ categoryIds, fromDate, toDate }: ExpenseReportFilters): string {
   return [fromDate, toDate, [...categoryIds].sort().join(",")].join("|");
 }
+
+/** Serializes filters into the search params `parseExpenseReportFilters` reads. */
+export function expenseReportQuery({ categoryIds, fromDate, toDate }: ExpenseReportFilters): string {
+  const params = new URLSearchParams({ [EXPENSE_REPORT_PARAMS.from]: fromDate, [EXPENSE_REPORT_PARAMS.to]: toDate });
+  if (categoryIds.length > 0) params.set(EXPENSE_REPORT_PARAMS.categories, categoryIds.join(","));
+  return params.toString();
+}
+
+/** Standalone, full-window viewer route (outside the app shell). */
+export const EXPENSE_REPORT_VIEWER_PATH = "/report-viewer/expense-details";

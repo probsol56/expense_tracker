@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   defaultExpenseReportRange,
   expenseReportFiltersKey,
+  expenseReportQuery,
   parseExpenseReportFilters,
 } from "@/lib/expense-report";
 import { expenseReportFiltersSchema } from "@/lib/validations";
@@ -60,5 +61,18 @@ describe("expenseReportFiltersSchema", () => {
 
   it("accepts a valid filter set", () => {
     expect(expenseReportFiltersSchema.safeParse({ categoryIds: [A], fromDate: "2026-01-01", toDate: "2026-01-01" }).success).toBe(true);
+  });
+});
+
+describe("expenseReportQuery", () => {
+  it("round-trips through parseExpenseReportFilters", () => {
+    const filters = { categoryIds: [A, B], fromDate: "2026-10-01", toDate: "2026-10-31" };
+    const parsed = parseExpenseReportFilters(Object.fromEntries(new URLSearchParams(expenseReportQuery(filters))), TODAY);
+    expect(parsed).toEqual(filters);
+  });
+
+  it("omits the categories param when none are selected", () => {
+    const query = expenseReportQuery({ categoryIds: [], fromDate: "2026-10-01", toDate: "2026-10-31" });
+    expect(new URLSearchParams(query).has("categories")).toBe(false);
   });
 });

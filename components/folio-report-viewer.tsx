@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { RotateCcw } from "lucide-react";
-import { Alert, Button, Skeleton } from "@/components/ui";
+import { Alert, Button } from "@/components/ui";
+import { ReportPageSkeleton } from "@/components/report-page-skeleton";
+import { cn } from "@/lib/utils";
 
 type TokenResult = { token: string } | { error: string };
 
@@ -45,11 +47,14 @@ export function FolioReportViewer({
   report,
   title,
   getToken,
+  frameClassName = "h-[75vh] min-h-[32rem] rounded-lg border border-rule bg-paper",
 }: {
   serverUrl: string;
   report: string;
   title: string;
   getToken: () => Promise<TokenResult>;
+  /** Size and surface of the report frame; defaults to a bordered in-page panel. */
+  frameClassName?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(false);
@@ -114,7 +119,11 @@ export function FolioReportViewer({
   }, [scriptReady, serverUrl, report, attempt]);
 
   return (
-    <section aria-label={title} aria-busy={status.kind === "loading"} className="relative">
+    <section
+      aria-label={title}
+      aria-busy={status.kind === "loading"}
+      className={cn("relative w-full overflow-hidden", frameClassName)}
+    >
       <Script
         src={`${serverUrl}/viewer.js`}
         strategy="afterInteractive"
@@ -122,25 +131,21 @@ export function FolioReportViewer({
         onError={() => setStatus({ kind: "error", message: "The report viewer couldn't be reached." })}
       />
 
+      <div ref={containerRef} className="h-full w-full" hidden={status.kind === "error"} />
+
+      {status.kind === "loading" && <ReportPageSkeleton className="absolute inset-0" />}
+
       {status.kind === "error" && (
-        <Alert className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <span>{status.message}</span>
-          <Button type="button" variant="outline" size="sm" onClick={() => setAttempt((n) => n + 1)}>
-            <RotateCcw aria-hidden="true" />
-            Try again
-          </Button>
-        </Alert>
+        <div className="absolute inset-0 flex items-center justify-center bg-canvas p-4">
+          <Alert className="flex max-w-md flex-col items-start gap-3">
+            <span>{status.message}</span>
+            <Button type="button" variant="outline" size="sm" onClick={() => setAttempt((n) => n + 1)}>
+              <RotateCcw aria-hidden="true" />
+              Try again
+            </Button>
+          </Alert>
+        </div>
       )}
-
-      {status.kind === "loading" && (
-        <Skeleton className="absolute inset-0 h-full rounded-lg" aria-hidden="true" />
-      )}
-
-      <div
-        ref={containerRef}
-        className="h-[75vh] min-h-[32rem] w-full overflow-hidden rounded-lg border border-rule bg-paper"
-        hidden={status.kind === "error"}
-      />
     </section>
   );
 }

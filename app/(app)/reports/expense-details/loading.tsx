@@ -4,12 +4,12 @@ import { PageSkeleton } from "@/components/page-skeleton";
 export default function Loading() {
   return (
     <PageSkeleton label="Loading expense report">
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="flex max-w-xl flex-col gap-5 rounded-lg border border-rule p-5 sm:p-6">
         <Skeleton className="h-11" />
         <Skeleton className="h-11" />
         <Skeleton className="h-11" />
+        <Skeleton className="ml-auto h-10 w-36" />
       </div>
-      <Skeleton className="h-[70vh] min-h-[32rem] rounded-lg" />
     </PageSkeleton>
   );
 }

@@ -19,6 +19,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getInitials } from "@/lib/utils";
+import { FOLIO_REPORTS, folioReportSlugSchema, reportFormPath } from "@/lib/folio-reports";
 import { createClient } from "@/lib/supabase/client";
 import type { Workspace, Profile } from "@/lib/types";
 
@@ -60,10 +61,7 @@ const REPORTS_NAV: NavGroup = {
   label: "Reports",
   icon: PieChart,
   basePath: "/reports",
-  items: [
-    { label: "Account statements", href: "/reports" },
-    { label: "Expense details", href: "/reports/expense-details" },
-  ],
+  items: folioReportSlugSchema.options.map((slug) => ({ label: FOLIO_REPORTS[slug].title, href: reportFormPath(slug) })),
 };
 
 const MANAGE_NAV: NavItem[] = [
@@ -152,7 +150,6 @@ export function DashboardSidebar({
           <div className="min-h-0 overflow-hidden">
           <ul className="mt-1 space-y-1">
             {items.map(({ label: itemLabel, href }) => {
-              // Exact match: the group's base path is itself one of the reports.
               const isActive = pathname === href;
               return (
                 <li key={href}>

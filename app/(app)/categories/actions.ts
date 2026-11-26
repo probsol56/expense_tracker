@@ -162,6 +162,6 @@ function revalidateCategoryPaths() {
   revalidatePath("/categories");
   revalidatePath("/transactions");
   revalidatePath("/");
-  revalidatePath("/reports");
+  revalidatePath("/reports", "layout");
   revalidatePath("/recurring");
 }

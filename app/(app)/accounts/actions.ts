@@ -83,7 +83,6 @@ export async function deleteLedgerAccount(formData: FormData): Promise<{ error: 
   revalidatePath("/accounts");
   revalidatePath("/loans");
   revalidatePath("/recurring");
-  revalidatePath("/reports");
   revalidatePath("/transactions");
   return { success: true };
 }

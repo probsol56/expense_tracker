@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, ExternalLink, Receipt, Upload, X } from "lucide-react";
+import { Camera, ExternalLink, Receipt, RefreshCw, Upload, X } from "lucide-react";
 import { extractReceipt, getReceiptViewUrl, prepareReceiptUpload } from "@/app/receipt-actions";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Alert, Button } from "@/components/ui";
@@ -17,7 +17,9 @@ export type ScannedReceipt = {
 };
 
 type ScanStatus = "idle" | "uploading" | "reading";
-type ScanSource = "camera" | "file";
+type ScanSource = "camera" | "file" | "retry";
+/** A scan waiting on "replace the line items?" confirmation. */
+type PendingScan = { kind: "file"; file: File } | { kind: "retry"; path: string };
 
 // Camera capture only makes sense where `capture` opens one; desktops would
 // just show a second file picker.
@@ -50,8 +52,10 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
   const [status, setStatus] = useState<ScanStatus>("idle");
   const [source, setSource] = useState<ScanSource>("file");
   const [error, setError] = useState<string | null>(null);
+  /** Set when the attached receipt uploaded but couldn't be read, so it can be re-read. */
+  const [unreadPath, setUnreadPath] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
-  const [fileAwaitingConfirm, setFileAwaitingConfirm] = useState<File | null>(null);
+  const [pendingScan, setPendingScan] = useState<PendingScan | null>(null);
 
   function resetFileInput() {
     // Allow picking the same file again after a failure or a cancel.
@@ -60,10 +64,28 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
   }
 
   // Confirm before uploading so a cancelled scan doesn't use up the daily quota.
-  function pickFile(file: File, pickedFrom: ScanSource) {
-    setSource(pickedFrom);
-    if (existingItemCount > 0) setFileAwaitingConfirm(file);
-    else void scan(file);
+  function requestScan(pending: PendingScan, from: ScanSource) {
+    setSource(from);
+    if (existingItemCount > 0) setPendingScan(pending);
+    else runScan(pending);
+  }
+
+  function runScan(pending: PendingScan) {
+    if (pending.kind === "file") void scan(pending.file);
+    else void retryRead(pending.path);
+  }
+
+  async function read(path: string) {
+    setStatus("reading");
+    const result = await extractReceipt(path);
+    if ("error" in result) {
+      setError(`${result.error} The receipt is still attached.`);
+      setUnreadPath(path);
+      onScanned({ path, draft: null });
+      return;
+    }
+    setUnreadPath(null);
+    onScanned({ path, draft: result.draft });
   }
 
   async function scan(file: File) {
@@ -71,6 +93,7 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
     setStatus("uploading");
     try {
       const prepared = await prepareReceiptFile(file);
+      // Same file → same content-hash path, so a re-picked receipt skips the upload.
       const upload = await prepareReceiptUpload(prepared.mimeType, await hashReceiptBlob(prepared.blob));
       if ("error" in upload) {
         setError(upload.error);
@@ -87,20 +110,33 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
         }
       }
 
-      setStatus("reading");
-      const result = await extractReceipt(upload.path);
-      if ("error" in result) {
-        setError(`${result.error} The receipt is still attached.`);
-        onScanned({ path: upload.path, draft: null });
-        return;
-      }
-      onScanned({ path: upload.path, draft: result.draft });
+      await read(upload.path);
     } catch (caught: unknown) {
       setError(caught instanceof ReceiptFileError ? caught.userMessage : "Couldn't scan the receipt. Try again.");
     } finally {
       setStatus("idle");
       resetFileInput();
     }
+  }
+
+  // The file is already in storage; only the read needs repeating.
+  async function retryRead(path: string) {
+    setError(null);
+    try {
+      await read(path);
+    } catch (caught: unknown) {
+      // Server action transport failure (e.g. offline); the receipt stays attached.
+      console.error("receipt re-read failed", caught instanceof Error ? caught.name : "unknown");
+      setError("Couldn't read the receipt. Check your connection and try again.");
+    } finally {
+      setStatus("idle");
+    }
+  }
+
+  function removeReceipt() {
+    setError(null);
+    setUnreadPath(null);
+    onRemove();
   }
 
   async function openReceipt(path: string) {
@@ -118,21 +154,11 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
   }
 
   const busy = status !== "idle";
+  const canRetry = canScan && receiptPath !== null && unreadPath === receiptPath;
 
   return (
     <div className="space-y-2">
-      {receiptPath ? (
-        <div className="flex min-h-11 items-center gap-2 rounded-md border border-rule bg-canvas px-3">
-          <Receipt size={16} aria-hidden="true" className="shrink-0 text-fg-muted" />
-          <span className="flex-1 text-sm font-medium text-fg">Receipt attached</span>
-          <Button type="button" variant="link" size="sm" onClick={() => void openReceipt(receiptPath)} loading={opening}>
-            <ExternalLink aria-hidden="true" /> View
-          </Button>
-          <Button type="button" variant="ghost" size="icon" onClick={onRemove} aria-label="Remove receipt">
-            <X aria-hidden="true" />
-          </Button>
-        </div>
-      ) : canScan ? (
+      {canScan && (
         <>
           <input
             ref={fileInputRef}
@@ -143,7 +169,7 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
             aria-hidden="true"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) pickFile(file, "file");
+              if (file) requestScan({ kind: "file", file }, "file");
             }}
           />
           <input
@@ -156,9 +182,39 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
             aria-hidden="true"
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (file) pickFile(file, "camera");
+              if (file) requestScan({ kind: "file", file }, "camera");
             }}
           />
+        </>
+      )}
+
+      {receiptPath ? (
+        <div className="flex min-h-11 items-center gap-2 rounded-md border border-rule bg-canvas px-3">
+          <Receipt size={16} aria-hidden="true" className="shrink-0 text-fg-muted" />
+          <span className="flex-1 text-sm font-medium text-fg">
+            {busy ? STATUS_TEXT[status] : "Receipt attached"}
+          </span>
+          <Button type="button" variant="link" size="sm" onClick={() => void openReceipt(receiptPath)} loading={opening} disabled={busy}>
+            <ExternalLink aria-hidden="true" /> View
+          </Button>
+          {canScan && (
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy}
+              loading={busy && source !== "retry"}
+            >
+              <Upload aria-hidden="true" /> Replace
+            </Button>
+          )}
+          <Button type="button" variant="ghost" size="icon" onClick={removeReceipt} disabled={busy} aria-label="Remove receipt">
+            <X aria-hidden="true" />
+          </Button>
+        </div>
+      ) : canScan ? (
+        <>
           <div className="flex gap-2">
             <Button
               type="button"
@@ -192,22 +248,40 @@ export function ReceiptSection({ receiptPath, warnings, canScan, existingItemCou
       <p aria-live="polite" className="sr-only">{busy ? STATUS_TEXT[status] : ""}</p>
 
       <ConfirmDialog
-        open={fileAwaitingConfirm !== null}
+        open={pendingScan !== null}
         title="Replace the line items?"
         description={`The scanned receipt replaces the ${existingItemCount} line item${existingItemCount === 1 ? "" : "s"}, tax and discount in this form. Merchant, category and date are updated if the receipt shows them.`}
         confirmLabel="Scan and replace"
         onConfirm={() => {
-          const file = fileAwaitingConfirm;
-          setFileAwaitingConfirm(null);
-          if (file) void scan(file);
+          const pending = pendingScan;
+          setPendingScan(null);
+          if (pending) runScan(pending);
         }}
         onCancel={() => {
-          setFileAwaitingConfirm(null);
+          setPendingScan(null);
           resetFileInput();
         }}
       />
 
-      {error && <Alert>{error}</Alert>}
+      {error && (
+        <Alert className="flex items-start gap-3">
+          <p className="flex-1">{error}</p>
+          {canRetry && receiptPath && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => requestScan({ kind: "retry", path: receiptPath }, "retry")}
+              disabled={busy}
+              loading={busy && source === "retry"}
+              loadingText="Reading…"
+            >
+              <RefreshCw aria-hidden="true" /> Try again
+            </Button>
+          )}
+        </Alert>
+      )}
       {warnings.length > 0 && (
         <Alert tone="warning">
           <p className="font-medium">Check the scanned details before saving:</p>

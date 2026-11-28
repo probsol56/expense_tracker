@@ -9,6 +9,7 @@ import type { Account, Loan, Transaction, TransactionItem } from "@/lib/types";
 import { money } from "@/lib/utils";
 
 const FIELD_LABEL = "block text-sm font-medium text-fg";
+const ITEM_INPUT = "h-9 px-2 py-1 sm:text-[13px]";
 
 interface TransactionFormFieldsProps {
   type: CategoryType;
@@ -251,15 +252,16 @@ export function TransactionFormFields({
 
         {hasItemDetails && (
           <>
-            <div className="space-y-3 rounded-md border border-rule bg-canvas p-3">
+            <div className="space-y-1.5 rounded-md border border-rule bg-canvas p-2">
               {items.map((item, index) => (
-                <div key={item.id || index} className="grid grid-cols-[64px_minmax(0,1fr)_minmax(0,1fr)_44px] gap-2 sm:grid-cols-[minmax(0,1.7fr)_64px_96px_96px_44px]">
+                <div key={item.id || index} className="grid grid-cols-[56px_minmax(0,1fr)_minmax(0,1fr)_36px] items-center gap-1.5 sm:grid-cols-[minmax(0,1fr)_52px_68px_auto_32px]">
                   <Input
                     value={item.name}
                     onChange={(event) => updateItem(item.id || `${index}`, { name: event.target.value })}
                     placeholder="Item or service"
                     aria-label={`Item ${index + 1} name`}
-                    className="col-span-4 sm:col-span-1"
+                    title={item.name}
+                    className={`${ITEM_INPUT} col-span-4 sm:col-span-1`}
                   />
                   <Input
                     type="number"
@@ -269,6 +271,7 @@ export function TransactionFormFields({
                     onChange={(event) => updateItem(item.id || `${index}`, { quantity: Number(event.target.value || 1) })}
                     placeholder="Qty"
                     aria-label={`Item ${index + 1} quantity`}
+                    className={ITEM_INPUT}
                   />
                   <Input
                     type="number"
@@ -278,17 +281,18 @@ export function TransactionFormFields({
                     onChange={(event) => updateItem(item.id || `${index}`, { unit_price: Number(event.target.value || 0) })}
                     placeholder="Price"
                     aria-label={`Item ${index + 1} unit price`}
+                    className={ITEM_INPUT}
                   />
-                  <div className="flex items-center justify-end px-1 text-sm font-medium tabular-nums text-fg">
+                  <div className="flex items-center justify-end whitespace-nowrap px-1 text-xs font-medium tabular-nums text-fg sm:text-[13px]">
                     {money(Number(item.total_price || 0), currency)}
                   </div>
                   <button
                     type="button"
                     onClick={() => removeItem(item.id || `${index}`)}
-                    className="grid h-11 w-11 place-items-center rounded-md text-fg-muted transition-colors duration-150 hover:bg-brick/10 hover:text-brick"
+                    className="grid h-9 w-8 place-items-center rounded-md text-fg-muted transition-colors duration-150 hover:bg-brick/10 hover:text-brick"
                     aria-label={`Remove item ${index + 1}`}
                   >
-                    <Trash2 size={15} aria-hidden="true" />
+                    <Trash2 size={14} aria-hidden="true" />
                   </button>
                 </div>
               ))}

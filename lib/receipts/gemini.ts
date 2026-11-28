@@ -12,7 +12,7 @@ import {
 // Free-tier models, tried in order. The free tier often answers 503 "high
 // demand" or a per-model 429 for the primary, so a lighter model backs it up.
 // Check https://ai.google.dev/gemini-api/docs/models when bumping.
-const GEMINI_MODELS = ["gemini-3.8-flash", "gemini-3.1-flash-lite"] as const;
+const GEMINI_MODELS = ["gemini-2.5-flash", "gemini-3.1-flash-lite"] as const;
 // Shared by every attempt so a fallback can't push the action past it.
 const REQUEST_TIMEOUT_MS = 45_000;
 const BUSY_STATUSES: ReadonlySet<number> = new Set([429, 503]);

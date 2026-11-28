@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(15);
 
 insert into auth.users (id, email) values
   ('aaaaaaaa-0000-0000-0000-000000000001', 'a@test.local'),
@@ -89,6 +89,28 @@ set local role authenticated;
 select throws_ok(
   $$select public.start_receipt_scan('aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-1111-0000-0000-000000000001/z.jpg')$$,
   'P0001', 'Daily receipt scan limit reached (30). Try again later.', 'the 31st scan in 24h is refused');
+
+-- Failed scans don't use up the quota...
+reset role;
+update public.receipt_scans set status = 'failed'
+  where user_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+set local role authenticated;
+
+select lives_ok(
+  $$select public.start_receipt_scan('aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-1111-0000-0000-000000000001/z.jpg')$$,
+  'failed scans do not count against the daily quota');
+
+-- ...but every attempt counts toward the backstop (31 so far, top up to 100).
+reset role;
+insert into public.receipt_scans (workspace_id, user_id, receipt_path, status)
+  select 'aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
+         'aaaaaaaa-1111-0000-0000-000000000001/fail-' || n || '.jpg', 'failed'
+  from generate_series(1, 69) n;
+set local role authenticated;
+
+select throws_ok(
+  $$select public.start_receipt_scan('aaaaaaaa-1111-0000-0000-000000000001', 'aaaaaaaa-1111-0000-0000-000000000001/z2.jpg')$$,
+  'P0001', 'Too many receipt scan attempts today. Try again later.', 'the 101st attempt in 24h is refused');
 
 select * from finish();
 rollback;
